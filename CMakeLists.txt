@@ -1,0 +1,46 @@
+INCLUDE_DIRECTORIES(${ROSS_BINARY_DIR} ./include)
+IF(USE_DAMARIS)
+    INCLUDE_DIRECTORIES(${DAMARIS_INCLUDE}) 
+ENDIF(USE_DAMARIS)
+IF(BGPM)
+	INCLUDE_DIRECTORIES(${ROSS_SOURCE_DIR} ${BGPM_LIB})
+ELSE(NOT(BGPM))
+	INCLUDE_DIRECTORIES(${ROSS_SOURCE_DIR})
+ENDIF(BGPM)
+
+SET(ispd_srcs
+./src/log.c
+./src/main.c
+./src/routing_table.c
+./src/services/master.c
+./src/services/link.c
+./src/services/machine.c
+./src/services/dummy.c
+./src/workload/workload.c
+./src/builder/builder.c
+)
+
+ADD_EXECUTABLE(ispd ${ispd_srcs})
+ADD_EXECUTABLE(ispd_test ${ispd_srcs})
+
+IF(BGPM)
+	TARGET_LINK_LIBRARIES(ispd ROSS imp_bgpm m)
+	TARGET_LINK_LIBRARIES(ispd_test ROSS imp_bgpm m)
+ELSE(NOT(BGPM))
+    IF(USE_DAMARIS)
+        TARGET_LINK_LIBRARIES(ispd ROSS ROSS_Damaris m)
+        TARGET_LINK_LIBRARIES(ispd_test ROSS ROSS_Damaris m)
+    ELSE(NOT(USE_DAMARIS))
+        TARGET_LINK_LIBRARIES(ispd ROSS m)
+        TARGET_LINK_LIBRARIES(ispd_test ROSS m)
+    ENDIF(USE_DAMARIS)
+ENDIF(BGPM)
+
+ROSS_TEST_SCHEDULERS(ispd)
+ROSS_TEST_INSTRUMENTATION(ispd)
+
+SET_TARGET_PROPERTIES(ispd_test PROPERTIES COMPILE_DEFINITIONS TEST_COMM_ROSS)
+ROSS_TEST_SCHEDULERS(ispd_test)
+ROSS_TEST_INSTRUMENTATION(ispd_test)
+
+INSTALL(FILES ${ROSS_BINARY_DIR}/../models/ispd/ispd DESTINATION bin PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)

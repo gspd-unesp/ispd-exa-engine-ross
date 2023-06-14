@@ -1,0 +1,6 @@
+-I
+./include
+-I
+/home/ricardo/Desktop/ROSS/core
+-I
+/usr/include/x86_64-linux-gnu/mpi
