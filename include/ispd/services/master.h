@@ -2,6 +2,7 @@
 #define SERVICE_MASTER_H
 
 #include <ispd/message.h>
+#include <ispd/scheduler/scheduler.h>
 #include <ross.h>
 
 typedef struct master_state {
@@ -16,6 +17,9 @@ typedef struct master_state {
 
 	/// \brief The count of how many slaves this master has.
 	unsigned slave_count;
+
+	void *scheduler;
+	scheduler_type scheduler_type;
 } master_state;
 
 extern void master_init(master_state *s, tw_lp *lp);
