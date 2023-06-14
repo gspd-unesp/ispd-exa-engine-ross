@@ -1,10 +1,11 @@
 #include <ispd/services/link.h>
 #include <ispd/message.h>
 #include <ispd/builder/builder.h>
+#include <ispd/core.h>
 #include <ispd/log.h>
 #include <ross.h>
 
-static inline double time_to_comm(const link_state *s, const double comm_size)
+ENGINE_INLINE static double time_to_comm(const link_state *s, const double comm_size)
 {
 	return comm_size / ((1.0 - s->load) * s->bandwidth) + s->latency;
 }

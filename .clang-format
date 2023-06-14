@@ -5,7 +5,7 @@ AlignAfterOpenBracket: DontAlign
 AlignConsecutiveAssignments: None
 AlignConsecutiveBitFields: None
 AlignConsecutiveDeclarations: None
-AlignConsecutiveMacros: None
+AlignConsecutiveMacros: true
 AlignEscapedNewlines: Right
 AlignOperands: Align
 AlignTrailingComments: true
@@ -70,7 +70,7 @@ IndentCaseBlocks: true
 IndentCaseLabels: true
 IndentExternBlock: NoIndent
 IndentGotoLabels: false
-IndentPPDirectives: None
+IndentPPDirectives: AfterHash
 IndentRequires: true
 IndentWidth: 8
 IndentWrappedFunctionNames: true
