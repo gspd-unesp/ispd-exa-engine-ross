@@ -1,5 +1,5 @@
-#include <ispd/debug.h>
 #include <ispd/log.h>
+#include <ispd/core.h>
 #include <ispd/routing_table.h>
 #include <stdio.h>
 #include <stdlib.h>

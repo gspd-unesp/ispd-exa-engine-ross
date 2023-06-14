@@ -1,5 +1,5 @@
-#include <ispd/debug.h>
 #include <ispd/log.h>
+#include <ispd/core.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,7 +15,7 @@ void __ispd_log(enum log_level level, const char *filepath, const unsigned line,
 #endif // DEBUG_ON
 	va_list args;
 
-	if(!logfile) {
+	if(unlikely(!logfile)) {
 		fprintf(stderr, "You are trying to log without set a log file. Use logfile_set function!\n");
 		abort();
 	}
