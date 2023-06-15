@@ -9,6 +9,17 @@
 
 extern routing_table *g_routing_table;
 
+ENGINE_INLINE static void master_sched_next(master_state *s, tw_lpid *id)
+{
+	switch(s->scheduler_type) {
+		case SCHED_ROUND_ROBIN:
+			sched_rr_next(s->scheduler, id);
+			break;
+		default:
+			ispd_error("Unknown master scheduler type (%u).", s->scheduler_type);
+	}
+}
+
 void master_init(master_state *s, tw_lp *lp)
 {
 	// Initialize the master state, fetching it from the model built.
@@ -31,7 +42,7 @@ void master_init(master_state *s, tw_lp *lp)
 	task_amount = 200000;
 
 	for(i = 0; i < task_amount; i++) {
-		sched_rr_next(s->scheduler, &next_slave_id);
+		master_sched_next(s, &next_slave_id);
 		routing_table_get(g_routing_table, lp->gid, next_slave_id, &r);
 
 		e = tw_event_new(r->route[0], tw_rand_exponential(lp->rng, 5.0), lp);

@@ -15,7 +15,6 @@ typedef struct sched_round_robin {
 	tw_lpid next_slave_id;
 } sched_round_robin;
 
-#define SCHEDULER_ROUND_ROBIN_DEBUG
 ENGINE_INLINE void sched_rr_next(sched_round_robin *rr, tw_lpid *id)
 {
 	if(unlikely(rr->next_slave_id == rr->master->slave_count))
