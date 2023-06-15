@@ -99,7 +99,7 @@ void master_rc_event(master_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp)
 		bf->c0 = 0;
 		s->completed_tasks--;
 
-		if(bf->c1) {
+		if(bf->c1 == 1) {
 			bf->c1 = 0;
 			switch(s->scheduler_type) {
 				case SCHED_ROUND_ROBIN:
@@ -119,7 +119,7 @@ void master_rc_event(master_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp)
 
 void master_final(master_state *s, tw_lp *lp)
 {
-	ispd_log(LOG_DEBUG,
+	ispd_log(LOG_INFO,
 	    "\nMaster @ LP %lu\n"
 	    " - Completed Tasks: %u tasks.\n",
 	    lp->gid, s->completed_tasks);

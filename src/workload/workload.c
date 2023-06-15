@@ -17,16 +17,14 @@ void workload_next_time(workload *wl, tw_stime *offset, tw_rng_stream *rng)
 
 void workload_next_task(workload *wl, task *t)
 {
-	static int i = 0;
 	switch(wl->wl_type) {
 		case CONSTANT_WORKLOAD:
-			t->proc_size = wl->wl_proc_size + i;
-			t->comm_size = wl->wl_comm_size + i;
+			t->proc_size = wl->wl_proc_size;
+			t->comm_size = wl->wl_comm_size;
 			break;
 		default:
 			ispd_error("Unknown workload generation type (%u).", wl->wl_type);
 	}
 
-	i++;
 	wl->amount--;
 }

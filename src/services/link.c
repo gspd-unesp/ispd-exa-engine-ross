@@ -31,26 +31,12 @@ void link_event(link_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp)
 	ispd_message *m;
 
 	now = tw_now(lp);
-	bf->c0 = 0;
 
 	// This is the time needed for the packet to be completely transmitted
 	// over this network link that is connecting two ends.
 	delay = time_to_comm(s, msg->t.comm_size);
 
 	waiting_time = ROSS_MAX(0, s->next_free_time - now);
-
-	// Checks if the task has arrived before the link is available. Therefore,
-	// the task will have to wait to be transmitted, incurring in a non-zero
-	// waiting time. Altough, it is used ROSS_MAX as in
-	//
-	//   waiting_time = ROSS_MAX(0, s->next_free_time - tw_now(lp))
-	//
-	// to obtain the waiting time. It is necessary, to set the bitfield that
-	// identify that this task has waited, without doing that the reverse
-	// computation will not know whther the task has waited.
-	if(tw_now(lp) < s->next_free_time)
-		bf->c0 = 1;
-
 	departure_time = now + waiting_time + delay;
 
 	// Update the next free time instant. This indicates the next instant
@@ -92,7 +78,7 @@ void link_rc_event(link_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp)
 
 void link_final(link_state *s, tw_lp *lp)
 {
-	ispd_log(LOG_DEBUG,
+	ispd_log(LOG_INFO,
 	    "\nLink @ LP %lu\n"
 	    " - Last Activity Time..: %lf seconds.\n"
 	    " - Communicated Mbits..: %lf Mbits.\n"

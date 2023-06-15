@@ -53,7 +53,7 @@ void machine_rc_event(machine_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp)
 
 void machine_final(machine_state *s, tw_lp *lp)
 {
-	ispd_log(LOG_DEBUG,
+	ispd_log(LOG_INFO,
 	    "\nMachine @ LP %lu\n"
 	    " - Processed MFLOPS: %lf MFLOPS.\n"
 	    " - Processed Time..: %lf seconds.\n"
