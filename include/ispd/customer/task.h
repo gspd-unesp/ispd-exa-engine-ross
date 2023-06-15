@@ -9,6 +9,7 @@ typedef struct task {
 	double proc_size;
 	double comm_size;
 	tw_lpid origin;
+	tw_lpid destination;
 	task_state state;
 } task;
 

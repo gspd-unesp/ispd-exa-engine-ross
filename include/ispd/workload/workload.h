@@ -5,13 +5,13 @@
 #include <ross.h>
 
 typedef enum workload_gen_type {
-	CONSTANT,
+	CONSTANT_WORKLOAD,
 } workload_gen_type;
 
 typedef enum interarrival_dist_type {
-	FIXED,
-	EXPONENTIAL,
-	POISSON,
+	FIXED_INTERARRIVAL,
+	EXPONENTIAL_INTERARRIVAL,
+	POISSON_INTERARRIVAL,
 } interarrival_dist_type;
 
 typedef struct workload {
@@ -20,9 +20,10 @@ typedef struct workload {
 
 	double wl_proc_size;
 	double wl_comm_size;
-	unsigned long amount;
+	unsigned amount;
 } workload;
 
-extern void workload_next(workload *wl, task *t, tw_stime *offset);
+extern void workload_next_time(workload *wl, tw_stime *offset, tw_rng_stream *rng);
+extern void workload_next_task(workload *wl, task *t);
 
 #endif // WORKLOAD_H

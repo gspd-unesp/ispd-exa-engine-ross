@@ -5,9 +5,13 @@
 #include <ross.h>
 
 typedef struct machine_state {
+	/// \brief Machine Properties
 	double power;
 	double load;
 	unsigned cores;
+
+	/// \brief Machine Statistics.
+	double last_activity_time;
 	double proc_mflops;
 	double proc_time;
 	unsigned proc_tasks;

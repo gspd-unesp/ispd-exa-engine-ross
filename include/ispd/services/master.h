@@ -1,9 +1,10 @@
 #ifndef SERVICE_MASTER_H
 #define SERVICE_MASTER_H
 
-#include <ispd/message.h>
-#include <ispd/scheduler/scheduler.h>
 #include <ross.h>
+#include <ispd/message.h>
+#include <ispd/workload/workload.h>
+#include <ispd/scheduler/scheduler.h>
 
 typedef struct master_state {
 	/// \brief A count of how many tasks have been processed.
@@ -20,6 +21,8 @@ typedef struct master_state {
 
 	void *scheduler;
 	scheduler_type scheduler_type;
+
+	workload wl;
 } master_state;
 
 extern void master_init(master_state *s, tw_lp *lp);

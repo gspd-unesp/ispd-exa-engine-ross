@@ -1,3 +1,4 @@
+#include "ispd/workload/workload.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <ispd/routing_table.h>
@@ -101,14 +102,26 @@ int main(int argc, char **argv)
 	tw_lpid *slaves = malloc(sizeof(tw_lpid) * 8);
 	for(i = 0; i < 8; i++)
 		slaves[i] = 2 * i + 2;
-	model_lp_settype(0, MASTER, &(struct master_state){.completed_tasks = 0, .slaves = slaves, .slave_count = 8},
+	model_lp_settype(0, MASTER,
+	    &(struct master_state){.completed_tasks = 0,
+		.slaves = slaves,
+		.slave_count = 8,
+		.scheduler_type = SCHED_WORKQUEUE,
+		.wl =
+		    {
+			.wl_type = CONSTANT_WORKLOAD,
+			.ia_dist_type = EXPONENTIAL_INTERARRIVAL,
+			.wl_proc_size = 150.0,
+			.wl_comm_size = 200.0,
+			.amount = 9,
+		    }},
 	    sizeof(master_state));
 
 	for(i = 1; i < 17; i += 2) {
 		model_lp_settype(i, LINK,
 		    &(link_state){.from = 0,
 			.to = i + 1,
-			.bandwidth = 280.0,
+			.bandwidth = 5.0,
 			.load = 0.0,
 			.latency = 7.0,
 			.comm_mbits = 0,

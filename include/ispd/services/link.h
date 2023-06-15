@@ -5,11 +5,16 @@
 #include <ross.h>
 
 typedef struct link_state {
+	/// \brief Link Properties.
 	tw_lpid from;
 	tw_lpid to;
 	double bandwidth;
 	double latency;
 	double load;
+
+	double next_free_time;
+
+	/// \brief Link Statistics
 	double comm_mbits;
 	double comm_time;
 	unsigned comm_packets;
