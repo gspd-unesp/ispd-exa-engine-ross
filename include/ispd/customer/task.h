@@ -11,6 +11,7 @@ typedef struct task {
 	tw_lpid origin;
 	tw_lpid destination;
 	task_state state;
+	tw_stime link_free_time;
 } task;
 
 #endif // CUSTOMER_TASK_H

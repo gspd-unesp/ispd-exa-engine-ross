@@ -113,7 +113,7 @@ int main(int argc, char **argv)
 			.ia_dist_type = EXPONENTIAL_INTERARRIVAL,
 			.wl_proc_size = 150.0,
 			.wl_comm_size = 200.0,
-			.amount = 9,
+			.amount = 20,
 		    }},
 	    sizeof(master_state));
 
