@@ -1,7 +1,6 @@
 #ifndef ISPD_CORE_H
 #define ISPD_CORE_H
 
-
 #ifdef DEBUG_ON
 #	define DEBUG_BLOCK(CODE) CODE
 #else

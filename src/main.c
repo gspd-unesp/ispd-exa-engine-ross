@@ -84,7 +84,7 @@ routing_table *g_routing_table;
 
 int main(int argc, char **argv)
 {
-	g_tw_lookahead = 1e-6;
+	g_tw_lookahead = 1e-9;
 
 	int i;
 	int nlp_per_pe;
@@ -97,15 +97,15 @@ int main(int argc, char **argv)
 
 	printf("Node Count: %u.\n", tw_nnodes());
 
-	model_set_nlp(17);
+	model_set_nlp(257);
 
-	tw_lpid *slaves = malloc(sizeof(tw_lpid) * 8);
-	for(i = 0; i < 8; i++)
+	tw_lpid *slaves = malloc(sizeof(tw_lpid) * 128);
+	for(i = 0; i < 128; i++)
 		slaves[i] = 2 * i + 2;
 	model_lp_settype(0, MASTER,
 	    &(struct master_state){.completed_tasks = 0,
 		.slaves = slaves,
-		.slave_count = 8,
+		.slave_count = 128,
 		.scheduler_type = SCHED_WORKQUEUE,
 		.wl =
 		    {
@@ -117,7 +117,7 @@ int main(int argc, char **argv)
 		    }},
 	    sizeof(master_state));
 
-	for(i = 1; i < 17; i += 2) {
+	for(i = 1; i < 257; i += 2) {
 		model_lp_settype(i, LINK,
 		    &(link_state){.from = 0,
 			.to = i + 1,
