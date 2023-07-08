@@ -44,6 +44,9 @@ struct master {
     s->workload = new ispd::workload::workload_constant(10, 200.0, 80.0);
     /// @Temporary: End
     
+    /// Initialize the scheduler.
+    s->scheduler->init_scheduler();
+
     /// Initialize the metrics.
     s->metrics.completed_tasks = 0;
 
@@ -57,6 +60,10 @@ struct master {
   }
 
   static void forward(master_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
+    DEBUG({
+        std::printf("Master with GID %lu has received a message to be processed.\n", lp->gid);
+    });
+
     switch (msg->type) {
       case message_type::GENERATE:
         generate(s, bf, msg, lp);
@@ -72,6 +79,10 @@ struct master {
   }
 
   static void reverse(master_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
+    DEBUG({
+        std::printf("Master with GID %lu has received a message to be reversed processed.\n", lp->gid);
+    });
+
     switch (msg->type) {
       case message_type::GENERATE:
         generate_rc(s, bf, msg, lp);

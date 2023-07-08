@@ -9,6 +9,8 @@ namespace scheduler {
 
 struct scheduler {
 
+  virtual void init_scheduler() = 0;
+
   virtual tw_lpid forward_schedule(
       std::vector<tw_lpid> &slaves,
       tw_bf *bf,

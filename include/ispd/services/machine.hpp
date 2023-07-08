@@ -74,6 +74,10 @@ struct machine {
   }
 
   static void forward(machine_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
+    DEBUG({
+        std::printf("Machine with GID %lu has received a message to be processed.\n", lp->gid);
+    });
+
     /// Checks if the task's destination is this machine. If so, the task is processed
     /// and the task's results is sent back to the master by the same route it came along.
     if (msg->task.dest == lp->gid) {
@@ -131,6 +135,10 @@ struct machine {
   }
 
   static void reverse(machine_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
+    DEBUG({
+        std::printf("Machine with GID %lu has received a message to be reversed processed.\n", lp->gid);
+    });
+
     /// Check if the task's destination is this machine.
     if (msg->task.dest == lp->gid) {
       const double proc_size = msg->task.proc_size;

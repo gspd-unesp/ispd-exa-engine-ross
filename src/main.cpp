@@ -73,10 +73,23 @@ int main(int argc, char **argv)
  	tw_opt_add(opt);
 	tw_init(&argc, &argv);
 
-  tw_define_lps(3, sizeof(ispd_message));
-  tw_lp_settype(0, &lps_type[0]);
-  tw_lp_settype(1, &lps_type[1]);
-  tw_lp_settype(2, &lps_type[2]);
+  /// Distributed.
+  if (tw_nnodes() > 1) {
+    if (tw_nnodes() != 3) {
+      std::cerr << "It must be executed using 3 nodes." << std::endl;
+      abort();
+    }
+
+    tw_define_lps(1, sizeof(ispd_message));
+    tw_lp_settype(0, &lps_type[g_tw_mynode]);
+  } 
+  /// Sequential.
+  else {
+    tw_define_lps(3, sizeof(ispd_message));
+    tw_lp_settype(0, &lps_type[0]);
+    tw_lp_settype(1, &lps_type[1]);
+    tw_lp_settype(2, &lps_type[2]);
+  }
 
 	tw_run();
 	tw_end();
