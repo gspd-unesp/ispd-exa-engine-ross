@@ -1,3 +1,6 @@
+PROJECT(ISPD_EXA_ENGINE LANGUAGES CXX C)
+SET(CMAKE_CXX_STANDARD 14)
+
 INCLUDE_DIRECTORIES(${ROSS_BINARY_DIR} ./include)
 IF(USE_DAMARIS)
     INCLUDE_DIRECTORIES(${DAMARIS_INCLUDE}) 
@@ -9,15 +12,7 @@ ELSE(NOT(BGPM))
 ENDIF(BGPM)
 
 SET(ispd_srcs
-./src/log.c
-./src/main.c
-./src/routing_table.c
-./src/services/master.c
-./src/services/link.c
-./src/services/machine.c
-./src/services/dummy.c
-./src/workload/workload.c
-./src/builder/builder.c
+./src/main.cpp
 )
 
 ADD_EXECUTABLE(ispd ${ispd_srcs})
