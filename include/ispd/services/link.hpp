@@ -48,7 +48,7 @@ struct link {
 
     /// @Temporary:
     s->from = 0;
-    s->to = 2;
+    s->to = lp->gid + 1;
     s->conf.bandwidth = 50;
     s->conf.load = 0.0;
     s->conf.latency = 2;
@@ -91,6 +91,8 @@ struct link {
     /// Update the link's metrics.
     s->metrics.comm_mbits += comm_size;
     s->metrics.comm_packets++;
+
+    next_available_time = tw_now(lp) + departure_delay;
 
     tw_lpid send_to;
 
@@ -153,13 +155,17 @@ struct link {
   static void finish(link_state *s, tw_lp *lp) {
     DEBUG({
         std::printf(
-            "Link Metrics (%lu)\n"
-            " - Communicated Mbits..: %lf Mbits (%lu).\n"
-            " - Communicated Packets: %u packets (%lu).\n"
+            "Link Queue Info & Metrics (%lu)\n"
+            " - Communicated Mbits.......: %lf Mbits (%lu).\n"
+            " - Communicated Packets.....: %u packets (%lu).\n"
+            " - Downward Next Avail. Time: %lf seconds (%lu).\n"
+            " - Upward Next Avail. Time..: %lf seconds (%lu).\n"
             "\n",
             lp->gid, 
             s->metrics.comm_mbits, lp->gid,
-            s->metrics.comm_packets, lp->gid
+            s->metrics.comm_packets, lp->gid,
+            s->downward_next_available_time, lp->gid,
+            s->upward_next_available_time, lp->gid
         );
     });
   }

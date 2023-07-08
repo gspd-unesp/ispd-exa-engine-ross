@@ -75,20 +75,42 @@ int main(int argc, char **argv)
 
   /// Distributed.
   if (tw_nnodes() > 1) {
-    if (tw_nnodes() != 3) {
-      std::cerr << "It must be executed using 3 nodes." << std::endl;
+    if (tw_nnodes() != 5) {
+      std::cerr << "It must be executed using 5 nodes." << std::endl;
       abort();
     }
 
     tw_define_lps(1, sizeof(ispd_message));
-    tw_lp_settype(0, &lps_type[g_tw_mynode]);
+    
+    switch (g_tw_mynode) {
+      case 0:
+        tw_lp_settype(0, &lps_type[0]);
+        break;
+      case 1:
+        tw_lp_settype(0, &lps_type[1]);
+        break;
+      case 2:
+        tw_lp_settype(0, &lps_type[2]);
+        break;
+      case 3:
+        tw_lp_settype(0, &lps_type[1]);
+        break;
+      case 4:
+        tw_lp_settype(0, &lps_type[2]);
+        break;
+      default:
+        std::cerr << "Unknown node (" << g_tw_mynode << ")" << std::endl;
+        abort();
+    }
   } 
   /// Sequential.
   else {
-    tw_define_lps(3, sizeof(ispd_message));
+    tw_define_lps(5, sizeof(ispd_message));
     tw_lp_settype(0, &lps_type[0]);
     tw_lp_settype(1, &lps_type[1]);
     tw_lp_settype(2, &lps_type[2]);
+    tw_lp_settype(3, &lps_type[1]);
+    tw_lp_settype(4, &lps_type[2]);
   }
 
 	tw_run();

@@ -40,12 +40,10 @@ struct round_robin : scheduler {
       /// This is necessary for the reverse computation.
       bf->c0 = 1;
 
-    printf("here 3!!!!\n");
       /// Set the next slave identifier back to 0.
       next_slave_index = 0;
     }
 
-    printf("here 4!!!!\n");
     return slave_id;
   }
 

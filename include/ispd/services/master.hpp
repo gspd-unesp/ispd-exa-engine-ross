@@ -40,8 +40,9 @@ struct master {
     /// @Temporary:
     s->slaves.reserve(1);
     s->slaves.emplace_back(2);
+    s->slaves.emplace_back(4);
     s->scheduler = new ispd::scheduler::round_robin;
-    s->workload = new ispd::workload::workload_constant(10, 200.0, 80.0);
+    s->workload = new ispd::workload::workload_constant(1000, 200.0, 80.0);
     /// @Temporary: End
     
     /// Initialize the scheduler.
@@ -112,8 +113,6 @@ private:
   static void generate(master_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
     /// Use the master's scheduling policy to the schedule the next slave.
     const tw_lpid scheduled_slave_id = s->scheduler->forward_schedule(s->slaves, bf, msg, lp);
-
-    std::cout << "Scheduled Slave Id: " << scheduled_slave_id << std::endl;
 
     /// Fetch the route that connects this master with the scheduled slave.
     const ispd::routing::route *route = g_routing_table.get_route(lp->gid, scheduled_slave_id);
