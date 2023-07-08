@@ -5,6 +5,7 @@
 #include <ross.h>
 #include <ispd/debug/debug.hpp>
 #include <ispd/routing/routing.hpp>
+#include <ispd/workload/workload.hpp>
 #include <ispd/scheduler/scheduler.hpp>
 #include <ispd/scheduler/round_robin.hpp>
 
@@ -23,6 +24,9 @@ struct master_state {
   /// \brief Master's scheduler.
   ispd::scheduler::scheduler *scheduler;
 
+  /// \brief Master's workload generator.
+  ispd::workload::workload *workload;
+
   /// \brief Master's metrics.
   master_metrics metrics;
 };
@@ -35,8 +39,9 @@ struct master {
 
     /// @Temporary:
     s->slaves.reserve(1);
-    s->slaves[0] = 2;
+    s->slaves.emplace_back(2);
     s->scheduler = new ispd::scheduler::round_robin;
+    s->workload = new ispd::workload::workload_constant(10, 200.0, 80.0);
     /// @Temporary: End
     
     /// Initialize the metrics.
@@ -67,7 +72,18 @@ struct master {
   }
 
   static void reverse(master_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
-
+    switch (msg->type) {
+      case message_type::GENERATE:
+        generate_rc(s, bf, msg, lp);
+        break;
+      case message_type::ARRIVAL:
+        arrival_rc(s, bf, msg, lp);
+        break;
+      default:
+        std::cerr << "Unknown message type " << static_cast<int>(msg->type) << " at Master LP reverse handler." << std::endl;
+        abort();
+        break;
+    }
   }
 
   static void finish(master_state *s, tw_lp *lp) {
@@ -86,6 +102,8 @@ private:
     /// Use the master's scheduling policy to the schedule the next slave.
     const tw_lpid scheduled_slave_id = s->scheduler->forward_schedule(s->slaves, bf, msg, lp);
 
+    std::cout << "Scheduled Slave Id: " << scheduled_slave_id << std::endl;
+
     /// Fetch the route that connects this master with the scheduled slave.
     const ispd::routing::route *route = g_routing_table.get_route(lp->gid, scheduled_slave_id);
 
@@ -95,11 +113,10 @@ private:
     ispd_message *const m = static_cast<ispd_message *>(tw_event_data(e));
 
     m->type = message_type::ARRIVAL;
-    
-    /// @Temporary: This should be set by the workload generator.
-    m->task.proc_size = 250.0;
-    m->task.comm_size = 80.0;
-    /// @Temporary: End
+
+    /// Use the master's workload generator for generate the task's
+    /// processing and communication sizes.
+    s->workload->workload_generate(m->task.proc_size, m->task.comm_size);
 
     m->task.origin = lp->gid;
     m->task.dest = scheduled_slave_id;
@@ -109,12 +126,41 @@ private:
     m->task_processed = 0;
 
     tw_event_send(e);
+
+    /// Checks if the there are more remaining tasks to be generated. If so, a generate message
+    /// is sent to the master by itself to generate a new task.
+    if (s->workload->count > 0) {
+      /// Send a generate message to itself.
+      tw_event *const e = tw_event_new(lp->gid, tw_rand_exponential(lp->rng, 0.1), lp);
+      ispd_message *const m = static_cast<ispd_message *>(tw_event_data(e));
+
+      m->type = message_type::GENERATE;
+
+     tw_event_send(e);    
+    }
+  }
+
+  static void generate_rc(master_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
+    /// Reverse the workload generator.
+    s->workload->workload_generate_rc();
+
+    /// Checks if after reversing the workload generator, there are remaining tasks to be generated.
+    /// If so, the random number generator is reversed since it is used to generate the interarrival
+    /// time of the tasks.
+    if (s->workload->count > 0)
+      tw_rand_reverse_unif(lp->rng);
   }
 
   static void arrival(master_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
-    /// Update master's metrics.
+    /// Update the master's metrics.
     s->metrics.completed_tasks++;
   }
+
+  static void arrival_rc(master_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
+    /// Reverse the master's metrics.
+    s->metrics.completed_tasks--;
+  }
+
 
 };
 
