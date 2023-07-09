@@ -13,6 +13,7 @@ ENDIF(BGPM)
 
 SET(ispd_srcs
 ./src/main.cpp
+./src/log/log.cpp
 )
 
 ADD_EXECUTABLE(ispd ${ispd_srcs})

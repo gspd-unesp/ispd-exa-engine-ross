@@ -1,8 +1,6 @@
 #ifndef ISPD_DEBUG_HPP
 #define ISPD_DEBUG_HPP
 
-#define DEBUG_ON
-
 #ifdef DEBUG_ON
 # define DEBUG(CODE) CODE
 #else

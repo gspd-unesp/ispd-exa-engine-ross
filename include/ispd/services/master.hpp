@@ -4,6 +4,7 @@
 #include <vector>
 #include <ross.h>
 #include <ispd/debug/debug.hpp>
+#include <ispd/model/builder.hpp>
 #include <ispd/routing/routing.hpp>
 #include <ispd/workload/workload.hpp>
 #include <ispd/scheduler/scheduler.hpp>
@@ -37,14 +38,11 @@ struct master {
     /// @Todo: Initialize the master configuration dynamically
     ///        using a model builder.
 
-    /// @Temporary:
-    s->slaves.reserve(1);
-    s->slaves.emplace_back(2);
-    s->slaves.emplace_back(4);
-    s->scheduler = new ispd::scheduler::round_robin;
-    s->workload = new ispd::workload::workload_constant(1000, 200.0, 80.0);
-    /// @Temporary: End
-    
+    const auto &service_initializer = ispd::model::builder::get_service_initializer(lp->gid);
+
+    /// Call the service initializer for this logical process.
+    service_initializer(s);
+   
     /// Initialize the scheduler.
     s->scheduler->init_scheduler();
 

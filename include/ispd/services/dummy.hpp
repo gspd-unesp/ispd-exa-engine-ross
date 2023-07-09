@@ -4,8 +4,6 @@
 #include <ispd/debug/debug.hpp>
 #include <ispd/message/message.hpp>
 
-#define DUMMY_SEND_BATCH_TO_ITSELF
-
 namespace ispd {
 namespace services {
 
