@@ -22,6 +22,9 @@ struct dummy_state {
 struct dummy {
 
   static void init(dummy_state *s, tw_lp *lp) {
+    /// @Note: The dummy does not need to be initialized dynamicaly
+    ///        by the model builder.
+
     /// Initialize the dummy state.
     s->forward_event_count = 0;
     s->reverse_event_count = 0;
@@ -47,10 +50,11 @@ struct dummy {
       tw_event_send(e);
     }
 #endif // DUMMY_SEND_BATCH_TO_ITSELF
-       
+
     /// Print a debug message to the standard output.
     DEBUG({
-        std::cout << "Dummy with GID " << lp->gid << " has been initialized." << std::endl;
+      std::cout << "Dummy with GID " << lp->gid << " has been initialized."
+                << std::endl;
     });
   }
 
@@ -60,7 +64,8 @@ struct dummy {
 
     /// Print a debug message to the standard output.
     DEBUG({
-        std::cout << "Dummy with GID " << lp->gid << " at " << tw_now(lp) << " has forward processed an event." << std::endl;
+      std::cout << "Dummy with GID " << lp->gid << " at " << tw_now(lp)
+                << " has forward processed an event." << std::endl;
     });
   }
 
@@ -70,15 +75,17 @@ struct dummy {
 
     /// Print a debug message to the standard output.
     DEBUG({
-        std::cout << "Dummy with GID " << lp->gid << " has reverse processed an event." << std::endl;
+      std::cout << "Dummy with GID " << lp->gid
+                << " has reverse processed an event." << std::endl;
     });
   }
 
   static void finish(dummy_state *s, tw_lp *lp) {
     /// Print a debug message to the standard output.
     DEBUG({
-        std::cout << "Dummy with GID " << lp->gid << " (F: " << s->forward_event_count <<
-                                                     ", R: " << s->reverse_event_count << ")." << std::endl;
+      std::cout << "Dummy with GID " << lp->gid
+                << " (F: " << s->forward_event_count
+                << ", R: " << s->reverse_event_count << ")." << std::endl;
     });
   }
 };
@@ -87,4 +94,3 @@ struct dummy {
 }; // namespace ispd
 
 #endif // ISPD_SERVICE_DUMMY_HPP
-

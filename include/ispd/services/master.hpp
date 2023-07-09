@@ -35,9 +35,7 @@ struct master_state {
 struct master {
 
   static void init(master_state *s, tw_lp *lp) {
-    /// @Todo: Initialize the master configuration dynamically
-    ///        using a model builder.
-
+    /// Fetch the service initializer from this logical process.
     const auto &service_initializer = ispd::model::builder::get_service_initializer(lp->gid);
 
     /// Call the service initializer for this logical process.

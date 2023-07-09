@@ -6,6 +6,7 @@
 #include <limits>
 #include <ispd/message/message.hpp>
 #include <ispd/routing/routing.hpp>
+#include <ispd/model/builder.hpp>
 
 namespace ispd {
 namespace services {
@@ -58,19 +59,16 @@ struct machine {
   }
 
   static void init(machine_state *s, tw_lp *lp) {
-   /// @Todo: Initialize the machine configuration dynamically
-   ///        using a model builder.
+    /// Fetch the service initializer from this logical process.
+    const auto &service_initializer = ispd::model::builder::get_service_initializer(lp->gid);
 
-   /// @Temporary:
-   s->conf.power = 20;
-   s->conf.load = 0.0;
-   s->cores_free_time.resize(8, 0.0);
-   /// @Temporary: End 
-
-   /// Initialize machine's metrics.
-   s->metrics.proc_mflops = 0;
-   s->metrics.proc_tasks = 0;
-   s->metrics.forwarded_packets = 0;
+    /// Call the service initializer for this logical process.
+    service_initializer(s);
+         
+     /// Initialize machine's metrics.
+     s->metrics.proc_mflops = 0;
+     s->metrics.proc_tasks = 0;
+     s->metrics.forwarded_packets = 0;
   }
 
   static void forward(machine_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {

@@ -4,6 +4,7 @@
 #include <ross.h>
 #include <ispd/debug/debug.hpp>
 #include <ispd/message/message.hpp>
+#include <ispd/model/builder.hpp>
 
 namespace ispd {
 namespace services {
@@ -43,16 +44,11 @@ struct link {
   }
 
   static void init(link_state *s, tw_lp *lp) {
-    /// @Todo: Initialize the link configuration dynamically
-    ///        using a model builder.
+    /// Fetch the service initializer from this logical process.
+    const auto &service_initializer = ispd::model::builder::get_service_initializer(lp->gid);
 
-    /// @Temporary:
-    s->from = 0;
-    s->to = lp->gid + 1;
-    s->conf.bandwidth = 50;
-    s->conf.load = 0.0;
-    s->conf.latency = 2;
-    /// @Temporary: End
+    /// Call the service initializer for this logical process.
+    service_initializer(s);
     
     /// Initialize link's metrics.
     s->metrics.comm_mbits = 0;

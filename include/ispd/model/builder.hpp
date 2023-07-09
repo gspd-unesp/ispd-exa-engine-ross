@@ -1,10 +1,10 @@
 #ifndef ISPD_MODEL_BUILDER_HPP
 #define ISPD_MODEL_BUILDER_HPP
 
-#include <functional>
-#include <ispd/log/log.hpp>
 #include <ross.h>
+#include <functional>
 #include <unordered_map>
+#include <ispd/log/log.hpp>
 
 namespace ispd {
 namespace model {
