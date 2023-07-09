@@ -95,14 +95,12 @@ struct master {
   }
 
   static void finish(master_state *s, tw_lp *lp) {
-    DEBUG({
-        std::printf(
-            "Master Metrics (%lu)\n"
-            " - Completed Tasks: %u tasks (%lu).\n"
-            "\n",
-            lp->gid, s->metrics.completed_tasks, lp->gid
-        );
-    });
+      std::printf(
+          "Master Metrics (%lu)\n"
+          " - Completed Tasks: %u tasks (%lu).\n"
+          "\n",
+          lp->gid, s->metrics.completed_tasks, lp->gid
+      );
   }
 
 private:

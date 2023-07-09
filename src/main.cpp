@@ -174,7 +174,7 @@ int main(int argc, char **argv) {
           continue;
         }
 
-        if (i & 1)
+        if (current_gid & 1)
           tw_lp_settype(i, &lps_type[1]);
         else
           tw_lp_settype(i, &lps_type[2]);

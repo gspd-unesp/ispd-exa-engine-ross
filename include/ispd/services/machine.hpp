@@ -155,17 +155,15 @@ struct machine {
   }
 
   static void finish(machine_state *s, tw_lp *lp) {
-    DEBUG({
-        std::printf(
-            "Machine Metrics (%lu)\n"
-            " - Processed MFLOPS: %lf MFLOPS (%lu).\n"
-            " - Processed Tasks.: %u tasks (%lu).\n"
-            "\n",
-            lp->gid, 
-            s->metrics.proc_mflops, lp->gid,
-            s->metrics.proc_tasks, lp->gid
-        );
-    });
+      std::printf(
+          "Machine Metrics (%lu)\n"
+          " - Processed MFLOPS: %lf MFLOPS (%lu).\n"
+          " - Processed Tasks.: %u tasks (%lu).\n"
+          "\n",
+          lp->gid, 
+          s->metrics.proc_mflops, lp->gid,
+          s->metrics.proc_tasks, lp->gid
+      );
   }
 };
 
