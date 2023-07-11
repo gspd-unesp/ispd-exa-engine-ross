@@ -4,6 +4,7 @@
 #include <ross.h>
 #include <vector>
 #include <limits>
+#include <algorithm>
 #include <ispd/message/message.hpp>
 #include <ispd/routing/routing.hpp>
 #include <ispd/model/builder.hpp>
@@ -157,10 +158,12 @@ struct machine {
   static void finish(machine_state *s, tw_lp *lp) {
       std::printf(
           "Machine Metrics (%lu)\n"
-          " - Processed MFLOPS: %lf MFLOPS (%lu).\n"
-          " - Processed Tasks.: %u tasks (%lu).\n"
+          " - Last Activity Time: %lf seconds (%lu).\n"
+          " - Processed MFLOPS..: %lf MFLOPS (%lu).\n"
+          " - Processed Tasks...: %u tasks (%lu).\n"
           "\n",
           lp->gid, 
+          *std::max_element(s->cores_free_time.cbegin(), s->cores_free_time.cend()), lp->gid,
           s->metrics.proc_mflops, lp->gid,
           s->metrics.proc_tasks, lp->gid
       );
