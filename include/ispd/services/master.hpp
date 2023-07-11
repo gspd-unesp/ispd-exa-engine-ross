@@ -54,6 +54,9 @@ struct master {
     m->type = message_type::GENERATE;
 
     tw_event_send(e);
+
+    /// Print a debug message.
+    ispd_debug("Master %lu has been initialized.", lp->gid);
   }
 
   static void forward(master_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
@@ -101,6 +104,8 @@ struct master {
 
 private:
   static void generate(master_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
+    ispd_debug("Master %lu will generate a task at %lf, remaining %u.", lp->gid, tw_now(lp), s->workload->count);
+
     /// Use the master's scheduling policy to the schedule the next slave.
     const tw_lpid scheduled_slave_id = s->scheduler->forward_schedule(s->slaves, bf, msg, lp);
 

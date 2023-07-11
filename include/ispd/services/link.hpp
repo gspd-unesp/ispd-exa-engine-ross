@@ -68,6 +68,9 @@ struct link {
     /// Initialize queueing model information.
     s->upward_next_available_time = 0;
     s->downward_next_available_time = 0;
+
+    /// Print a debug message.
+    ispd_debug("Link %lu has been initialized.", lp->gid);
   }
 
   static void forward(link_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
@@ -83,11 +86,13 @@ struct link {
     /// is used, otherwise, if the slave is sent the results to the master,
     /// then the upward link is being used.
     double next_available_time;
+    double saved_next_available_time;
 
     if (msg->downward_direction)
       next_available_time = s->downward_next_available_time;
     else
       next_available_time = s->upward_next_available_time;
+    saved_next_available_time = next_available_time;
 
     /// Calculate the waiting delay and the departure delay.
     const double waiting_delay = ROSS_MAX(0.0, next_available_time - tw_now(lp));
@@ -134,9 +139,11 @@ struct link {
     m->type = message_type::ARRIVAL;
     m->task = msg->task; /// Copy the task's information.
     m->downward_direction = 1;
-    m->saved_link_next_available_time = next_available_time;
     m->route_offset = msg->route_offset;
     m->previous_service_id = lp->gid;
+
+    /// Save information (for reverse computation).
+    msg->saved_link_next_available_time = saved_next_available_time;
 
     tw_event_send(e);
   }

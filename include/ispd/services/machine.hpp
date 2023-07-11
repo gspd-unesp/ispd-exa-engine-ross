@@ -70,6 +70,9 @@ struct machine {
      s->metrics.proc_mflops = 0;
      s->metrics.proc_tasks = 0;
      s->metrics.forwarded_packets = 0;
+
+    /// Print a debug message.
+    ispd_debug("Machine %lu has been initialized.", lp->gid);
   }
 
   static void forward(machine_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
@@ -97,12 +100,18 @@ struct machine {
       tw_event *const e = tw_event_new(msg->previous_service_id, departure_delay, lp);
       ispd_message *const m = static_cast<ispd_message *>(tw_event_data(e));
 
+      *m = *msg;
       m->type = message_type::ARRIVAL;
-      m->task = msg->task;       /// Copy the task's information.
-      m->task_processed = 1;     /// Indicate that the message is carrying a processed task.
-      m->downward_direction = 0; /// The task's results will be sent back to the master.
+      m->task = msg->task;             /// Copy the task's information.
+      m->task.comm_size = 0.000976562; /// 1 Kib (representing the results).
+      m->task_processed = 1;           /// Indicate that the message is carrying a processed task.
+      m->downward_direction = 0;       /// The task's results will be sent back to the master.
       m->route_offset = msg->route_offset - 2;
       m->previous_service_id = lp->gid;
+      
+      /// Save information (for reverse computation).
+      msg->saved_core_index = core_index;
+      msg->saved_core_next_available_time = least_free_time;
 
       tw_event_send(e);
     }
@@ -157,11 +166,13 @@ struct machine {
           " - Last Activity Time: %lf seconds (%lu).\n"
           " - Processed MFLOPS..: %lf MFLOPS (%lu).\n"
           " - Processed Tasks...: %u tasks (%lu).\n"
+          " - Forwarded Packets.: %u packets (%lu).\n"
           "\n",
           lp->gid, 
           *std::max_element(s->cores_free_time.cbegin(), s->cores_free_time.cend()), lp->gid,
           s->metrics.proc_mflops, lp->gid,
-          s->metrics.proc_tasks, lp->gid
+          s->metrics.proc_tasks, lp->gid,
+          s->metrics.forwarded_packets, lp->gid
       );
   }
 };
