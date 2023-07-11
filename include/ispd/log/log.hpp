@@ -1,9 +1,16 @@
 #ifndef ISPD_LOG_HPP
 #define ISPD_LOG_HPP
 
+#include <ispd/debug/debug.hpp>
+
 #define ispd_log(level, ...) ispd::log::__ispd_log(level, __FILE__, __LINE__, __VA_ARGS__);
 #define ispd_error(...) ispd::log::__ispd_log(LOG_ERROR, __FILE__, __LINE__, __VA_ARGS__);
+
+#ifdef DEBUG_ON
 #define ispd_debug(...) ispd::log::__ispd_log(LOG_DEBUG, __FILE__, __LINE__, __VA_ARGS__);
+#else
+#define ispd_debug(...)
+#endif // DEBUG_ON
 
 enum log_level {
 	LOG_DEBUG,

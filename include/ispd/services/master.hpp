@@ -120,7 +120,7 @@ private:
 
     /// Use the master's workload generator for generate the task's
     /// processing and communication sizes.
-    s->workload->workload_generate(m->task.proc_size, m->task.comm_size);
+    s->workload->workload_generate(lp->rng, m->task.proc_size, m->task.comm_size);
 
     m->task.origin = lp->gid;
     m->task.dest = scheduled_slave_id;
@@ -146,7 +146,7 @@ private:
 
   static void generate_rc(master_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
     /// Reverse the workload generator.
-    s->workload->workload_generate_rc();
+    s->workload->workload_generate_rc(lp->rng);
 
     /// Checks if after reversing the workload generator, there are remaining tasks to be generated.
     /// If so, the random number generator is reversed since it is used to generate the interarrival
