@@ -57,9 +57,7 @@ struct master {
   }
 
   static void forward(master_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
-    DEBUG({
-        std::printf("Master with GID %lu has received a message to be processed.\n", lp->gid);
-    });
+    ispd_debug("[Forward] Master %lu received a message at %lf of type (%d).", lp->gid, tw_now(lp), msg->type);
 
     switch (msg->type) {
       case message_type::GENERATE:
@@ -76,9 +74,7 @@ struct master {
   }
 
   static void reverse(master_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
-    DEBUG({
-        std::printf("Master with GID %lu has received a message to be reversed processed.\n", lp->gid);
-    });
+    ispd_debug("[Reverse] Master %lu received a message at %lf of type (%d).", lp->gid, tw_now(lp), msg->type);
 
     switch (msg->type) {
       case message_type::GENERATE:

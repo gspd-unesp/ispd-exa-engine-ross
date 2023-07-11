@@ -23,6 +23,10 @@ struct workload_constant : public workload {
                              const double comm_size)
       : constant_proc_size(proc_size), constant_comm_size(comm_size) {
     count = task_count;
+
+    ispd_debug(
+        "[Constant Workload] Proc Size %lf, Comm Size %lf, Remaining Tasks %u.",
+        constant_proc_size, constant_comm_size, count);
   }
 
   inline void workload_generate(tw_rng_stream *rng, double &proc_size,
@@ -56,6 +60,11 @@ struct workload_uniform : public workload {
       : min_proc_size(min_proc_size), max_proc_size(max_proc_size),
         min_comm_size(min_comm_size), max_comm_size(max_comm_size) {
     count = task_amount;
+
+    ispd_debug("[Uniform Workload] Proc Interval [%lf, %lf], Comm Interval "
+               "[%lf, %lf], Remaining Tasks %u.",
+               min_proc_size, max_proc_size, min_comm_size, max_comm_size,
+               count);
   }
 
   inline void workload_generate(tw_rng_stream *rng, double &proc_size,
@@ -69,7 +78,9 @@ struct workload_uniform : public workload {
     /// Update the workload information.
     count--;
 
-    ispd_debug("[Uniform Workload] Workload (%lf, %lf) generated. Remaining Tasks: %u.", proc_size, comm_size, count);
+    ispd_debug("[Uniform Workload] Workload (%lf, %lf) generated. Remaining "
+               "Tasks: %u.",
+               proc_size, comm_size, count);
   }
 
   inline void workload_generate_rc(tw_rng_stream *rng) {
@@ -81,7 +92,8 @@ struct workload_uniform : public workload {
     /// Reverse the workload information update.
     count++;
 
-    ispd_debug("[Uniform Workload] Workload reversed. Remaining Tasks: %u", count);
+    ispd_debug("[Uniform Workload] Workload reversed. Remaining Tasks: %u",
+               count);
   }
 };
 

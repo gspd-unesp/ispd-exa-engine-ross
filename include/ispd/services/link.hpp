@@ -71,9 +71,7 @@ struct link {
   }
 
   static void forward(link_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
-    DEBUG({
-        std::printf("Link with GID %lu has received a message to be processed.\n", lp->gid);
-    });
+    ispd_debug("[Forward] Link %lu received a message at %lf of type (%d).", lp->gid, tw_now(lp), msg->type);
 
     /// Fetch the communication size and calculates the communication time.
     const double comm_size = msg->task.comm_size;
@@ -144,9 +142,7 @@ struct link {
   }
 
   static void reverse(link_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
-    DEBUG({
-        std::printf("Link with GID %lu has received a message to be reversed processed.\n", lp->gid);
-    });
+    ispd_debug("[Reverse] Link %lu received a message at %lf of type (%d).", lp->gid, tw_now(lp), msg->type);
 
     /// Fetch the communication size and calculates the communication time.
     const double comm_size = msg->task.comm_size;
