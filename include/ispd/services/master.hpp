@@ -146,6 +146,9 @@ private:
   }
 
   static void generate_rc(master_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
+    /// Reverse the schedule.
+    s->scheduler->reverse_schedule(s->slaves, bf, msg, lp);
+
     /// Reverse the workload generator.
     s->workload->workload_generate_rc(lp->rng);
 
