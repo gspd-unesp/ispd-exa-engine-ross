@@ -153,7 +153,6 @@ struct link {
 
     /// Fetch the communication size and calculates the communication time.
     const double comm_size = msg->task.comm_size;
-    const double comm_time = time_to_comm(&s->conf, comm_size);
 
     /// Checks if the message is being sent from the master to the slave. Therefore,
     /// the downward next available time should be reverse processed.
