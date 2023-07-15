@@ -40,6 +40,7 @@ struct route {
 struct routing_table {
   /// \brief The map containing the registered routes.
   std::unordered_map<uint64_t, const route *> routes;
+  std::unordered_map<tw_lpid, uint32_t> routes_counting;
 
   void load(const std::string &filepath) {
     std::ifstream file(filepath);
@@ -81,6 +82,14 @@ struct routing_table {
 
   const route *get_route(const tw_lpid src, const tw_lpid dest) const {
     return routes.at(szudzik(src, dest));
+  }
+
+  const uint32_t count_routes(const tw_lpid src) const {
+    const auto it = routes_counting.find(src);
+    if (it == routes_counting.end())
+      ispd_error("There is no routing with source at LP with GID %lu.\n", src);
+
+    return routes_counting.at(src);
   }
 
 private:
@@ -171,6 +180,7 @@ private:
   }
 
   void add_route(const tw_lpid src, const tw_lpid dest, const route *route) {
+    routes_counting[src]++;
     routes.insert(std::make_pair(szudzik(src, dest), route));
   }
 };

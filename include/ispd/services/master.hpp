@@ -44,6 +44,13 @@ struct master {
     /// Initialize the scheduler.
     s->scheduler->init_scheduler();
 
+    const uint32_t registered_routes_count = g_routing_table.count_routes(lp->gid);
+
+    /// Early sanity check if the routes has been registered correctly. If not,
+    /// the program is immediately aborted.
+    if (registered_routes_count != s->slaves.size())
+      ispd_error("There are %u registered routes starting from master with GID %lu but there are %lu slaves.", registered_routes_count, lp->gid, s->slaves.size());
+
     /// Initialize the metrics.
     s->metrics.completed_tasks = 0;
 
