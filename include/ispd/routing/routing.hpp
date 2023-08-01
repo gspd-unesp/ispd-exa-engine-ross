@@ -82,39 +82,21 @@ class Route {
   std::unique_ptr<tw_lpid *> m_Path;
 
 public:
-  /// \brief Route class constructor.
+  /// \brief Constructor for the Route class.
   ///
-  /// This constructor initializes a `Route` object using the provided `path`
-  /// and `length` parameters.
+  /// Creates a new `Route` object with the given path and length.
   ///
-  /// The `path` parameter is a pointer to a dynamic array of type `tw_lpid`. It
-  /// represents the sequence of elements that make up the route. The `path`
-  /// array must be dynamically allocated, and its memory ownership is not
-  /// transferred to the `Route` object. Therefore, it is the caller's
-  /// responsibility to manage the memory allocation and deallocation of the
-  /// `path` array.
+  /// \param path A `unique_ptr` to an array of `tw_lpid` values representing
+  ///             the path of the route.
+  /// \param length The length of the route's path, indicating the number
+  ///               of vertices in the route.
   ///
-  /// The `length` parameter specifies the number of elements in the `path`
-  /// array, defining the size of the route. It represents the total number of
-  /// elements that constitute the route sequence.
-  ///
-  /// \param path A pointer to a dynamic array of type `tw_lpid`, containing the
-  ///             elements of the route. \param length The number of elements in
-  ///             the `path` array, indicating the size of the route.
-  ///
-  /// \warning The constructor does not copy the `path` array, nor does it take
-  ///          ownership of the `path` memory.
-  ///
-  ///          The caller must ensure that the `path` array remains valid during
-  ///          the lifetime of the `Route` object.
-  ///
-  /// \note The constructor is used to create `Route` objects, representing
-  ///       specific route sequences.
-  ///
-  ///       The caller is responsible for managing the memory allocation and
-  ///       deallocation of the `path` array, as well as ensuring that the
-  ///       `path` array remains valid while in use by the `Route` object.
-  ///
+  /// \note The constructor takes ownership of the `path` pointer, transferring
+  ///       it to the `m_Path` member using `std::move`. The caller should
+  ///       ensure that the memory pointed to by `path` is dynamically allocated
+  ///       and manage its deallocation properly. After construction, the
+  ///       `Route` object will be responsible for managing the memory and will
+  ///       automatically deallocate it when the object is destructed.
   Route(std::unique_ptr<tw_lpid *> path, const std::size_t length)
       : m_Path(std::move(path)), m_Length(length) {}
 
@@ -156,6 +138,7 @@ public:
   /// \brief Returns the route's length.
   inline std::size_t getLength() const { return m_Length; }
 };
+
 /// \class RoutingTable
 ///
 /// \brief A class representing a routing table to store and manage routes
@@ -255,7 +238,7 @@ public:
   /// \note This function uses Szudzik's pairing function to generate the key
   ///       based on the source and destination vertices and looks up the route
   ///       in the `m_Routes` map. It returns the corresponding `Route` object
-  ///       if found, or `nullptr` otherwise.
+  ///       if found, or  throws an exception otherwise.
   const Route *getRoute(const tw_lpid src, const tw_lpid dest) const;
 
   /// \brief Returns the number of routes originating from the specified source
@@ -278,8 +261,53 @@ public:
 
 namespace ispd::routing_table {
 
+/// \brief Loads route information from the specified file and populates the
+///        global routing table.
+///
+/// This function reads route data from the input file, parses each route line
+/// using `parseRouteLine()`, and adds the routes to the routing table using
+/// `addRoute()`. It also updates the `m_RoutesCounting` map to keep track of
+/// the number of routes originating from each source vertex.
+///
+/// \param filepath The path to the input file containing route information.
+///
+/// \note This function assumes that the input file contains route information
+///       in a specific format, with each route represented by a single line
+///       containing source and destination vertex IDs separated by a
+///       delimiter. The function reads each line, parses it using
+///       `parseRouteLine()`, and adds the routes to the `m_Routes` map. It
+///       also updates the `m_RoutesCounting` map to increment the count for
+///       the corresponding source vertex.
 void load(const std::string &filepath);
+
+/// \brief Retrieves the route between the specified source and destination
+///        vertices from the routing table.
+///
+/// \param src The source vertex (`tw_lpid`) of the desired route.
+/// \param dest The destination vertex (`tw_lpid`) of the desired route.
+///
+/// \returns A pointer to a `const Route` object representing the route from
+///          the source to the destination, or `nullptr` if no route is found.
+///
+/// \note This function uses Szudzik's pairing function to generate the key
+///       based on the source and destination vertices and looks up the route
+///       in the `m_Routes` map. It returns the corresponding `Route` object
+///       if found, or throws an exception otherwise.
 const ispd::routing::Route *getRoute(const tw_lpid src, const tw_lpid dest);
+
+/// \brief Returns the number of routes originating from the specified source
+///        vertex.
+///
+/// \param src The source vertex (`tw_lpid`) for which the count of routes is
+///        desired.
+///
+/// \returns The count of routes originating from the specified source vertex.
+///
+/// \note This function retrieves the count of routes for the given source
+///       vertex from the `m_RoutesCounting` map. It returns the count as an
+///       unsigned 32-bit integer. This information is useful for sanity
+///       checking, ensuring that the routes from a specific vertex match the
+///       expected model built.
 const std::uint32_t countRoutes(const tw_lpid src);
 
 }; // namespace ispd::routing_table
