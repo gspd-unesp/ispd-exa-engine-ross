@@ -44,7 +44,7 @@ struct master {
     /// Initialize the scheduler.
     s->scheduler->init_scheduler();
 
-    const uint32_t registered_routes_count = g_routing_table.count_routes(lp->gid);
+    const uint32_t registered_routes_count = ispd::routing_table::countRoutes(lp->gid);
 
     /// Early sanity check if the routes has been registered correctly. If not,
     /// the program is immediately aborted.
@@ -117,7 +117,7 @@ private:
     const tw_lpid scheduled_slave_id = s->scheduler->forward_schedule(s->slaves, bf, msg, lp);
 
     /// Fetch the route that connects this master with the scheduled slave.
-    const ispd::routing::route *route = g_routing_table.get_route(lp->gid, scheduled_slave_id);
+    const ispd::routing::Route *route = ispd::routing_table::getRoute(lp->gid, scheduled_slave_id);
 
     /// @Todo: This zero-delay timestamped message, could affect the conservative synchronization.
     ///        This should be changed later.

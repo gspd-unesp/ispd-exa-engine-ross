@@ -54,14 +54,11 @@ const tw_optdef opt[] = {
     TWOPT_END(),
 };
 
-/// \brief Global Routing Table.
-ispd::routing::routing_table g_routing_table;
-
 int main(int argc, char **argv) {
   ispd::log::set_log_file(NULL);
 
   /// Read the routing table from a specified file.
-  g_routing_table.load("routes.route");
+  ispd::routing_table::load("routes.route");
 
   tw_opt_add(opt);
   tw_init(&argc, &argv);

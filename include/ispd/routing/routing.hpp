@@ -1,193 +1,287 @@
 #ifndef ISPD_ROUTING_HPP
 #define ISPD_ROUTING_HPP
 
+#include <memory>
 #include <fstream>
 #include <unordered_map>
 #include <ispd/log/log.hpp>
 
-namespace ispd {
-namespace routing {
+namespace ispd::routing {
 
 namespace {
+
+/// \brief Szudzik's Pairing Function
+///
+/// This static function implements Szudzik's Pairing Function, which combines
+/// two non-negative 32-bit integers 'a' and 'b' into a unique 64-bit unsigned
+/// integer result. The returned integer is a combination of 'a' and 'b' that
+/// ensures uniqueness for each pair (a, b).
+///
+/// Szudzik's pairing function provides a way to map a pair of integers onto a
+/// single value, useful for hashing or indexing two-dimensional data
+/// structures. It is a method to transform a pair of non-negative integers into
+/// a single integer, allowing two-dimensional data to be represented as a
+/// one-dimensional index.
+///
+/// The pairing function is defined as follows:
+///
+///     result = a >= b ? a * a + a + b : a + b * b
+///
+/// \param a The first non-negative 32-bit integer.
+/// \param b The second non-negative 32-bit integer.
+/// \return A 64-bit integer representing the unique pairing of 'a' and 'b'.
+///
+/// \note Szudzik's pairing function is invertible, meaning that it can be
+///       reversed to extract 'a' and 'b' from the result.
+//
+///       However, it may lead to information loss if the original 'a' and 'b'
+///       values exceed the 32-bit range. For larger integers, consider using
+///       more advanced pairing functions or hash functions. The function
+///       assumes that 'a' and 'b' are non-negative 32-bit integers. It may not
+///       be suitable for negative integers or other data types without
+///       modification. For mathematical details, refer to Szudzik's Pairing
+///       Function definition.
+///
+/// \see
+/// https://en.wikipedia.org/wiki/Pairing_function#Szudzik's_pairing_function
+///
 static uint64_t szudzik(const uint32_t a, const uint32_t b) {
   const auto a64 = static_cast<uint64_t>(a);
   const auto b64 = static_cast<uint64_t>(b);
   return a64 >= b64 ? a64 * a64 + a64 + b64 : a64 + b64 * b64;
 }
+
 }; // namespace
 
-struct route {
+class Route {
   /// \brief The path's length.
-  unsigned length;
+  ///
+  /// This member variable holds the total number of elements in the path of the
+  /// route. The length represents the number of elements that make up the route
+  /// sequence. It is an essential attribute of the `Route` class, defining the
+  /// size of the route.
+  ///
+  /// \note The length is always non-negative, and it is set based on the number
+  ///       of elements stored in the path container.
+  ///
+  std::size_t m_Length;
 
   /// \brief The path.
-  tw_lpid *path;
+  ///
+  /// This member variable represents the route's sequence of elements.
+  /// The route is implemented as a dynamic array of type `tw_lpid`.
+  /// The `path` array stores the individual elements that make up the route.
+  ///
+  /// \note The `m_Path` array is dynamically allocated and deallocated as
+  ///       needed. It holds `m_Length` elements in the route sequence.
+  ///
+  /// \warning Accessing `m_Path` directly without considering `m_Length` may
+  ///          result in undefined behavior and possible memory access
+  ///          violations. In that case, is recommended the use of the `get`
+  ///          function.
+  std::unique_ptr<tw_lpid *> m_Path;
 
+public:
+  /// \brief Route class constructor.
+  ///
+  /// This constructor initializes a `Route` object using the provided `path`
+  /// and `length` parameters.
+  ///
+  /// The `path` parameter is a pointer to a dynamic array of type `tw_lpid`. It
+  /// represents the sequence of elements that make up the route. The `path`
+  /// array must be dynamically allocated, and its memory ownership is not
+  /// transferred to the `Route` object. Therefore, it is the caller's
+  /// responsibility to manage the memory allocation and deallocation of the
+  /// `path` array.
+  ///
+  /// The `length` parameter specifies the number of elements in the `path`
+  /// array, defining the size of the route. It represents the total number of
+  /// elements that constitute the route sequence.
+  ///
+  /// \param path A pointer to a dynamic array of type `tw_lpid`, containing the
+  ///             elements of the route. \param length The number of elements in
+  ///             the `path` array, indicating the size of the route.
+  ///
+  /// \warning The constructor does not copy the `path` array, nor does it take
+  ///          ownership of the `path` memory.
+  ///
+  ///          The caller must ensure that the `path` array remains valid during
+  ///          the lifetime of the `Route` object.
+  ///
+  /// \note The constructor is used to create `Route` objects, representing
+  ///       specific route sequences.
+  ///
+  ///       The caller is responsible for managing the memory allocation and
+  ///       deallocation of the `path` array, as well as ensuring that the
+  ///       `path` array remains valid while in use by the `Route` object.
+  ///
+  Route(std::unique_ptr<tw_lpid *> path, const std::size_t length)
+      : m_Path(std::move(path)), m_Length(length) {}
+
+  /// \brief Access the element at the specified index in the route.
+  ///
+  /// This function allows users to retrieve the element located at the given
+  /// index in the route. The index represents the position of the desired
+  /// element in the route, and it is zero-based.
+  ///
+  /// The route represents a sequence of elements that can be accessed through
+  /// index-based addressing. The route is implemented as a collection of
+  /// elements stored in the `path` array.
+  ///
+  /// In debug mode, if the provided index is out of the bounds of the route
+  /// (greater than or equal to its length), the program will be immediately
+  /// aborted. The `ispd_error` macro provides additional information about the
+  /// error, including the invalid index and route length. This ensures that any
+  /// potential index overflow issues are detected and addressed during
+  /// debugging.
+  ///
+  /// In release mode, the function works without any exception or overflow
+  /// checks, providing optimal performance.
+  ///
+  /// \param index The index of the element to be accessed in the route.
+  /// \return The route's element at the specified index.
   inline tw_lpid get(const std::size_t index) const {
     DEBUG({
-      /// Checks if the index being accessed overflow the route's path.
+      /// Check if the index being accessed will cause an overflow
       /// If so, the program is immediately aborted.
-      if (index >= length)
-        ispd_error("[Routing] Acessing an invalid route element. (Index: %zu, "
-                   "Length: %u).",
-                   index, length);
+      if (index >= m_Length)
+        ispd_error(
+            "Accessing an invalid route element (Index: %zu, Length: %zu).\n",
+            index, m_Length);
     });
 
-    return path[index];
+    return (*m_Path)[index];
   }
+
+  /// \brief Returns the route's length.
+  inline std::size_t getLength() const { return m_Length; }
+};
+/// \class RoutingTable
+///
+/// \brief A class representing a routing table to store and manage routes
+///        between source and destination vertices.
+///
+class RoutingTable {
+  /// \brief A hash table that stores routes between source and destination
+  /// vertices.
+  ///
+  /// Each route is identified by a unique key, which is calculated based on the
+  /// pairing of the source and destination vertices using Szudzik's pairing
+  /// function. The key is a 64-bit unsigned integer obtained by applying
+  /// Szudzik's pairing function on the source and destination vertex IDs.
+  ///
+  /// \note The value associated with each key is a constant pointer to the
+  ///       corresponding `Route` object, ensuring that the routes themselves
+  ///       cannot be modified through this map.
+  std::unordered_map<uint64_t, const Route *> m_Routes;
+
+  /// \brief A hash map that keeps track of the number of routes originating
+  ///        from each source vertex.
+  ///
+  /// This map allows an early sanity checking about if the routes from a
+  /// speecific vertex match with the specified model built.
+  std::unordered_map<tw_lpid, uint32_t> m_RoutesCounting;
+
+  /// \brief Adds a route to the routing table between the given source and
+  ///        destination vertices.
+  ///
+  /// \param src The source vertex (`tw_lpid`) of the route.
+  /// \param dest The destination vertex (`tw_lpid`) of the route.
+  /// \param route A pointer to a `const Route` object representing the route
+  ///              from the source to the destination.
+  ///
+  /// \note This function uses Szudzik's pairing function to generate a unique
+  ///       key for the route based on the source and destination vertices. The
+  ///       key is obtained by applying Szudzik's pairing function on the source
+  ///       and destination vertex IDs. The route is then stored in the
+  ///       `m_Routes` map, indexed by this unique key.
+  void addRoute(const tw_lpid src, const tw_lpid dest, const Route *route);
+
+  /// \brief Parses a route line from the input file and extracts the source and
+  ///        destination vertices.
+  ///
+  /// This function is used internally by the `load()` function to read and
+  /// parse individual route lines from the input file. It extracts the source
+  /// and destination vertices from the route line and returns a dynamically
+  /// allocated `Route` object.
+  ///
+  /// \param routeLine A string containing a single line of the input file
+  ///                  representing a route.
+  /// \param src A reference to a `tw_lpid` variable that
+  ///            will hold the parsed source vertex.
+  /// \param dest A reference to a `tw_lpid`
+  ///             variable that will hold the parsed destination vertex.
+  ///
+  /// \returns A pointer to a `Route` object representing the parsed route.
+  ///
+  /// \note This function expects the input route line to be in a specific
+  ///       format, containing source and destination vertex IDs separated by a
+  ///       delimiter. It extracts these IDs, converts them to `tw_lpid` format,
+  ///       and creates a new `Route` object to represent the route. The caller
+  ///       is responsible for managing the memory of the returned `Route`
+  ///       object.
+  Route *parseRouteLine(const std::string &routeLine, tw_lpid &src,
+                        tw_lpid &dest);
+
+public:
+  /// \brief Loads route information from the specified file and populates the
+  ///        routing table.
+  ///
+  /// This function reads route data from the input file, parses each route line
+  /// using `parseRouteLine()`, and adds the routes to the routing table using
+  /// `addRoute()`. It also updates the `m_RoutesCounting` map to keep track of
+  /// the number of routes originating from each source vertex.
+  ///
+  /// \param filepath The path to the input file containing route information.
+  ///
+  /// \note This function assumes that the input file contains route information
+  ///       in a specific format, with each route represented by a single line
+  ///       containing source and destination vertex IDs separated by a
+  ///       delimiter. The function reads each line, parses it using
+  ///       `parseRouteLine()`, and adds the routes to the `m_Routes` map. It
+  ///       also updates the `m_RoutesCounting` map to increment the count for
+  ///       the corresponding source vertex.
+  void load(const std::string &filepath);
+
+  /// \brief Retrieves the route between the specified source and destination
+  ///        vertices from the routing table.
+  ///
+  /// \param src The source vertex (`tw_lpid`) of the desired route.
+  /// \param dest The destination vertex (`tw_lpid`) of the desired route.
+  ///
+  /// \returns A pointer to a `const Route` object representing the route from
+  ///          the source to the destination, or `nullptr` if no route is found.
+  ///
+  /// \note This function uses Szudzik's pairing function to generate the key
+  ///       based on the source and destination vertices and looks up the route
+  ///       in the `m_Routes` map. It returns the corresponding `Route` object
+  ///       if found, or `nullptr` otherwise.
+  const Route *getRoute(const tw_lpid src, const tw_lpid dest) const;
+
+  /// \brief Returns the number of routes originating from the specified source
+  ///        vertex.
+  ///
+  /// \param src The source vertex (`tw_lpid`) for which the count of routes is
+  ///        desired.
+  ///
+  /// \returns The count of routes originating from the specified source vertex.
+  ///
+  /// \note This function retrieves the count of routes for the given source
+  ///       vertex from the `m_RoutesCounting` map. It returns the count as an
+  ///       unsigned 32-bit integer. This information is useful for sanity
+  ///       checking, ensuring that the routes from a specific vertex match the
+  ///       expected model built.
+  const std::uint32_t countRoutes(const tw_lpid src) const;
 };
 
-struct routing_table {
-  /// \brief The map containing the registered routes.
-  std::unordered_map<uint64_t, const route *> routes;
-  std::unordered_map<tw_lpid, uint32_t> routes_counting;
+}; // namespace ispd::routing
 
-  void load(const std::string &filepath) {
-    std::ifstream file(filepath);
+namespace ispd::routing_table {
 
-    /// Checks if the routing file could not be opened. If so, the program
-    /// is immediately aborted.
-    if (!file.is_open())
-      ispd_error("[Routing] Routing file %s could not be opened.", filepath);
+void load(const std::string &filepath);
+const ispd::routing::Route *getRoute(const tw_lpid src, const tw_lpid dest);
+const std::uint32_t countRoutes(const tw_lpid src);
 
-    /// Read each line from the file. Each line in the file contains a route
-    /// indicating the source service, the destination service and the services'
-    /// identifiers that composes the inner route's elements.
-    for (std::string route_line; std::getline(file, route_line);) {
-      /// The source identifier that will be read from the file.
-      tw_lpid src;
-
-      /// The destination identifier that will be read from the file.
-      tw_lpid dest;
-
-      /// Parse the route line obtaining the route structure containing
-      /// the route's length and the route itself as well as the source
-      /// and destination in the route.
-      route *r = parse_route_line(route_line, src, dest);
-
-      /// Add the route.
-      add_route(src, dest, r);
-
-      /// Print the debug.
-      DEBUG({
-        std::printf("Route [F: %lu, T: %lu, P: ", src, dest);
-        for (int i = 0; i < r->length - 1; i++)
-          std::printf("%lu -> ", r->path[i]);
-        std::printf("%lu].\n", r->path[r->length - 1]);
-      });
-    }
-
-    file.close();
-  }
-
-  const route *get_route(const tw_lpid src, const tw_lpid dest) const {
-    return routes.at(szudzik(src, dest));
-  }
-
-  const uint32_t count_routes(const tw_lpid src) const {
-    const auto it = routes_counting.find(src);
-    if (it == routes_counting.end())
-      ispd_error("There is no routing with source at LP with GID %lu.\n", src);
-
-    return routes_counting.at(src);
-  }
-
-private:
-  /**
-   * @brief A parsing stage is an enumeration that is used
-   *        classify the current parsing stage of the routing
-   *        table reader.
-   */
-  enum ParsingStage {
-    /**
-     * @brief This parsing stage indicates that the source service
-     *        identifier is being parsed by the reader.
-     */
-    SOURCE_VERTEX,
-
-    /**
-     * @brief This parsing stage indicates that the destination service
-     *        identifier is being parsed by the reader.
-     */
-    DESTINATION_VERTEX,
-
-    /**
-     * @brief This parsing stage indicates that the route service
-     *        identifier is being parsed by the reader.
-     */
-    INNER_VERTEX
-  };
-
-  route *parse_route_line(const std::string &routeLine, tw_lpid &src,
-                          tw_lpid &dest) {
-    const std::size_t routeLineLength = routeLine.length();
-    std::size_t whitespaceCount = 0;
-
-    std::size_t pathLength = 0;
-    std::size_t pathIndex = 0;
-    tw_lpid *path = nullptr;
-
-    // It counts the amount of whitespaces the route line contains.
-    // With that information in hands, it is possible to conclude the
-    // path length and allocate the exactly amount of path elements.
-    for (std::size_t i = 0; i < routeLineLength; i++)
-      if (routeLine[i] == ' ')
-        whitespaceCount++;
-
-    // It sets the path length and allocate the path elements.
-    pathLength = whitespaceCount - 1;
-    path = new tw_lpid[pathLength];
-
-    std::size_t partStart = 0;
-    std::size_t partLength = 0;
-    ParsingStage stage = ParsingStage::SOURCE_VERTEX;
-
-    for (std::size_t i = 0; i < routeLineLength; i++) {
-      while (routeLine[i] != ' ' && i < routeLineLength) {
-        partLength++;
-        i++;
-      }
-
-      // It obtains a route part. That is represented by a sequence of
-      // letters followed by a space, new line or end of file.
-      const std::string routePart = routeLine.substr(partStart, partLength);
-
-      switch (stage) {
-      case ParsingStage::SOURCE_VERTEX:
-        src = std::stoul(routePart);
-        stage = ParsingStage::DESTINATION_VERTEX;
-        break;
-      case ParsingStage::DESTINATION_VERTEX:
-        dest = std::stoul(routePart);
-        stage = ParsingStage::INNER_VERTEX;
-        break;
-      case ParsingStage::INNER_VERTEX:
-        path[pathIndex++] = std::stoul(routePart);
-        break;
-      default:
-        ispd_error("[Routing] Unknown parsing stage.");
-      }
-
-      partStart = i + 1;
-      partLength = 0;
-    }
-
-    route *r = new route;
-    r->length = pathLength;
-    r->path = path;
-
-    return r;
-  }
-
-  void add_route(const tw_lpid src, const tw_lpid dest, const route *route) {
-    routes_counting[src]++;
-    routes.insert(std::make_pair(szudzik(src, dest), route));
-  }
-};
-
-}; // namespace routing
-}; // namespace ispd
-
-extern ispd::routing::routing_table g_routing_table;
+}; // namespace ispd::routing_table
 
 #endif // ISPD_ROUTING_HPP
