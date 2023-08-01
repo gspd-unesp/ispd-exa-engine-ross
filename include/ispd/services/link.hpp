@@ -54,7 +54,7 @@ struct link {
 
   static void init(link_state *s, tw_lp *lp) {
     /// Fetch the service initializer from this logical process.
-    const auto &service_initializer = ispd::model::builder::get_service_initializer(lp->gid);
+    const auto &service_initializer = ispd::this_model::getServiceInitializer(lp->gid);
 
     /// Call the service initializer for this logical process.
     service_initializer(s);
@@ -138,7 +138,7 @@ struct link {
 
     m->type = message_type::ARRIVAL;
     m->task = msg->task; /// Copy the task's information.
-    m->downward_direction = 1;
+    m->downward_direction = msg->downward_direction;
     m->route_offset = msg->route_offset;
     m->previous_service_id = lp->gid;
 

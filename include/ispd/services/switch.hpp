@@ -1,5 +1,3 @@
-
-
 #ifndef ISPD_SERVICE_SWITCH_HPP
 #define ISPD_SERVICE_SWITCH_HPP
 
@@ -8,149 +6,116 @@
 #include <ispd/message/message.hpp>
 #include <ispd/routing/routing.hpp>
 
-namespace ispd {
-    namespace services {
+namespace ispd::services {
 
-        struct switch_metrics {
-            double comm_mbits;
-            unsigned comm_packets;
-        };
+struct SwitchMetrics {
+  double m_UpwardCommMbits;
+  double m_DownwardCommMbits;
 
-        struct switch_configuration{
-            double bandwidth;
-            double latency;
-            double load_factor;
-        };
+  unsigned m_UpwardCommPackets;
+  unsigned m_DownwardCommPackets;
+};
 
-        struct switch_state{
-            switch_configuration conf;
-            switch_metrics metrics;
+struct SwitchConfiguration {
+  double m_Bandwidth;
+  double m_Load;
+  double m_Latency;
+};
 
-            // Switch's queuing model
-            double upward_next_avaliable_time;
-            double downward_next_available_time;
+struct SwitchState {
+  SwitchConfiguration m_Conf;
+  SwitchMetrics m_Metrics;
+};
 
+struct Switch {
+  static inline double timeToComm(const SwitchConfiguration &conf,
+                                  const double commSize) {
+    return conf.m_Latency + commSize / ((1.0 - conf.m_Load) * conf.m_Bandwidth);
+  }
 
+  static void init(SwitchState *s, tw_lp *lp) {
+    /// Fetch the service initializer from this logical process.
+    const auto &serviceInitializer =
+        ispd::this_model::getServiceInitializer(lp->gid);
 
-        };
+    /// Call the service initializer for this logical process.
+    serviceInitializer(s);
 
-// the struct's name has to be in PascalCase due to the fact the word "switch" is a keyword in C/C++, therefor it cannot be used.
-        struct Switch{
+    /// Initialize the switch's metrics.
+    s->m_Metrics.m_UpwardCommMbits = 0;
+    s->m_Metrics.m_DownwardCommMbits = 0;
+    s->m_Metrics.m_UpwardCommPackets = 0;
+    s->m_Metrics.m_DownwardCommPackets = 0;
 
-            static double time_to_communicate(const switch_configuration *const conf, const double comm_size)
-            {
-                return conf->latency + comm_size / (1.0 - conf->load_factor) * conf->bandwidth;
-            }
+    ispd_debug("Switch %lu has been initialized (B: %lf, L: %lf, LT: %lf).",
+               lp->gid, s->m_Conf.m_Bandwidth, s->m_Conf.m_Latency,
+               s->m_Conf.m_Latency);
+  }
 
-            static void init(switch_state *s, tw_lp *lp)
-            {
-                // @TODO: Initialize the switch configuration dynamically using a model builder
+  static void forward(SwitchState *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
+    ispd_debug("[Forward] Switch %lu received a message at %lf of type (%d) and route offset (%u).",
+               lp->gid, tw_now(lp), msg->type, msg->route_offset);
 
-                // @Temporary
-                s->conf.bandwidth = 50;
-                s->conf.load_factor = 0.0;
-                s->conf.latency = 2;
+    /// Fetch the communication size and calculate the communication time.
+    const double commSize = msg->task.comm_size;
+    const double commTime = timeToComm(s->m_Conf, commSize);
 
-                // initialize the metrics
-                s->metrics.comm_mbits = 0;
-                s->metrics.comm_packets = 0;
+    /// Update the switch's metrics.
+    if (msg->downward_direction) {
+      s->m_Metrics.m_DownwardCommMbits += commSize;
+      s->m_Metrics.m_DownwardCommPackets++;
+    } else {
+      s->m_Metrics.m_UpwardCommMbits += commSize;
+      s->m_Metrics.m_UpwardCommPackets++;
+    }
 
-                // initialize switch's model information
-                s->upward_next_avaliable_time = 0;
-                s->downward_next_available_time = 0;
+    const ispd::routing::route *route =
+        g_routing_table.get_route(msg->task.origin, msg->task.dest);
 
-            }
+    tw_event *const e = tw_event_new(route->get(msg->route_offset), commTime, lp);
+    ispd_message *const m = static_cast<ispd_message *>(tw_event_data(e));
 
-            static void forward(switch_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp)
-            {
-                const double comm_size = msg->task.comm_size;
-                const double comm_time = time_to_communicate(&s->conf, comm_size);
+    m->type = message_type::ARRIVAL;
+    m->task = msg->task; /// Copies the task information.
+    m->task_processed = msg->task_processed;
+    m->downward_direction = msg->downward_direction;
+    m->route_offset = msg->downward_direction ? (msg->route_offset + 1) : (msg->route_offset -1);
+    m->previous_service_id = lp->gid;
 
-                /* Similar to the link scheme.
-                 *
-                 * Here is selected which avaliable time should be used. If the message is being sent from the master
-                 * to the slave, then the downward link is being us. Otherwise, if the slave is sending the results
-                 * to master, then the upward link is being used.
-                 */
-                double next_avaliable_time;
+    tw_event_send(e);
+  }
 
-                if(msg->downward_direction)
-                    next_avaliable_time = s->downward_next_available_time;
-                else
-                    next_avaliable_time = s->upward_next_avaliable_time;
+  static void reverse(SwitchState *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
+    ispd_debug("[Reverse] Switch %lu received a message at %lf of type (%d).",
+               lp->gid, tw_now(lp), msg->type);
 
-                // calculate the waiting delay and the departure delay
-                const double waiting_delay = ROSS_MAX(0.0, next_avaliable_time - tw_now(lp));
-                const double departure_delay = waiting_delay + comm_time;
+    const double commSize = msg->task.comm_size;
+    const double commTime = timeToComm(s->m_Conf, commSize);
 
-                // update the switch's metrics
-                s->metrics.comm_packets++;
-                s->metrics.comm_mbits += comm_size;
+    /// Reverse the switch's metrics.
+    if (msg->downward_direction) {
+      s->m_Metrics.m_DownwardCommMbits -= commSize;
+      s->m_Metrics.m_DownwardCommPackets--;
+    } else {
+      s->m_Metrics.m_UpwardCommMbits -= commSize;
+      s->m_Metrics.m_UpwardCommPackets--;
+    }
+  }
 
-                next_avaliable_time = tw_now(lp) + departure_delay;
+  static void finish(SwitchState *s, tw_lp *lp) {
+    std::printf("Switch Queue Info & Metrics (%lu)\n"
+                " - Downward Communicated Mbits..: %lf Mbits (%lu).\n"
+                " - Downward Communicated Packets: %u packets (%lu).\n"
+                " - Upward Communicated Mbits....: %lf Mbits (%lu).\n"
+                " - Upward Communicated Packets..: %u packets (%lu).\n"
+                "\n",
+                lp->gid, s->m_Metrics.m_DownwardCommMbits, lp->gid,
+                s->m_Metrics.m_DownwardCommPackets, lp->gid,
+                s->m_Metrics.m_UpwardCommMbits, lp->gid,
+                s->m_Metrics.m_UpwardCommPackets, lp->gid);
+  }
+};
 
-                //updates the switch's model information
-                if (msg->downward_direction)
-                    s->downward_next_available_time = next_avaliable_time;
-                else
-                    s->upward_next_avaliable_time = next_avaliable_time;
-
-                // fowards the package to its link
-                const ispd::routing::route *route  = g_routing_table.get_route(msg->task.origin, msg->task.dest);
-
-                tw_event *const e = tw_event_new(msg->previous_service_id, 0.0, lp );
-                ispd_message *const m = static_cast<ispd_message *>(tw_event_data(e));
-
-                m->type = message_type::ARRIVAL;
-                m->task = msg->task; //copies the task information
-                m->task_processed = msg->task_processed;
-                m->downward_direction = msg->downward_direction;
-                m->route_offset += msg->downward_direction ? 1 : -1;
-                m->previous_service_id = lp->gid;
-
-                tw_event_send(e);
-            }
-
-            static void reverse(switch_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp)
-            {
-                const double comm_size = msg->task.comm_size;
-                const double comm_time = time_to_communicate(&s->conf, comm_size);
-
-                // reverse the process in the case of a downward message or upward message
-                if(msg->downward_direction)
-                    s->downward_next_available_time = msg->saved_link_next_available_time;
-                else
-                    s->upward_next_avaliable_time = msg->saved_link_next_available_time;
-
-                // reverse the metrics
-                s->metrics.comm_packets--;
-                s->metrics.comm_mbits -= comm_size;
-            }
-
-            static void finish(switch_state *s, tw_lp *lp)
-            {
-                DEBUG({
-                              std::printf(
-                                      "Switch Queue Info & Metrics (%lu) \n"
-                                      " - Communicated Mbits.......: %lf Mbits (%lu).\n"
-                                      " - Communicated Packets.....: %u packets (%lu).\n"
-                                      " - Downward Next Avail. Time: %lf seconds (%lu).\n"
-                                      " - Upward Next Avail. Time..: %lf seconds (%lu).\n"
-                                      "\n",
-                                      lp->gid,
-                                      s->metrics.comm_mbits, lp->gid,
-                                      s->metrics.comm_packets,lp->gid,
-                                      s->downward_next_available_time,lp->gid,
-                                      s->upward_next_avaliable_time,lp->gid
-                              );
-                      });
-            }
-
-
-        };
-
-
-    } // namespace services
-} // namespace ispd
+}; // namespace ispd::services
 
 #endif // ISPD_SERVICE_SWITCH_HPP
