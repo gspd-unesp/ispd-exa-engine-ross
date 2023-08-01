@@ -53,7 +53,8 @@ struct Switch {
   }
 
   static void forward(SwitchState *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
-    ispd_debug("[Forward] Switch %lu received a message at %lf of type (%d) and route offset (%u).",
+    ispd_debug("[Forward] Switch %lu received a message at %lf of type (%d) "
+               "and route offset (%u).",
                lp->gid, tw_now(lp), msg->type, msg->route_offset);
 
     /// Fetch the communication size and calculate the communication time.
@@ -69,17 +70,19 @@ struct Switch {
       s->m_Metrics.m_UpwardCommPackets++;
     }
 
-    const ispd::routing::route *route =
-        g_routing_table.get_route(msg->task.origin, msg->task.dest);
+    const ispd::routing::Route *route =
+        ispd::routing_table::getRoute(msg->task.origin, msg->task.dest);
 
-    tw_event *const e = tw_event_new(route->get(msg->route_offset), commTime, lp);
+    tw_event *const e =
+        tw_event_new(route->get(msg->route_offset), commTime, lp);
     ispd_message *const m = static_cast<ispd_message *>(tw_event_data(e));
 
     m->type = message_type::ARRIVAL;
     m->task = msg->task; /// Copies the task information.
     m->task_processed = msg->task_processed;
     m->downward_direction = msg->downward_direction;
-    m->route_offset = msg->downward_direction ? (msg->route_offset + 1) : (msg->route_offset -1);
+    m->route_offset = msg->downward_direction ? (msg->route_offset + 1)
+                                              : (msg->route_offset - 1);
     m->previous_service_id = lp->gid;
 
     tw_event_send(e);

@@ -119,7 +119,7 @@ struct machine {
     /// the task should only be forwarded to its next destination. 
     else {
       /// Fetch the route between the task's origin and task's destination.
-      const ispd::routing::route *route = g_routing_table.get_route(msg->task.origin, msg->task.dest);
+      const ispd::routing::Route *route = ispd::routing_table::getRoute(msg->task.origin, msg->task.dest);
 
       /// Update machine's metrics.
       s->metrics.forwarded_packets++;
