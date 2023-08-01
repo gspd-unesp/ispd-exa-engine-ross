@@ -51,9 +51,6 @@ const tw_optdef opt[] = {
 /// \brief Global Routing Table.
 ispd::routing::routing_table g_routing_table;
 
-/// \brief Global Built Model.
-ispd::model::built_model g_built_model;
-
 int main(int argc, char **argv) {
   ispd::log::set_log_file(NULL);
 
@@ -66,70 +63,40 @@ int main(int argc, char **argv) {
   const tw_lpid highest_machine_id = g_star_machine_amount * 2;
   const tw_lpid highest_link_id = highest_machine_id - 1;
 
-  /// Registers a service initializer for the master.
-  ispd::model::builder::register_service_initializer(
-      0, [highest_machine_id](void *state) {
-        ispd::services::master_state *s =
-            static_cast<ispd::services::master_state *>(state);
+  /// Register a master.
+  std::vector<tw_lpid> slaves;
+  for (tw_lpid machine_id = 2; machine_id <= highest_machine_id;
+       machine_id += 2)
+    slaves.emplace_back(machine_id);
 
-        /// Add the slaves.
-        s->slaves.reserve(g_star_machine_amount);
-        for (tw_lpid machine_id = 2; machine_id <= highest_machine_id;
-             machine_id += 2)
-          s->slaves.emplace_back(machine_id);
-
-        s->scheduler = new ispd::scheduler::round_robin;
-        s->workload = new ispd::workload::workload_constant(g_star_task_amount,
-                                                            200.0, 80.0);
-      });
+  ispd::this_model::registerMaster(
+      0, std::move(slaves), new ispd::scheduler::round_robin,
+      new ispd::workload::workload_constant(g_star_task_amount, 200.0, 80.0));
 
   /// Registers service initializers for the links.
-  for (tw_lpid link_id = 1; link_id <= highest_link_id; link_id += 2) {
-    ispd::model::builder::register_service_initializer(
-        link_id, [link_id](void *state) {
-          ispd::services::link_state *s =
-              static_cast<ispd::services::link_state *>(state);
-
-          /// Initialize the link's ends.
-          s->from = 0;
-          s->to = link_id + 1;
-
-          /// Initialize the link's configuration.
-          s->conf.bandwidth = 50.0;
-          s->conf.load = 0.0;
-          s->conf.latency = 1.0;
-        });
-  }
+  for (tw_lpid link_id = 1; link_id <= highest_link_id; link_id += 2)
+    ispd::this_model::registerLink(link_id, 0, link_id + 1, 50.0, 0.0, 1.0);
 
   /// Registers serivce initializers for the machines.
   for (tw_lpid machine_id = 2; machine_id <= highest_machine_id;
-       machine_id += 2) {
-    ispd::model::builder::register_service_initializer(
-        machine_id, [](void *state) {
-          ispd::services::machine_state *s =
-              static_cast<ispd::services::machine_state *>(state);
-
-          /// Initialize machine's configuration.
-          s->conf.power = 20.0;
-          s->conf.load = 0.0;
-          s->cores_free_time.resize(8, 0.0);
-        });
-  }
+       machine_id += 2)
+    ispd::this_model::registerMachine(machine_id, 20.0, 0.0, 8);
 
   /// The total number of logical processes.
   const unsigned nlp = g_star_machine_amount * 2 + 1;
 
   /// Distributed.
   if (tw_nnodes() > 1) {
-    /// Here, since we are distributing the logical processes through many nodes,
-    /// the number of logical processes (LP) per process element (PE) should be
-    /// calculated.
+    /// Here, since we are distributing the logical processes through many
+    /// nodes, the number of logical processes (LP) per process element (PE)
+    /// should be calculated.
     ///
-    /// However, will be noted that when multiply the number of logical processes
-    /// per process element (nlp_per_pe) by the number of available nodes (tw_nnodes())
-    /// the result may be greater than the total number of lps (nlp). In this case,
-    /// in the last node, after all the required logical processes be created, the
-    /// remaining logical processes are going to be set as dummies.
+    /// However, will be noted that when multiply the number of logical
+    /// processes per process element (nlp_per_pe) by the number of available
+    /// nodes (tw_nnodes()) the result may be greater than the total number of
+    /// lps (nlp). In this case, in the last node, after all the required
+    /// logical processes be created, the remaining logical processes are going
+    /// to be set as dummies.
     const unsigned nlp_per_pe = (unsigned)ceil((double)nlp / tw_nnodes());
 
     /// Set the number of logical processes (LP) per processing element (PE).
@@ -182,7 +149,8 @@ int main(int argc, char **argv) {
       }
     }
 
-    ispd_log(LOG_INFO, "A total of %u dummies have been created at node %d.", dummy_count, g_tw_mynode);
+    ispd_log(LOG_INFO, "A total of %u dummies have been created at node %d.",
+             dummy_count, g_tw_mynode);
   }
   /// Sequential.
   else {

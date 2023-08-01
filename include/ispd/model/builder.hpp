@@ -2,60 +2,60 @@
 #define ISPD_MODEL_BUILDER_HPP
 
 #include <ross.h>
+#include <vector>
 #include <functional>
 #include <unordered_map>
 #include <ispd/log/log.hpp>
+#include <ispd/workload/workload.hpp>
+#include <ispd/scheduler/scheduler.hpp>
 
-namespace ispd {
-namespace model {
+namespace ispd::model {
 
-struct built_model {
+class SimulationModel {
   std::unordered_map<tw_lpid, std::function<void(void *)>> service_initializers;
-};
 
-}; // namespace model
-}; // namespace ispd
-
-extern ispd::model::built_model g_built_model;
-
-namespace ispd {
-namespace model {
-
-struct builder {
-  static inline void
-  register_service_initializer(const tw_lpid gid,
-                               std::function<void(void *)> initializer) {
+  inline void
+  registerServiceInitializer(const tw_lpid gid,
+                             std::function<void(void *)> initializer) {
     /// Checks if a service with the specified global identifier has already
     /// been registered. If so, the program is immediately aborted.
-    if (g_built_model.service_initializers.find(gid) !=
-        g_built_model.service_initializers.end())
+    if (service_initializers.find(gid) != service_initializers.end())
       ispd_error("A service with GID %lu has already been registered.", gid);
 
     /// Emplace the pair (gid, initializer).
-    g_built_model.service_initializers.emplace(gid, initializer);
-
-    /// Print a debug indicating that a service initializer to the specified
-    /// global identifier has been registered.
-    ispd_debug(
-        "A service initializer for a service with GID %lu has been registered.",
-        gid);
+    service_initializers.emplace(gid, initializer);
   }
 
-  static inline const std::function<void(void *)> &
-  get_service_initializer(const tw_lpid gid) {
-    /// Checks if a service initializer for the specified global identifier has
-    /// not been registered. If so, the program is immediately aborted, since
-    /// service initializer is mandatory for every service.
-    if (g_built_model.service_initializers.find(gid) ==
-        g_built_model.service_initializers.end())
-      ispd_error(
-          "A service initializer for service with GID %lu has not been found.",
-          gid);
-    return g_built_model.service_initializers.at(gid);
-  }
+public:
+  void registerMachine(const tw_lpid gid, const double power, const double load,
+                       const unsigned coreCount);
+
+  void registerLink(const tw_lpid gid, const tw_lpid from, const tw_lpid to,
+                    const double bandwidth, const double load,
+                    const double latency);
+
+  void registerMaster(const tw_lpid gid, std::vector<tw_lpid> &&slaves,
+                      ispd::scheduler::scheduler *const scheduler,
+                      ispd::workload::workload *const workload);
+
+  const std::function<void(void *)> &getServiceInitializer(const tw_lpid gid);
 };
 
-}; // namespace model
-}; // namespace ispd
+}; // namespace ispd::model
+
+namespace ispd::this_model {
+void registerMachine(const tw_lpid gid, const double power, const double load,
+                     const unsigned coreCount);
+
+void registerLink(const tw_lpid gid, const tw_lpid from, const tw_lpid to,
+                  const double bandwidth, const double load,
+                  const double latency);
+
+void registerMaster(const tw_lpid gid, std::vector<tw_lpid> &&slaves,
+                    ispd::scheduler::scheduler *const scheduler,
+                    ispd::workload::workload *const workload);
+
+const std::function<void(void *)> &getServiceInitializer(const tw_lpid gid);
+}; // namespace ispd::this_model
 
 #endif // ISPD_MODEL_BUILDER_HPP
