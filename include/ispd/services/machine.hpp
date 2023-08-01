@@ -61,7 +61,7 @@ struct machine {
 
   static void init(machine_state *s, tw_lp *lp) {
     /// Fetch the service initializer from this logical process.
-    const auto &service_initializer = ispd::model::builder::get_service_initializer(lp->gid);
+    const auto &service_initializer = ispd::this_model::getServiceInitializer(lp->gid);
 
     /// Call the service initializer for this logical process.
     service_initializer(s);
