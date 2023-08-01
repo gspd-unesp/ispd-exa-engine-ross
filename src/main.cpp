@@ -6,6 +6,7 @@
 #include <ispd/services/link.hpp>
 #include <ispd/services/dummy.hpp>
 #include <ispd/services/master.hpp>
+#include <ispd/services/switch.hpp>
 #include <ispd/services/machine.hpp>
 #include <ispd/message/message.hpp>
 #include <ispd/routing/routing.hpp>
@@ -31,6 +32,11 @@ tw_lptype lps_type[] = {
      (revent_f)ispd::services::machine::reverse, (commit_f)NULL,
      (final_f)ispd::services::machine::finish, (map_f)mapping,
      sizeof(ispd::services::machine_state)},
+    {(init_f)ispd::services::Switch::init, (pre_run_f)NULL,
+     (event_f)ispd::services::Switch::forward,
+     (revent_f)ispd::services::Switch::reverse, (commit_f)NULL,
+     (final_f)ispd::services::Switch::finish, (map_f)mapping,
+     sizeof(ispd::services::Switch)},
     {(init_f)ispd::services::dummy::init, (pre_run_f)NULL,
      (event_f)ispd::services::dummy::forward,
      (revent_f)ispd::services::dummy::reverse, (commit_f)NULL,

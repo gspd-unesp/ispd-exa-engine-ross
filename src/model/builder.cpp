@@ -1,9 +1,10 @@
 #include <sstream>
 #include <algorithm>
 #include <ispd/model/builder.hpp>
-#include <ispd/services/machine.hpp>
-#include <ispd/services/link.hpp>
 #include <ispd/services/master.hpp>
+#include <ispd/services/link.hpp>
+#include <ispd/services/machine.hpp>
+#include <ispd/services/switch.hpp>
 
 static inline std::string firstSlaves(const std::vector<tw_lpid> &slaves) {
   const auto maxToShow = std::vector<tw_lpid>::size_type(10);
@@ -108,6 +109,47 @@ void SimulationModel::registerLink(const tw_lpid gid, const tw_lpid from,
       bandwidth, load, latency);
 }
 
+void SimulationModel::registerSwitch(const tw_lpid gid, const double bandwidth,
+                                     const double load, const double latency) {
+  /// Check if the bandwidth is not positive. If so, an error indicating the
+  /// case is sent and the program is immediately aborted.
+  if (bandwidth <= 0.0)
+    ispd_error("At registering the switch %lu the bandwidth must be positive "
+               "(Specified Bandwidth: %lf).",
+               gid, bandwidth);
+
+  /// Check if the load is not in the interval [0, 1]. If so, an error
+  /// indicating the case is sent and the program is immediately aborted.
+  if (load < 0.0 || load > 1.0)
+    ispd_error("At registering the switch %lu the load must be in the "
+               "interval [0, 1] (Specified Load: %lf).",
+               gid, load);
+
+  /// Check if the latency is not positive. If so, an error indicating the case
+  /// is sent and the program is immediately aborted.
+  if (latency < 0.0)
+    ispd_error("At registering the switch %lu the latency must be positive "
+               "(Specified Latency: %lf).",
+               gid, latency);
+
+  /// Register the service initializer for a switch with the specified
+  /// logical process global identifier (GID).
+  registerServiceInitializer(gid, [=](void *state) {
+    ispd::services::SwitchState *s =
+        static_cast<ispd::services::SwitchState *>(state);
+
+    /// Initialize the switch's configuration.
+    s->m_Conf.m_Bandwidth = bandwidth;
+    s->m_Conf.m_Load = load;
+    s->m_Conf.m_Latency = latency;
+  });
+
+  /// Print a debug indicating that a switch initializer has been registered.
+  ispd_debug(
+      "A switch with GID %lu has been registered (B: %lf, L: %lf, LT: %lf).",
+      gid, bandwidth, load, latency);
+}
+
 void SimulationModel::registerMaster(
     const tw_lpid gid, std::vector<tw_lpid> &&slaves,
     ispd::scheduler::scheduler *const scheduler,
@@ -132,18 +174,17 @@ void SimulationModel::registerMaster(
 
   /// Register the service initializer for a master with the specified
   /// logical process global identifier.
-  registerServiceInitializer(
-      gid, [workload, scheduler, &slaves](void *state) {
-        ispd::services::master_state *s =
-            static_cast<ispd::services::master_state *>(state);
+  registerServiceInitializer(gid, [workload, scheduler, &slaves](void *state) {
+    ispd::services::master_state *s =
+        static_cast<ispd::services::master_state *>(state);
 
-        /// Specify the master's slaves.
-        s->slaves = std::move(slaves);
+    /// Specify the master's slaves.
+    s->slaves = std::move(slaves);
 
-        /// Specify the master's schedule and workload.
-        s->scheduler = scheduler;
-        s->workload = workload;
-      });
+    /// Specify the master's schedule and workload.
+    s->scheduler = scheduler;
+    s->workload = workload;
+  });
 
   /// Print a debug indicating that a master initializer has been registered.
   ispd_debug("A master with GID %lu has been registered (SC: %u, S: %s).", gid,
@@ -179,6 +220,12 @@ void registerLink(const tw_lpid gid, const tw_lpid from, const tw_lpid to,
                   const double latency) {
   /// Forward the link registration to the global model.
   g_Model->registerLink(gid, from, to, bandwidth, load, latency);
+}
+
+void registerSwitch(const tw_lpid gid, const double bandwidth,
+                    const double load, const double latency) {
+  /// Forward the switch registration to the global model.
+  g_Model->registerSwitch(gid, bandwidth, load, latency);
 }
 
 void registerMaster(const tw_lpid gid, std::vector<tw_lpid> &&slaves,

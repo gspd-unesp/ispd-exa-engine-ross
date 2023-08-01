@@ -76,7 +76,7 @@ struct machine {
   }
 
   static void forward(machine_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
-    ispd_debug("[Forward] Machine %lu received a message at %lf of type (%d).", lp->gid, tw_now(lp), msg->type);
+    ispd_debug("[Forward] Machine %lu received a message at %lf of type (%d) and route offset (%u).", lp->gid, tw_now(lp), msg->type, msg->route_offset);
 
     /// Checks if the task's destination is this machine. If so, the task is processed
     /// and the task's results is sent back to the master by the same route it came along.
@@ -133,7 +133,7 @@ struct machine {
       m->task = msg->task; /// Copy the tasks's information.
       m->task_processed = msg->task_processed;
       m->downward_direction = msg->downward_direction;
-      m->route_offset += msg->downward_direction ? 1 : -1;
+      m->route_offset = msg->downward_direction ? (msg->route_offset + 1) : (msg->route_offset - 1);
       m->previous_service_id = lp->gid;
 
       tw_event_send(e);

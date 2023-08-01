@@ -34,6 +34,9 @@ public:
                     const double bandwidth, const double load,
                     const double latency);
 
+  void registerSwitch(const tw_lpid gid, const double bandwidth,
+                      const double load, const double latency);
+
   void registerMaster(const tw_lpid gid, std::vector<tw_lpid> &&slaves,
                       ispd::scheduler::scheduler *const scheduler,
                       ispd::workload::workload *const workload);
@@ -50,6 +53,9 @@ void registerMachine(const tw_lpid gid, const double power, const double load,
 void registerLink(const tw_lpid gid, const tw_lpid from, const tw_lpid to,
                   const double bandwidth, const double load,
                   const double latency);
+
+void registerSwitch(const tw_lpid gid, const double bandwidth,
+                    const double load, const double latency);
 
 void registerMaster(const tw_lpid gid, std::vector<tw_lpid> &&slaves,
                     ispd::scheduler::scheduler *const scheduler,

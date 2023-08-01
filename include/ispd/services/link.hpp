@@ -138,7 +138,7 @@ struct link {
 
     m->type = message_type::ARRIVAL;
     m->task = msg->task; /// Copy the task's information.
-    m->downward_direction = 1;
+    m->downward_direction = msg->downward_direction;
     m->route_offset = msg->route_offset;
     m->previous_service_id = lp->gid;
 
