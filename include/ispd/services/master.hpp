@@ -1,8 +1,9 @@
 #ifndef ISPD_SERVICE_MASTER_HPP
 #define ISPD_SERVICE_MASTER_HPP
 
-#include <vector>
 #include <ross.h>
+#include <vector>
+#include <memory>
 #include <ispd/debug/debug.hpp>
 #include <ispd/model/builder.hpp>
 #include <ispd/routing/routing.hpp>
@@ -26,7 +27,7 @@ struct master_state {
   ispd::scheduler::scheduler *scheduler;
 
   /// \brief Master's workload generator.
-  ispd::workload::workload *workload;
+  ispd::workload::Workload *workload;
 
   /// \brief Master's metrics.
   master_metrics metrics;
@@ -111,7 +112,7 @@ struct master {
 
 private:
   static void generate(master_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
-    ispd_debug("Master %lu will generate a task at %lf, remaining %u.", lp->gid, tw_now(lp), s->workload->count);
+    ispd_debug("Master %lu will generate a task at %lf, remaining %u.", lp->gid, tw_now(lp), s->workload->getRemainingTasks());
 
     /// Use the master's scheduling policy to the schedule the next slave.
     const tw_lpid scheduled_slave_id = s->scheduler->forward_schedule(s->slaves, bf, msg, lp);
@@ -128,7 +129,7 @@ private:
 
     /// Use the master's workload generator for generate the task's
     /// processing and communication sizes.
-    s->workload->workload_generate(lp->rng, m->task.proc_size, m->task.comm_size);
+    s->workload->generateWorkload(lp->rng, m->task.proc_size, m->task.comm_size);
 
     m->task.origin = lp->gid;
     m->task.dest = scheduled_slave_id;
@@ -141,7 +142,7 @@ private:
 
     /// Checks if the there are more remaining tasks to be generated. If so, a generate message
     /// is sent to the master by itself to generate a new task.
-    if (s->workload->count > 0) {
+    if (s->workload->getRemainingTasks() > 0) {
       /// Send a generate message to itself.
       tw_event *const e = tw_event_new(lp->gid, tw_rand_exponential(lp->rng, 0.1), lp);
       ispd_message *const m = static_cast<ispd_message *>(tw_event_data(e));
@@ -157,12 +158,12 @@ private:
     s->scheduler->reverse_schedule(s->slaves, bf, msg, lp);
 
     /// Reverse the workload generator.
-    s->workload->workload_generate_rc(lp->rng);
+    s->workload->reverseGenerateWorkload(lp->rng);
 
     /// Checks if after reversing the workload generator, there are remaining tasks to be generated.
     /// If so, the random number generator is reversed since it is used to generate the interarrival
     /// time of the tasks.
-    if (s->workload->count > 0)
+    if (s->workload->getRemainingTasks() > 0)
       tw_rand_reverse_unif(lp->rng);
   }
 
@@ -175,7 +176,6 @@ private:
     /// Reverse the master's metrics.
     s->metrics.completed_tasks--;
   }
-
 
 };
 

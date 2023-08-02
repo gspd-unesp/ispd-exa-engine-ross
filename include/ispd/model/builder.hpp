@@ -39,7 +39,7 @@ public:
 
   void registerMaster(const tw_lpid gid, std::vector<tw_lpid> &&slaves,
                       ispd::scheduler::scheduler *const scheduler,
-                      ispd::workload::workload *const workload);
+                      ispd::workload::Workload *const workload);
 
   const std::function<void(void *)> &getServiceInitializer(const tw_lpid gid);
 };
@@ -59,7 +59,7 @@ void registerSwitch(const tw_lpid gid, const double bandwidth,
 
 void registerMaster(const tw_lpid gid, std::vector<tw_lpid> &&slaves,
                     ispd::scheduler::scheduler *const scheduler,
-                    ispd::workload::workload *const workload);
+                    ispd::workload::Workload *const workload);
 
 const std::function<void(void *)> &getServiceInitializer(const tw_lpid gid);
 }; // namespace ispd::this_model
