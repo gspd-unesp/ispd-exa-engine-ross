@@ -1,4 +1,5 @@
 #include <iostream>
+#include <memory>
 #include <ross.h>
 #include <ross-extern.h>
 #include <ispd/log/log.hpp>
@@ -74,7 +75,7 @@ int main(int argc, char **argv) {
 
   ispd::this_model::registerMaster(
       0, std::move(slaves), new ispd::scheduler::round_robin,
-      new ispd::workload::workload_constant(g_star_task_amount, 200.0, 80.0));
+      ispd::workload::uniform(g_star_task_amount, 500.0, 1000.0, 200.0, 250.0));
 
   /// Registers service initializers for the links.
   for (tw_lpid link_id = 1; link_id <= highest_link_id; link_id += 2)
