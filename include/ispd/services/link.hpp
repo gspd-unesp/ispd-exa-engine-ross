@@ -6,6 +6,8 @@
 #include <ispd/message/message.hpp>
 #include <ispd/model/builder.hpp>
 
+extern double g_NodeSimulationTime;
+
 namespace ispd {
 namespace services {
 
@@ -175,23 +177,28 @@ struct link {
   }
 
   static void finish(link_state *s, tw_lp *lp) {
-        std::printf(
-            "Link Queue Info & Metrics (%lu)\n"
-            " - Downward Communicated Mbits..: %lf Mbits (%lu).\n"
-            " - Downward Communicated Packets: %u packets (%lu).\n"
-            " - Downward Next Avail. Time....: %lf seconds (%lu).\n"
-            " - Upward Communicated Mbits....: %lf Mbits (%lu).\n"
-            " - Upward Communicated Packets..: %u packets (%lu).\n"
-            " - Upward Next Avail. Time......: %lf seconds (%lu).\n"
-            "\n",
-            lp->gid, 
-            s->metrics.downward_comm_mbits, lp->gid,
-            s->metrics.downward_comm_packets, lp->gid,
-            s->downward_next_available_time, lp->gid,
-            s->metrics.upward_comm_mbits, lp->gid,
-            s->metrics.upward_comm_packets, lp->gid,
-            s->upward_next_available_time, lp->gid
-        );
+    const double lastActivityTime = std::max(s->downward_next_available_time,
+        s->upward_next_available_time);
+
+    g_NodeSimulationTime = std::max(g_NodeSimulationTime, lastActivityTime);
+
+    std::printf(
+        "Link Queue Info & Metrics (%lu)\n"
+        " - Downward Communicated Mbits..: %lf Mbits (%lu).\n"
+        " - Downward Communicated Packets: %u packets (%lu).\n"
+        " - Downward Next Avail. Time....: %lf seconds (%lu).\n"
+        " - Upward Communicated Mbits....: %lf Mbits (%lu).\n"
+        " - Upward Communicated Packets..: %u packets (%lu).\n"
+        " - Upward Next Avail. Time......: %lf seconds (%lu).\n"
+        "\n",
+        lp->gid, 
+        s->metrics.downward_comm_mbits, lp->gid,
+        s->metrics.downward_comm_packets, lp->gid,
+        s->downward_next_available_time, lp->gid,
+        s->metrics.upward_comm_mbits, lp->gid,
+        s->metrics.upward_comm_packets, lp->gid,
+        s->upward_next_available_time, lp->gid
+    );
   }
 };
 

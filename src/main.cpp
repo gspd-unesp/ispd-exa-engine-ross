@@ -55,6 +55,9 @@ const tw_optdef opt[] = {
     TWOPT_END(),
 };
 
+/// \brief The simulation time at the current node.
+double g_NodeSimulationTime = 0.0;
+
 int main(int argc, char **argv) {
   ispd::log::set_log_file(NULL);
 
@@ -175,6 +178,15 @@ int main(int argc, char **argv) {
   }
 
   tw_run();
+
+  double globalSimulationTime = 0;
+
+  /// Calculate the global simulation time.
+  if (MPI_SUCCESS != MPI_Reduce(&g_NodeSimulationTime, &globalSimulationTime, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD))
+    ispd_error("Global simulation time could not be reduced, exiting...");
+
+  ispd_log(LOG_INFO, "Global Simulation Time: %lf.", globalSimulationTime);
+
   tw_end();
 
   return 0;

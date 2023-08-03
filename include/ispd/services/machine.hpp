@@ -9,6 +9,8 @@
 #include <ispd/routing/routing.hpp>
 #include <ispd/model/builder.hpp>
 
+extern double g_NodeSimulationTime;
+
 namespace ispd {
 namespace services {
 
@@ -161,6 +163,10 @@ struct machine {
   }
 
   static void finish(machine_state *s, tw_lp *lp) {
+    const double lastActivityTime = *std::max_element(s->cores_free_time.cbegin(), s->cores_free_time.cend());
+
+    g_NodeSimulationTime = std::max(g_NodeSimulationTime, lastActivityTime);
+
       std::printf(
           "Machine Metrics (%lu)\n"
           " - Last Activity Time: %lf seconds (%lu).\n"
@@ -169,7 +175,7 @@ struct machine {
           " - Forwarded Packets.: %u packets (%lu).\n"
           "\n",
           lp->gid, 
-          *std::max_element(s->cores_free_time.cbegin(), s->cores_free_time.cend()), lp->gid,
+          lastActivityTime, lp->gid,
           s->metrics.proc_mflops, lp->gid,
           s->metrics.proc_tasks, lp->gid,
           s->metrics.forwarded_packets, lp->gid
