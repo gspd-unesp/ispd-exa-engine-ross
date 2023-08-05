@@ -19,6 +19,7 @@ struct ispd_message {
   double saved_link_next_available_time;
   unsigned saved_core_index;
   double saved_core_next_available_time;
+  double saved_waiting_time;
 
   /// \brief Route's descriptor.
   int route_offset;

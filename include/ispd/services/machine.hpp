@@ -24,6 +24,7 @@ struct machine_metrics {
   double proc_mflops;
   unsigned proc_tasks;
   unsigned forwarded_packets;
+  double waiting_time;
 };
 
 struct machine_state {
@@ -73,6 +74,7 @@ struct machine {
      s->metrics.proc_mflops = 0;
      s->metrics.proc_tasks = 0;
      s->metrics.forwarded_packets = 0;
+     s->metrics.waiting_time = 0;
 
     /// Print a debug message.
     ispd_debug("Machine %lu has been initialized.", lp->gid);
@@ -96,6 +98,7 @@ struct machine {
       /// Update the machine's metrics.
       s->metrics.proc_mflops += proc_size;
       s->metrics.proc_tasks++;
+      s->metrics.waiting_time += waiting_delay;
 
       /// Update the machine's queueing model information.
       s->cores_free_time[core_index] = tw_now(lp) + departure_delay;
@@ -151,12 +154,16 @@ struct machine {
       const double proc_size = msg->task.proc_size;
       const double proc_time = time_to_proc(&s->conf, proc_size);
 
+      const double least_free_time = msg->saved_core_next_available_time;
+      const double waiting_delay = ROSS_MAX(0.0, least_free_time - tw_now(lp));
+
       /// Reverse the machine's metrics.
       s->metrics.proc_mflops -= proc_size;
       s->metrics.proc_tasks--;
+      s->metrics.waiting_time -= waiting_delay;
 
       /// Reverse the machine's queueing model information.
-      s->cores_free_time[msg->saved_core_index] = msg->saved_core_next_available_time;
+      s->cores_free_time[msg->saved_core_index] = least_free_time;
     } else {
       /// Reverse machine's metrics.
       s->metrics.forwarded_packets--;
@@ -169,19 +176,23 @@ struct machine {
     /// Report to the node`s metrics collector this machine`s metrics.
     ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_SIMULATION_TIME, lastActivityTime);
     ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_PROCESSED_MFLOPS, s->metrics.proc_mflops);
-  
+    ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_PROCESSING_WAITING_TIME, s->metrics.waiting_time);
+    ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_PROCESSING_SERVICES, 0);
+
       std::printf(
           "Machine Metrics (%lu)\n"
           " - Last Activity Time: %lf seconds (%lu).\n"
           " - Processed MFLOPS..: %lf MFLOPS (%lu).\n"
           " - Processed Tasks...: %u tasks (%lu).\n"
           " - Forwarded Packets.: %u packets (%lu).\n"
+          " - Waiting Time......: %lf seconds (%lu).\n"
           "\n",
           lp->gid, 
           lastActivityTime, lp->gid,
           s->metrics.proc_mflops, lp->gid,
           s->metrics.proc_tasks, lp->gid,
-          s->metrics.forwarded_packets, lp->gid
+          s->metrics.forwarded_packets, lp->gid,
+          s->metrics.waiting_time, lp->gid
       );
   }
 };

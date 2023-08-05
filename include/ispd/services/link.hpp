@@ -24,6 +24,12 @@ struct link_metrics {
 
   /// \brief The amount of communicated packets by the downward link.
   unsigned downward_comm_packets;
+
+  /// \brief The amount of upward waiting time occurred in this link.
+  double upward_waiting_time;
+
+  /// \brief The amount of downward waiting time occurred in this link.
+  double downward_waiting_time;
 };
 
 struct link_configuration {
@@ -67,6 +73,8 @@ struct link {
     s->metrics.downward_comm_mbits = 0;
     s->metrics.upward_comm_packets = 0;
     s->metrics.downward_comm_packets = 0;
+    s->metrics.upward_waiting_time = 0;
+    s->metrics.downward_waiting_time = 0;
 
     /// Initialize queueing model information.
     s->upward_next_available_time = 0;
@@ -105,11 +113,13 @@ struct link {
     if (msg->downward_direction) {
       s->metrics.downward_comm_mbits += comm_size;
       s->metrics.downward_comm_packets++;
+      s->metrics.downward_waiting_time += waiting_delay;
     }
     /// Update the upward link's metrics.
     else {
       s->metrics.upward_comm_mbits += comm_size;
       s->metrics.upward_comm_packets++;
+      s->metrics.upward_waiting_time += waiting_delay;
     }
 
     next_available_time = tw_now(lp) + departure_delay;
@@ -147,6 +157,7 @@ struct link {
 
     /// Save information (for reverse computation).
     msg->saved_link_next_available_time = saved_next_available_time;
+    msg->saved_waiting_time = waiting_delay;
 
     tw_event_send(e);
   }
@@ -156,24 +167,28 @@ struct link {
 
     /// Fetch the communication size and calculates the communication time.
     const double comm_size = msg->task.comm_size;
+    const double next_available_time = msg->saved_link_next_available_time;
+    const double waiting_delay = msg->saved_waiting_time;
 
     /// Checks if the message is being sent from the master to the slave. Therefore,
     /// the downward next available time should be reverse processed.
     if (msg->downward_direction) {
-      s->downward_next_available_time = msg->saved_link_next_available_time;
+      s->downward_next_available_time = next_available_time;
 
       /// Reverse the downward link's metrics.
       s->metrics.downward_comm_mbits -= comm_size;
       s->metrics.downward_comm_packets--;
+      s->metrics.downward_waiting_time -= waiting_delay;
     }
     /// Otherwise, if the message is being sent from the slae to the master. Therefore
     /// the upward next available time should be reverse processed.
     else {
-      s->upward_next_available_time = msg->saved_link_next_available_time;
+      s->upward_next_available_time = next_available_time;
 
       /// Reverse the upward link's metrics.
       s->metrics.upward_comm_mbits -= comm_size;
       s->metrics.upward_comm_packets--;
+      s->metrics.upward_waiting_time -= waiting_delay;
     }
   }
 
@@ -182,27 +197,35 @@ struct link {
         s->upward_next_available_time);
     const double linkTotalCommunicatedMBits = s->metrics.downward_comm_mbits +
         s->metrics.upward_comm_mbits;
+    const double linkTotalCommunicationWaitingTime = s->metrics.downward_waiting_time +
+        s->metrics.upward_waiting_time;
 
     /// Report to the node`s metrics collector the last activity time
     /// of the machine in the simulation.
     ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_SIMULATION_TIME, lastActivityTime);
     ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_COMMUNICATED_MBITS, linkTotalCommunicatedMBits);
+    ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_COMMUNICATION_WAITING_TIME, linkTotalCommunicationWaitingTime);
+    ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_COMMUNICATION_SERVICES, 0);
 
     std::printf(
         "Link Queue Info & Metrics (%lu)\n"
         " - Downward Communicated Mbits..: %lf Mbits (%lu).\n"
         " - Downward Communicated Packets: %u packets (%lu).\n"
+        " - Downward Waiting Time........: %lf seconds (%lu).\n"
         " - Downward Next Avail. Time....: %lf seconds (%lu).\n"
         " - Upward Communicated Mbits....: %lf Mbits (%lu).\n"
         " - Upward Communicated Packets..: %u packets (%lu).\n"
+        " - Upward Waiting Time..........: %lf seconds (%lu).\n"
         " - Upward Next Avail. Time......: %lf seconds (%lu).\n"
         "\n",
         lp->gid, 
         s->metrics.downward_comm_mbits, lp->gid,
         s->metrics.downward_comm_packets, lp->gid,
+        s->metrics.downward_waiting_time, lp->gid,
         s->downward_next_available_time, lp->gid,
         s->metrics.upward_comm_mbits, lp->gid,
         s->metrics.upward_comm_packets, lp->gid,
+        s->metrics.upward_waiting_time, lp->gid,
         s->upward_next_available_time, lp->gid
     );
   }
