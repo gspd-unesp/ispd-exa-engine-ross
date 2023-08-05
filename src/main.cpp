@@ -122,7 +122,7 @@ int main(int argc, char **argv) {
       /// Set the links and machines.
       for (unsigned i = 1; i < nlp_per_pe; i++) {
         if (current_gid > highest_machine_id) {
-          tw_lp_settype(i, &lps_type[3]);
+          tw_lp_settype(i, &lps_type[4]);
 
           dummy_count++;
           current_gid++;
@@ -139,7 +139,7 @@ int main(int argc, char **argv) {
       /// Set the links and machines.
       for (unsigned i = 0; i < nlp_per_pe; i++) {
         if (current_gid > highest_machine_id) {
-          tw_lp_settype(i, &lps_type[3]);
+          tw_lp_settype(i, &lps_type[4]);
 
           dummy_count++;
           current_gid++;
