@@ -166,10 +166,10 @@ struct machine {
   static void finish(machine_state *s, tw_lp *lp) {
     const double lastActivityTime = *std::max_element(s->cores_free_time.cbegin(), s->cores_free_time.cend());
 
-    /// Report to the node`s metrics collector the last activity time
-    /// of the machine in the simulation.
-    ispd::node_metrics::notifyLastActivityTime(lastActivityTime);
-
+    /// Report to the node`s metrics collector this machine`s metrics.
+    ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_SIMULATION_TIME, lastActivityTime);
+    ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_PROCESSED_MFLOPS, s->metrics.proc_mflops);
+  
       std::printf(
           "Machine Metrics (%lu)\n"
           " - Last Activity Time: %lf seconds (%lu).\n"

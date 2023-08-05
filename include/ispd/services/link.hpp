@@ -180,10 +180,13 @@ struct link {
   static void finish(link_state *s, tw_lp *lp) {
     const double lastActivityTime = std::max(s->downward_next_available_time,
         s->upward_next_available_time);
+    const double linkTotalCommunicatedMBits = s->metrics.downward_comm_mbits +
+        s->metrics.upward_comm_mbits;
 
     /// Report to the node`s metrics collector the last activity time
     /// of the machine in the simulation.
-    ispd::node_metrics::notifyLastActivityTime(lastActivityTime);
+    ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_SIMULATION_TIME, lastActivityTime);
+    ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_COMMUNICATED_MBITS, linkTotalCommunicatedMBits);
 
     std::printf(
         "Link Queue Info & Metrics (%lu)\n"
