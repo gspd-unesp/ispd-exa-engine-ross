@@ -13,6 +13,8 @@ enum NodeMetricsFlag {
   NODE_TOTAL_MACHINE_SERVICES,
   NODE_TOTAL_SWITCH_SERVICES,
   NODE_TOTAL_COMPLETED_TASKS,
+  NODE_TOTAL_COMPUTATIONAL_POWER,
+  NODE_TOTAL_CPU_CORES,
   NODE_SIMULATION_TIME
 };
 
@@ -22,6 +24,9 @@ class NodeMetricsCollector {
   unsigned m_NodeTotalMachineServices;
   unsigned m_NodeTotalSwitchServices;
   unsigned m_NodeTotalCompletedTasks;
+
+  double m_NodeTotalComputationalPower;
+  unsigned m_NodeTotalCpuCores;
 
   double m_NodeTotalCommunicatedMBits;
   double m_NodeTotalProcessedMFlops;
@@ -44,6 +49,9 @@ class GlobalMetricsCollector {
   unsigned m_GlobalTotalMachineServices;
   unsigned m_GlobalTotalSwitchServices;
   unsigned m_GlobalTotalCompletedTasks;
+
+  double m_GlobalTotalComputationalPower;
+  unsigned m_GlobalTotalCpuCores;
 
   double m_GlobalTotalCommunicatedMBits;
   double m_GlobalTotalProcessedMFlops;

@@ -33,6 +33,11 @@ void NodeMetricsCollector::notifyMetric(const enum NodeMetricsFlag flag, const d
       /// services that have been simulated in this node.
       m_NodeTotalCommunicationWaitingTime += value;
       break;
+    case NODE_TOTAL_COMPUTATIONAL_POWER:
+      /// In this case, the total computational power in this node is just the
+      /// addition of all computational power of the processing services that have been
+      /// simulated in this node.
+      m_NodeTotalComputationalPower += value;
     case NODE_SIMULATION_TIME:
       /// In this case, the value acts as the last activity time of
       /// the service center.
@@ -48,6 +53,9 @@ void NodeMetricsCollector::notifyMetric(const enum NodeMetricsFlag flag, const u
   switch (flag) {
     case NODE_TOTAL_COMPLETED_TASKS:
       m_NodeTotalCompletedTasks += value;
+      break;
+    case NODE_TOTAL_CPU_CORES:
+      m_NodeTotalCpuCores += value;
       break;
     default:
       ispd_error("Unknown node metrics flag (%d) or it may be the case the flag is correct but the argument is not of the required type.", flag);
@@ -116,6 +124,14 @@ void NodeMetricsCollector::reportNodeMetrics() {
   /// Report to the master node the total completed tasks.
   if (MPI_SUCCESS != MPI_Reduce(&m_NodeTotalCompletedTasks, &gmc->m_GlobalTotalCompletedTasks, 1, MPI_UNSIGNED, MPI_SUM, 0, MPI_COMM_ROSS))
     ispd_error("Global total completed tasks could not be reduced, exiting...");
+
+  /// Report to the master node the total computational power.
+  if (MPI_SUCCESS != MPI_Reduce(&m_NodeTotalComputationalPower, &gmc->m_GlobalTotalComputationalPower, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_ROSS))
+    ispd_error("Global total computational power could not be reduced, exiting...");
+
+  /// Report to the master node the total CPU cores.
+  if (MPI_SUCCESS != MPI_Reduce(&m_NodeTotalCpuCores, &gmc->m_GlobalTotalCpuCores, 1, MPI_UNSIGNED, MPI_SUM, 0, MPI_COMM_ROSS))
+    ispd_error("Global total cpu cores could not be reduced, exiting...");
 }
 
 void GlobalMetricsCollector::reportGlobalMetrics() {
@@ -144,6 +160,10 @@ void GlobalMetricsCollector::reportGlobalMetrics() {
   ispd_log(LOG_INFO, "Average Metrics");
   ispd_log(LOG_INFO, " Avg. Processing Waiting Time.....: %lf seconds.", avgProcessingWaitingTime);
   ispd_log(LOG_INFO, " Avg. Communication Waiting Time..: %lf seconds.", avgCommunicationWaitingTime);
+  ispd_log(LOG_INFO, "");
+  ispd_log(LOG_INFO, "System Metrics");
+  ispd_log(LOG_INFO, " Total Computational Power........: %lf MFLOPS.", m_GlobalTotalComputationalPower);
+  ispd_log(LOG_INFO, " Total CPU Cores..................: %u cores.", m_GlobalTotalCpuCores);
   ispd_log(LOG_INFO, "");
 }
 
