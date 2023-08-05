@@ -16,6 +16,7 @@ SET(ispd_srcs
 ./src/log/log.cpp
 ./src/model/builder.cpp
 ./src/routing/routing.cpp
+./src/metrics/metrics.cpp
 )
 
 ADD_EXECUTABLE(ispd ${ispd_srcs})

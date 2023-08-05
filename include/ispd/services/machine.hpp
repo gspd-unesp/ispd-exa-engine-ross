@@ -8,6 +8,7 @@
 #include <ispd/message/message.hpp>
 #include <ispd/routing/routing.hpp>
 #include <ispd/model/builder.hpp>
+#include <ispd/metrics/metrics.hpp>
 
 extern double g_NodeSimulationTime;
 
@@ -165,7 +166,9 @@ struct machine {
   static void finish(machine_state *s, tw_lp *lp) {
     const double lastActivityTime = *std::max_element(s->cores_free_time.cbegin(), s->cores_free_time.cend());
 
-    g_NodeSimulationTime = std::max(g_NodeSimulationTime, lastActivityTime);
+    /// Report to the node`s metrics collector the last activity time
+    /// of the machine in the simulation.
+    ispd::node_metrics::notifyLastActivityTime(lastActivityTime);
 
       std::printf(
           "Machine Metrics (%lu)\n"

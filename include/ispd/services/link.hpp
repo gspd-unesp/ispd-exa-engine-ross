@@ -3,8 +3,9 @@
 
 #include <ross.h>
 #include <ispd/debug/debug.hpp>
-#include <ispd/message/message.hpp>
 #include <ispd/model/builder.hpp>
+#include <ispd/message/message.hpp>
+#include <ispd/metrics/metrics.hpp>
 
 extern double g_NodeSimulationTime;
 
@@ -180,7 +181,9 @@ struct link {
     const double lastActivityTime = std::max(s->downward_next_available_time,
         s->upward_next_available_time);
 
-    g_NodeSimulationTime = std::max(g_NodeSimulationTime, lastActivityTime);
+    /// Report to the node`s metrics collector the last activity time
+    /// of the machine in the simulation.
+    ispd::node_metrics::notifyLastActivityTime(lastActivityTime);
 
     std::printf(
         "Link Queue Info & Metrics (%lu)\n"
