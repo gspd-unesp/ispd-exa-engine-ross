@@ -5,6 +5,7 @@
 #include <ispd/debug/debug.hpp>
 #include <ispd/message/message.hpp>
 #include <ispd/routing/routing.hpp>
+#include <ispd/metrics/metrics.hpp>
 
 namespace ispd::services {
 
@@ -106,6 +107,8 @@ struct Switch {
   }
 
   static void finish(SwitchState *s, tw_lp *lp) {
+    ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_MASTER_SERVICES);
+
     std::printf("Switch Queue Info & Metrics (%lu)\n"
                 " - Downward Communicated Mbits..: %lf Mbits (%lu).\n"
                 " - Downward Communicated Packets: %u packets (%lu).\n"

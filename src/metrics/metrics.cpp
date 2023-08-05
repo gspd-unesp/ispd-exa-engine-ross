@@ -56,12 +56,18 @@ void NodeMetricsCollector::notifyMetric(const enum NodeMetricsFlag flag, const u
 
 void NodeMetricsCollector::notifyMetric(const enum NodeMetricsFlag flag) {
   switch (flag) {
-     case NODE_TOTAL_PROCESSING_SERVICES:
-      m_NodeTotalProcessingServices++;
+     case NODE_TOTAL_MASTER_SERVICES:
+      m_NodeTotalMasterServices++;
       break;
-    case NODE_TOTAL_COMMUNICATION_SERVICES:
-      m_NodeTotalCommunicationServices++;
-      break; 
+     case NODE_TOTAL_LINK_SERVICES:
+      m_NodeTotalLinkServices++;
+      break;
+     case NODE_TOTAL_MACHINE_SERVICES:
+      m_NodeTotalMachineServices++;
+      break;
+     case NODE_TOTAL_SWITCH_SERVICES:
+      m_NodeTotalSwitchServices++;
+      break;
     default:
       ispd_error("Unknown node metrics flag (%d) or it may be the case the flag is correct but the argument is not of the required type.", flag);
     }
@@ -91,14 +97,22 @@ void NodeMetricsCollector::reportNodeMetrics() {
   if (MPI_SUCCESS != MPI_Reduce(&m_NodeTotalCommunicationWaitingTime, &gmc->m_GlobalTotalCommunicationWaitingTime, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_ROSS))
     ispd_error("Global total communication waiting time could not be reduced, exiting...");
 
-  /// Report to the master node the total processing services count.
-  if (MPI_SUCCESS != MPI_Reduce(&m_NodeTotalProcessingServices, &gmc->m_GlobalTotalProcessingServices, 1, MPI_UNSIGNED, MPI_SUM, 0, MPI_COMM_ROSS))
-    ispd_error("Global total processing services could not be reduced, exiting...");
-
-  /// Report to the master node the total communication services count.
-  if (MPI_SUCCESS != MPI_Reduce(&m_NodeTotalCommunicationServices, &gmc->m_GlobalTotalCommunicationServices, 1, MPI_UNSIGNED, MPI_SUM, 0, MPI_COMM_ROSS))
-    ispd_error("Global total communication services could not be reduced, exiting...");
-  
+  /// Report to the master node the total master services count.
+  if (MPI_SUCCESS != MPI_Reduce(&m_NodeTotalMasterServices, &gmc->m_GlobalTotalMasterServices, 1, MPI_UNSIGNED, MPI_SUM, 0, MPI_COMM_ROSS))
+    ispd_error("Global total master services could not be reduced, exiting...");
+ 
+  /// Report to the master node the total link services count.
+  if (MPI_SUCCESS != MPI_Reduce(&m_NodeTotalLinkServices, &gmc->m_GlobalTotalLinkServices, 1, MPI_UNSIGNED, MPI_SUM, 0, MPI_COMM_ROSS))
+    ispd_error("Global total link services could not be reduced, exiting...");
+ 
+  /// Report to the master node the total machine services count.
+  if (MPI_SUCCESS != MPI_Reduce(&m_NodeTotalMachineServices, &gmc->m_GlobalTotalMachineServices, 1, MPI_UNSIGNED, MPI_SUM, 0, MPI_COMM_ROSS))
+    ispd_error("Global total machine services could not be reduced, exiting...");
+ 
+  /// Report to the master node the total switch services count.
+  if (MPI_SUCCESS != MPI_Reduce(&m_NodeTotalSwitchServices, &gmc->m_GlobalTotalSwitchServices, 1, MPI_UNSIGNED, MPI_SUM, 0, MPI_COMM_ROSS))
+    ispd_error("Global total switch services could not be reduced, exiting...");
+ 
   /// Report to the master node the total completed tasks.
   if (MPI_SUCCESS != MPI_Reduce(&m_NodeTotalCompletedTasks, &gmc->m_GlobalTotalCompletedTasks, 1, MPI_UNSIGNED, MPI_SUM, 0, MPI_COMM_ROSS))
     ispd_error("Global total completed tasks could not be reduced, exiting...");
@@ -110,8 +124,8 @@ void GlobalMetricsCollector::reportGlobalMetrics() {
   if (g_tw_mynode)
     return;
 
-  const double avgProcessingWaitingTime = m_GlobalTotalProcessingWaitingTime / m_GlobalTotalProcessingServices;
-  const double avgCommunicationWaitingTime = m_GlobalTotalCommunicationWaitingTime / m_GlobalTotalCommunicationServices;
+  const double avgProcessingWaitingTime = m_GlobalTotalProcessingWaitingTime / m_GlobalTotalMachineServices;
+  const double avgCommunicationWaitingTime = m_GlobalTotalCommunicationWaitingTime / m_GlobalTotalLinkServices;
 
   ispd_log(LOG_INFO, "");
   ispd_log(LOG_INFO, "Global Simulation Time...........: %lf seconds.", m_GlobalSimulationTime);
@@ -121,8 +135,10 @@ void GlobalMetricsCollector::reportGlobalMetrics() {
   ispd_log(LOG_INFO, " Total Communicated MBits.........: %lf MBits.", m_GlobalTotalCommunicatedMBits);
   ispd_log(LOG_INFO, " Total Processing Waiting Time....: %lf seconds.", m_GlobalTotalProcessingWaitingTime);
   ispd_log(LOG_INFO, " Total Communication Waiting Time.: %lf seconds.", m_GlobalTotalCommunicationWaitingTime);
-  ispd_log(LOG_INFO, " Total Processing Services........: %u services.", m_GlobalTotalProcessingServices);
-  ispd_log(LOG_INFO, " Total Communication Services.....: %u services.", m_GlobalTotalCommunicationServices);
+  ispd_log(LOG_INFO, " Total Master Services............: %u services.", m_GlobalTotalMasterServices);
+  ispd_log(LOG_INFO, " Total Link Services..............: %u services.", m_GlobalTotalLinkServices);
+  ispd_log(LOG_INFO, " Total Machine Services...........: %u services.", m_GlobalTotalMachineServices);
+  ispd_log(LOG_INFO, " Total Switch Services............: %u services.", m_GlobalTotalSwitchServices);
   ispd_log(LOG_INFO, " Total Completed Tasks............: %u tasks.", m_GlobalTotalCompletedTasks);
   ispd_log(LOG_INFO, "");
   ispd_log(LOG_INFO, "Average Metrics");

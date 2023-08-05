@@ -104,7 +104,7 @@ struct master {
 
   static void finish(master_state *s, tw_lp *lp) {
     ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_COMPLETED_TASKS, s->metrics.completed_tasks);
-
+    ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_MASTER_SERVICES);
       std::printf(
           "Master Metrics (%lu)\n"
           " - Completed Tasks: %u tasks (%lu).\n"

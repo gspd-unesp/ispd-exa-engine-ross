@@ -8,15 +8,19 @@ enum NodeMetricsFlag {
   NODE_TOTAL_PROCESSED_MFLOPS,
   NODE_TOTAL_PROCESSING_WAITING_TIME,
   NODE_TOTAL_COMMUNICATION_WAITING_TIME,
-  NODE_TOTAL_PROCESSING_SERVICES,
-  NODE_TOTAL_COMMUNICATION_SERVICES,
+  NODE_TOTAL_MASTER_SERVICES,
+  NODE_TOTAL_LINK_SERVICES,
+  NODE_TOTAL_MACHINE_SERVICES,
+  NODE_TOTAL_SWITCH_SERVICES,
   NODE_TOTAL_COMPLETED_TASKS,
   NODE_SIMULATION_TIME
 };
 
 class NodeMetricsCollector {
-  unsigned m_NodeTotalProcessingServices;
-  unsigned m_NodeTotalCommunicationServices;
+  unsigned m_NodeTotalMasterServices;
+  unsigned m_NodeTotalLinkServices;
+  unsigned m_NodeTotalMachineServices;
+  unsigned m_NodeTotalSwitchServices;
   unsigned m_NodeTotalCompletedTasks;
 
   double m_NodeTotalCommunicatedMBits;
@@ -35,8 +39,10 @@ public:
 class GlobalMetricsCollector {
   friend NodeMetricsCollector;
 
-  unsigned m_GlobalTotalProcessingServices;
-  unsigned m_GlobalTotalCommunicationServices;
+  unsigned m_GlobalTotalMasterServices;
+  unsigned m_GlobalTotalLinkServices;
+  unsigned m_GlobalTotalMachineServices;
+  unsigned m_GlobalTotalSwitchServices;
   unsigned m_GlobalTotalCompletedTasks;
 
   double m_GlobalTotalCommunicatedMBits;
