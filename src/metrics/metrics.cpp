@@ -47,7 +47,8 @@ void NodeMetricsCollector::notifyMetric(const enum NodeMetricsFlag flag, const d
 }
 
 void NodeMetricsCollector::reportNodeMetrics() {
-  ispd::metrics::GlobalMetricsCollector *gmc = ispd::global_metrics::g_GlobalMetricsCollector;
+  /// An alias for the global metrics collector.
+  auto gmc = ispd::global_metrics::g_GlobalMetricsCollector;
 
   /// Report to the master node the simulation time of this node.
   if (MPI_SUCCESS != MPI_Reduce(&m_NodeSimulationTime, &gmc->m_GlobalSimulationTime, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_ROSS))
