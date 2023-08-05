@@ -43,6 +43,8 @@ void NodeMetricsCollector::notifyMetric(const enum NodeMetricsFlag flag, const d
       /// the service center.
       m_NodeSimulationTime = std::max(m_NodeSimulationTime, value);
       break;
+    default:
+      ispd_error("Unknown node metrics flag (%d).", flag);
   }
 }
 
