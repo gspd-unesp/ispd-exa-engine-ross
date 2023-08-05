@@ -7,6 +7,7 @@
 #include <ispd/debug/debug.hpp>
 #include <ispd/model/builder.hpp>
 #include <ispd/routing/routing.hpp>
+#include <ispd/metrics/metrics.hpp>
 #include <ispd/workload/workload.hpp>
 #include <ispd/scheduler/scheduler.hpp>
 #include <ispd/scheduler/round_robin.hpp>
@@ -102,6 +103,8 @@ struct master {
   }
 
   static void finish(master_state *s, tw_lp *lp) {
+    ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_COMPLETED_TASKS, s->metrics.completed_tasks);
+
       std::printf(
           "Master Metrics (%lu)\n"
           " - Completed Tasks: %u tasks (%lu).\n"

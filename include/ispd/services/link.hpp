@@ -205,7 +205,7 @@ struct link {
     ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_SIMULATION_TIME, lastActivityTime);
     ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_COMMUNICATED_MBITS, linkTotalCommunicatedMBits);
     ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_COMMUNICATION_WAITING_TIME, linkTotalCommunicationWaitingTime);
-    ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_COMMUNICATION_SERVICES, 0);
+    ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_COMMUNICATION_SERVICES);
 
     std::printf(
         "Link Queue Info & Metrics (%lu)\n"

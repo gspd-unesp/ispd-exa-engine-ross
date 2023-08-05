@@ -6,6 +6,7 @@
 
 namespace ispd::metrics {
 
+template <>
 void NodeMetricsCollector::notifyMetric(const enum NodeMetricsFlag flag, const double value) {
   switch (flag) {
     case NODE_TOTAL_PROCESSED_MFLOPS:
@@ -32,20 +33,38 @@ void NodeMetricsCollector::notifyMetric(const enum NodeMetricsFlag flag, const d
       /// services that have been simulated in this node.
       m_NodeTotalCommunicationWaitingTime += value;
       break;
-    case NODE_TOTAL_PROCESSING_SERVICES:
-      m_NodeTotalProcessingServices++;
-      break;
-    case NODE_TOTAL_COMMUNICATION_SERVICES:
-      m_NodeTotalCommunicationServices++;
-      break;
     case NODE_SIMULATION_TIME:
       /// In this case, the value acts as the last activity time of
       /// the service center.
       m_NodeSimulationTime = std::max(m_NodeSimulationTime, value);
       break;
     default:
-      ispd_error("Unknown node metrics flag (%d).", flag);
+      ispd_error("Unknown node metrics flag (%d) or it may be the case the flag is correct but the argument is not of the required type.", flag);
   }
+}
+
+template <>
+void NodeMetricsCollector::notifyMetric(const enum NodeMetricsFlag flag, const unsigned value) {
+  switch (flag) {
+    case NODE_TOTAL_COMPLETED_TASKS:
+      m_NodeTotalCompletedTasks += value;
+      break;
+    default:
+      ispd_error("Unknown node metrics flag (%d) or it may be the case the flag is correct but the argument is not of the required type.", flag);
+  }
+}
+
+void NodeMetricsCollector::notifyMetric(const enum NodeMetricsFlag flag) {
+  switch (flag) {
+     case NODE_TOTAL_PROCESSING_SERVICES:
+      m_NodeTotalProcessingServices++;
+      break;
+    case NODE_TOTAL_COMMUNICATION_SERVICES:
+      m_NodeTotalCommunicationServices++;
+      break; 
+    default:
+      ispd_error("Unknown node metrics flag (%d) or it may be the case the flag is correct but the argument is not of the required type.", flag);
+    }
 }
 
 void NodeMetricsCollector::reportNodeMetrics() {
@@ -79,6 +98,10 @@ void NodeMetricsCollector::reportNodeMetrics() {
   /// Report to the master node the total communication services count.
   if (MPI_SUCCESS != MPI_Reduce(&m_NodeTotalCommunicationServices, &gmc->m_GlobalTotalCommunicationServices, 1, MPI_UNSIGNED, MPI_SUM, 0, MPI_COMM_ROSS))
     ispd_error("Global total communication services could not be reduced, exiting...");
+  
+  /// Report to the master node the total completed tasks.
+  if (MPI_SUCCESS != MPI_Reduce(&m_NodeTotalCompletedTasks, &gmc->m_GlobalTotalCompletedTasks, 1, MPI_UNSIGNED, MPI_SUM, 0, MPI_COMM_ROSS))
+    ispd_error("Global total completed tasks could not be reduced, exiting...");
 }
 
 void GlobalMetricsCollector::reportGlobalMetrics() {
@@ -100,6 +123,7 @@ void GlobalMetricsCollector::reportGlobalMetrics() {
   ispd_log(LOG_INFO, " Total Communication Waiting Time.: %lf seconds.", m_GlobalTotalCommunicationWaitingTime);
   ispd_log(LOG_INFO, " Total Processing Services........: %u services.", m_GlobalTotalProcessingServices);
   ispd_log(LOG_INFO, " Total Communication Services.....: %u services.", m_GlobalTotalCommunicationServices);
+  ispd_log(LOG_INFO, " Total Completed Tasks............: %u tasks.", m_GlobalTotalCompletedTasks);
   ispd_log(LOG_INFO, "");
   ispd_log(LOG_INFO, "Average Metrics");
   ispd_log(LOG_INFO, " Avg. Processing Waiting Time.....: %lf seconds.", avgProcessingWaitingTime);
@@ -113,9 +137,21 @@ namespace ispd::node_metrics {
 
   ispd::metrics::NodeMetricsCollector *g_NodeMetricsCollector = new ispd::metrics::NodeMetricsCollector();
 
+  template <>
   void notifyMetric(const enum ispd::metrics::NodeMetricsFlag flag, const double value) {
     /// Forward the notification to the node metrics collector.
     g_NodeMetricsCollector->notifyMetric(flag, value);
+  }
+
+  template <>
+  void notifyMetric(const enum ispd::metrics::NodeMetricsFlag flag, const unsigned value) {
+    /// Forward the notification to the node metrics collector.
+    g_NodeMetricsCollector->notifyMetric(flag, value);
+  }
+
+  void notifyMetric(const enum ispd::metrics::NodeMetricsFlag flag) {
+    /// Forward the notification to the node metrics collector.
+    g_NodeMetricsCollector->notifyMetric(flag);
   }
 
   void reportNodeMetrics() {
