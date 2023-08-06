@@ -214,6 +214,9 @@ struct link {
         s->metrics.upward_comm_time;
     const double linkTotalCommunicationWaitingTime = s->metrics.downward_waiting_time +
         s->metrics.upward_waiting_time;
+    const double downwardIdleness = 1.0 - (s->metrics.downward_comm_time - s->metrics.downward_waiting_time) / s->metrics.downward_comm_time;
+    const double upwardIdleness = 1.0 - (s->metrics.upward_comm_time - s->metrics.upward_waiting_time) / s->metrics.upward_comm_time;
+
 
     /// Report to the node`s metrics collector the last activity time
     /// of the machine in the simulation.
@@ -228,20 +231,24 @@ struct link {
         " - Downward Communicated Mbits..: %lf Mbits (%lu).\n"
         " - Downward Communicated Packets: %u packets (%lu).\n"
         " - Downward Waiting Time........: %lf seconds (%lu).\n"
+        " - Downward Idleness............: %lf% (%lu).\n"
         " - Downward Next Avail. Time....: %lf seconds (%lu).\n"
         " - Upward Communicated Mbits....: %lf Mbits (%lu).\n"
         " - Upward Communicated Packets..: %u packets (%lu).\n"
         " - Upward Waiting Time..........: %lf seconds (%lu).\n"
+        " - Upward Idleness..............: %lf% (%lu).\n"
         " - Upward Next Avail. Time......: %lf seconds (%lu).\n"
         "\n",
         lp->gid, 
         s->metrics.downward_comm_mbits, lp->gid,
         s->metrics.downward_comm_packets, lp->gid,
         s->metrics.downward_waiting_time, lp->gid,
+        downwardIdleness * 100.0, lp->gid,
         s->downward_next_available_time, lp->gid,
         s->metrics.upward_comm_mbits, lp->gid,
         s->metrics.upward_comm_packets, lp->gid,
         s->metrics.upward_waiting_time, lp->gid,
+        upwardIdleness * 100.0, lp->gid,
         s->upward_next_available_time, lp->gid
     );
   }

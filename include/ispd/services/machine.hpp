@@ -5,6 +5,7 @@
 #include <vector>
 #include <limits>
 #include <algorithm>
+#include <numeric>
 #include <ispd/message/message.hpp>
 #include <ispd/routing/routing.hpp>
 #include <ispd/model/builder.hpp>
@@ -175,6 +176,8 @@ struct machine {
 
   static void finish(machine_state *s, tw_lp *lp) {
     const double lastActivityTime = *std::max_element(s->cores_free_time.cbegin(), s->cores_free_time.cend());
+    const double totalCpuTime = std::accumulate(s->cores_free_time.cbegin(), s->cores_free_time.cend(), 0.0);
+    const double idleness = (totalCpuTime - s->metrics.proc_time) / totalCpuTime;
 
     /// Report to the node`s metrics collector this machine`s metrics.
     ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_SIMULATION_TIME, lastActivityTime);
@@ -185,23 +188,25 @@ struct machine {
     ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_CPU_CORES, static_cast<unsigned>(s->cores_free_time.size()));
     ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_PROCESSING_TIME, s->metrics.proc_time);
 
-      std::printf(
-          "Machine Metrics (%lu)\n"
-          " - Last Activity Time..: %lf seconds (%lu).\n"
-          " - Processed MFLOPS....: %lf MFLOPS (%lu).\n"
-          " - Processed Tasks.....: %u tasks (%lu).\n"
-          " - Forwarded Packets...: %u packets (%lu).\n"
-          " - Waiting Time........: %lf seconds (%lu).\n"
-          " - Avg. Processing Time: %lf seconds (%lu).\n"
-          "\n",
-          lp->gid, 
-          lastActivityTime, lp->gid,
-          s->metrics.proc_mflops, lp->gid,
-          s->metrics.proc_tasks, lp->gid,
-          s->metrics.forwarded_packets, lp->gid,
-          s->metrics.waiting_time, lp->gid,
-          s->metrics.proc_time / s->cores_free_time.size(), lp->gid
-      );
+    std::printf(
+        "Machine Metrics (%lu)\n"
+        " - Last Activity Time: %lf seconds (%lu).\n"
+        " - Processed MFLOPS..: %lf MFLOPS (%lu).\n"
+        " - Processed Tasks...: %u tasks (%lu).\n"
+        " - Forwarded Packets.: %u packets (%lu).\n"
+        " - Waiting Time......: %lf seconds (%lu).\n"
+        " - Processing Time...: %lf seconds (%lu).\n"
+        " - Idleness..........: %lf% (%lu).\n"
+        "\n",
+        lp->gid, 
+        lastActivityTime, lp->gid,
+        s->metrics.proc_mflops, lp->gid,
+        s->metrics.proc_tasks, lp->gid,
+        s->metrics.forwarded_packets, lp->gid,
+        s->metrics.waiting_time, lp->gid,
+        lastActivityTime * (1.0 - idleness), lp->gid,
+        idleness * 100.0, lp->gid
+    );
   }
 };
 
