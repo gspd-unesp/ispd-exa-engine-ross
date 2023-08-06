@@ -13,6 +13,12 @@ namespace ispd {
 namespace services {
 
 struct link_metrics {
+  /// \brief The amount of communication time performed by the upward link.
+  double upward_comm_time;
+
+  /// \brief The amount of communication time performed by the downward link.
+  double downward_comm_time;
+
   /// \brief The amount of communicated Mbits by the upward link.
   double upward_comm_mbits;
 
@@ -69,6 +75,8 @@ struct link {
     service_initializer(s);
     
     /// Initialize link's metrics.
+    s->metrics.upward_comm_time = 0;
+    s->metrics.downward_comm_time = 0;
     s->metrics.upward_comm_mbits = 0;
     s->metrics.downward_comm_mbits = 0;
     s->metrics.upward_comm_packets = 0;
@@ -111,12 +119,14 @@ struct link {
 
     /// Update the downward link's metrics.
     if (msg->downward_direction) {
+      s->metrics.downward_comm_time += comm_time;
       s->metrics.downward_comm_mbits += comm_size;
       s->metrics.downward_comm_packets++;
       s->metrics.downward_waiting_time += waiting_delay;
     }
     /// Update the upward link's metrics.
     else {
+      s->metrics.upward_comm_time += comm_time;
       s->metrics.upward_comm_mbits += comm_size;
       s->metrics.upward_comm_packets++;
       s->metrics.upward_waiting_time += waiting_delay;
@@ -167,6 +177,7 @@ struct link {
 
     /// Fetch the communication size and calculates the communication time.
     const double comm_size = msg->task.comm_size;
+    const double comm_time = time_to_comm(&s->conf, comm_size);
     const double next_available_time = msg->saved_link_next_available_time;
     const double waiting_delay = msg->saved_waiting_time;
 
@@ -176,6 +187,7 @@ struct link {
       s->downward_next_available_time = next_available_time;
 
       /// Reverse the downward link's metrics.
+      s->metrics.downward_comm_time -= comm_time;
       s->metrics.downward_comm_mbits -= comm_size;
       s->metrics.downward_comm_packets--;
       s->metrics.downward_waiting_time -= waiting_delay;
@@ -186,6 +198,7 @@ struct link {
       s->upward_next_available_time = next_available_time;
 
       /// Reverse the upward link's metrics.
+      s->metrics.upward_comm_time -= comm_time;
       s->metrics.upward_comm_mbits -= comm_size;
       s->metrics.upward_comm_packets--;
       s->metrics.upward_waiting_time -= waiting_delay;
@@ -197,6 +210,8 @@ struct link {
         s->upward_next_available_time);
     const double linkTotalCommunicatedMBits = s->metrics.downward_comm_mbits +
         s->metrics.upward_comm_mbits;
+    const double linkTotalCommunicationTime = s->metrics.downward_comm_time +
+        s->metrics.upward_comm_time;
     const double linkTotalCommunicationWaitingTime = s->metrics.downward_waiting_time +
         s->metrics.upward_waiting_time;
 
@@ -206,6 +221,7 @@ struct link {
     ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_COMMUNICATED_MBITS, linkTotalCommunicatedMBits);
     ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_COMMUNICATION_WAITING_TIME, linkTotalCommunicationWaitingTime);
     ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_LINK_SERVICES);
+    ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_COMMUNICATION_TIME, linkTotalCommunicationTime);
 
     std::printf(
         "Link Queue Info & Metrics (%lu)\n"

@@ -6,7 +6,9 @@ namespace ispd::metrics {
 enum NodeMetricsFlag { 
   NODE_TOTAL_COMMUNICATED_MBITS,
   NODE_TOTAL_PROCESSED_MFLOPS,
+  NODE_TOTAL_PROCESSING_TIME,
   NODE_TOTAL_PROCESSING_WAITING_TIME,
+  NODE_TOTAL_COMMUNICATION_TIME,
   NODE_TOTAL_COMMUNICATION_WAITING_TIME,
   NODE_TOTAL_MASTER_SERVICES,
   NODE_TOTAL_LINK_SERVICES,
@@ -30,7 +32,9 @@ class NodeMetricsCollector {
 
   double m_NodeTotalCommunicatedMBits;
   double m_NodeTotalProcessedMFlops;
+  double m_NodeTotalProcessingTime;
   double m_NodeTotalProcessingWaitingTime;
+  double m_NodeTotalCommunicationTime;
   double m_NodeTotalCommunicationWaitingTime;
 	double m_NodeSimulationTime;
 public:
@@ -55,7 +59,9 @@ class GlobalMetricsCollector {
 
   double m_GlobalTotalCommunicatedMBits;
   double m_GlobalTotalProcessedMFlops;
+  double m_GlobalTotalProcessingTime;
   double m_GlobalTotalProcessingWaitingTime;
+  double m_GlobalTotalCommunicationTime;
   double m_GlobalTotalCommunicationWaitingTime;
   double m_GlobalSimulationTime;
 public:

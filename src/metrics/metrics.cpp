@@ -38,6 +38,18 @@ void NodeMetricsCollector::notifyMetric(const enum NodeMetricsFlag flag, const d
       /// addition of all computational power of the processing services that have been
       /// simulated in this node.
       m_NodeTotalComputationalPower += value;
+    case NODE_TOTAL_PROCESSING_TIME:
+      /// In this case, the total processing time in this node is just the
+      /// addition of all processing time of the processing services that have been
+      /// simulated in this node.
+      m_NodeTotalProcessingTime += value;
+      break;
+     case NODE_TOTAL_COMMUNICATION_TIME:
+      /// In this case, the total communication time in this node is just the
+      /// addition of all communication time of the communication services that have been
+      /// simulated in this node.
+      m_NodeTotalCommunicationTime += value;
+      break;
     case NODE_SIMULATION_TIME:
       /// In this case, the value acts as the last activity time of
       /// the service center.
@@ -132,6 +144,15 @@ void NodeMetricsCollector::reportNodeMetrics() {
   /// Report to the master node the total CPU cores.
   if (MPI_SUCCESS != MPI_Reduce(&m_NodeTotalCpuCores, &gmc->m_GlobalTotalCpuCores, 1, MPI_UNSIGNED, MPI_SUM, 0, MPI_COMM_ROSS))
     ispd_error("Global total cpu cores could not be reduced, exiting...");
+
+  /// Report to the master node the processing time.
+  if (MPI_SUCCESS != MPI_Reduce(&m_NodeTotalProcessingTime, &gmc->m_GlobalTotalProcessingTime, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_ROSS))
+    ispd_error("Global total processing time could not be reduced, exiting...");
+
+  /// Report to the master node the communication size.
+  if (MPI_SUCCESS != MPI_Reduce(&m_NodeTotalCommunicationTime, &gmc->m_GlobalTotalCommunicationTime, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_ROSS))
+    ispd_error("Global total communication time could not be reduced, exiting...");
+
 }
 
 void GlobalMetricsCollector::reportGlobalMetrics() {
@@ -140,30 +161,34 @@ void GlobalMetricsCollector::reportGlobalMetrics() {
   if (g_tw_mynode)
     return;
 
+  const double avgProcessingTime = m_GlobalTotalProcessingTime / m_GlobalTotalCpuCores;
   const double avgProcessingWaitingTime = m_GlobalTotalProcessingWaitingTime / m_GlobalTotalMachineServices;
+  const double avgCommunicationTime = m_GlobalTotalCommunicationTime / m_GlobalTotalLinkServices;
   const double avgCommunicationWaitingTime = m_GlobalTotalCommunicationWaitingTime / m_GlobalTotalLinkServices;
 
   ispd_log(LOG_INFO, "");
   ispd_log(LOG_INFO, "Global Simulation Time...........: %lf seconds.", m_GlobalSimulationTime);
   ispd_log(LOG_INFO, "");
   ispd_log(LOG_INFO, "Total Metrics");
-  ispd_log(LOG_INFO, " Total Processed MFLOPS...........: %lf MFLOPS.", m_GlobalTotalProcessedMFlops);
-  ispd_log(LOG_INFO, " Total Communicated MBits.........: %lf MBits.", m_GlobalTotalCommunicatedMBits);
-  ispd_log(LOG_INFO, " Total Processing Waiting Time....: %lf seconds.", m_GlobalTotalProcessingWaitingTime);
-  ispd_log(LOG_INFO, " Total Communication Waiting Time.: %lf seconds.", m_GlobalTotalCommunicationWaitingTime);
-  ispd_log(LOG_INFO, " Total Master Services............: %u services.", m_GlobalTotalMasterServices);
-  ispd_log(LOG_INFO, " Total Link Services..............: %u services.", m_GlobalTotalLinkServices);
-  ispd_log(LOG_INFO, " Total Machine Services...........: %u services.", m_GlobalTotalMachineServices);
-  ispd_log(LOG_INFO, " Total Switch Services............: %u services.", m_GlobalTotalSwitchServices);
-  ispd_log(LOG_INFO, " Total Completed Tasks............: %u tasks.", m_GlobalTotalCompletedTasks);
+  ispd_log(LOG_INFO, " Total Processed MFLOPS..........: %lf MFLOPS.", m_GlobalTotalProcessedMFlops);
+  ispd_log(LOG_INFO, " Total Communicated MBits........: %lf MBits.", m_GlobalTotalCommunicatedMBits);
+  ispd_log(LOG_INFO, " Total Processing Waiting Time...: %lf seconds.", m_GlobalTotalProcessingWaitingTime);
+  ispd_log(LOG_INFO, " Total Communication Waiting Time: %lf seconds.", m_GlobalTotalCommunicationWaitingTime);
+  ispd_log(LOG_INFO, " Total Master Services...........: %u services.", m_GlobalTotalMasterServices);
+  ispd_log(LOG_INFO, " Total Link Services.............: %u services.", m_GlobalTotalLinkServices);
+  ispd_log(LOG_INFO, " Total Machine Services..........: %u services.", m_GlobalTotalMachineServices);
+  ispd_log(LOG_INFO, " Total Switch Services...........: %u services.", m_GlobalTotalSwitchServices);
+  ispd_log(LOG_INFO, " Total Completed Tasks...........: %u tasks.", m_GlobalTotalCompletedTasks);
   ispd_log(LOG_INFO, "");
   ispd_log(LOG_INFO, "Average Metrics");
-  ispd_log(LOG_INFO, " Avg. Processing Waiting Time.....: %lf seconds.", avgProcessingWaitingTime);
-  ispd_log(LOG_INFO, " Avg. Communication Waiting Time..: %lf seconds.", avgCommunicationWaitingTime);
+  ispd_log(LOG_INFO, " Avg. Processing Time............: %lf seconds.", avgProcessingTime);
+  ispd_log(LOG_INFO, " Avg. Processing Waiting Time....: %lf seconds.", avgProcessingWaitingTime);
+  ispd_log(LOG_INFO, " Avg. Communication Time.........: %lf seconds.", avgCommunicationTime);
+  ispd_log(LOG_INFO, " Avg. Communication Waiting Time.: %lf seconds.", avgCommunicationWaitingTime);
   ispd_log(LOG_INFO, "");
   ispd_log(LOG_INFO, "System Metrics");
-  ispd_log(LOG_INFO, " Total Computational Power........: %lf MFLOPS.", m_GlobalTotalComputationalPower);
-  ispd_log(LOG_INFO, " Total CPU Cores..................: %u cores.", m_GlobalTotalCpuCores);
+  ispd_log(LOG_INFO, " Total Computational Power.......: %lf MFLOPS.", m_GlobalTotalComputationalPower);
+  ispd_log(LOG_INFO, " Total CPU Cores.................: %u cores.", m_GlobalTotalCpuCores);
   ispd_log(LOG_INFO, "");
 }
 
