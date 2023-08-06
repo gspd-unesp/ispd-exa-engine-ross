@@ -17,6 +17,7 @@ enum NodeMetricsFlag {
   NODE_TOTAL_COMPLETED_TASKS,
   NODE_TOTAL_COMPUTATIONAL_POWER,
   NODE_TOTAL_CPU_CORES,
+  NODE_TOTAL_TURNAROUND_TIME,
   NODE_SIMULATION_TIME
 };
 
@@ -36,6 +37,7 @@ class NodeMetricsCollector {
   double m_NodeTotalProcessingWaitingTime;
   double m_NodeTotalCommunicationTime;
   double m_NodeTotalCommunicationWaitingTime;
+  double m_NodeTotalTurnaroundTime;
 	double m_NodeSimulationTime;
 public:
   void notifyMetric(const enum NodeMetricsFlag flag);
@@ -63,6 +65,7 @@ class GlobalMetricsCollector {
   double m_GlobalTotalProcessingWaitingTime;
   double m_GlobalTotalCommunicationTime;
   double m_GlobalTotalCommunicationWaitingTime;
+  double m_GlobalTotalTurnaroundTime;
   double m_GlobalSimulationTime;
 public:
   void reportGlobalMetrics();

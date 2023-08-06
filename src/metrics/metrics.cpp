@@ -50,6 +50,12 @@ void NodeMetricsCollector::notifyMetric(const enum NodeMetricsFlag flag, const d
       /// simulated in this node.
       m_NodeTotalCommunicationTime += value;
       break;
+    case NODE_TOTAL_TURNAROUND_TIME:
+      /// In this case, the total turnaround time in this node is just the
+      /// addition of all turnaround times of the completed tasks that have been
+      /// completed in this node.
+      m_NodeTotalTurnaroundTime += value;
+      break;
     case NODE_SIMULATION_TIME:
       /// In this case, the value acts as the last activity time of
       /// the service center.
@@ -153,6 +159,9 @@ void NodeMetricsCollector::reportNodeMetrics() {
   if (MPI_SUCCESS != MPI_Reduce(&m_NodeTotalCommunicationTime, &gmc->m_GlobalTotalCommunicationTime, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_ROSS))
     ispd_error("Global total communication time could not be reduced, exiting...");
 
+  /// Report to the master node the turnaround time.
+  if (MPI_SUCCESS != MPI_Reduce(&m_NodeTotalTurnaroundTime, &gmc->m_GlobalTotalTurnaroundTime, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_ROSS))
+    ispd_error("Global total turnaround time could not be reduced, exiting...");
 }
 
 void GlobalMetricsCollector::reportGlobalMetrics() {
@@ -165,6 +174,7 @@ void GlobalMetricsCollector::reportGlobalMetrics() {
   const double avgProcessingWaitingTime = m_GlobalTotalProcessingWaitingTime / m_GlobalTotalMachineServices;
   const double avgCommunicationTime = m_GlobalTotalCommunicationTime / m_GlobalTotalLinkServices;
   const double avgCommunicationWaitingTime = m_GlobalTotalCommunicationWaitingTime / m_GlobalTotalLinkServices;
+  const double avgTotalTurnaroundTime = m_GlobalTotalTurnaroundTime / m_GlobalTotalCompletedTasks;
 
   ispd_log(LOG_INFO, "");
   ispd_log(LOG_INFO, "Global Simulation Time...........: %lf seconds.", m_GlobalSimulationTime);
@@ -185,6 +195,7 @@ void GlobalMetricsCollector::reportGlobalMetrics() {
   ispd_log(LOG_INFO, " Avg. Processing Waiting Time....: %lf seconds.", avgProcessingWaitingTime);
   ispd_log(LOG_INFO, " Avg. Communication Time.........: %lf seconds.", avgCommunicationTime);
   ispd_log(LOG_INFO, " Avg. Communication Waiting Time.: %lf seconds.", avgCommunicationWaitingTime);
+  ispd_log(LOG_INFO, " Avg. Turnaround Time............: %lf seconds.", avgTotalTurnaroundTime);
   ispd_log(LOG_INFO, "");
   ispd_log(LOG_INFO, "System Metrics");
   ispd_log(LOG_INFO, " Total Computational Power.......: %lf MFLOPS.", m_GlobalTotalComputationalPower);
