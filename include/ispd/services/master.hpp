@@ -7,6 +7,7 @@
 #include <ispd/debug/debug.hpp>
 #include <ispd/model/builder.hpp>
 #include <ispd/routing/routing.hpp>
+#include <ispd/metrics/metrics.hpp>
 #include <ispd/workload/workload.hpp>
 #include <ispd/scheduler/scheduler.hpp>
 #include <ispd/scheduler/round_robin.hpp>
@@ -17,6 +18,9 @@ namespace services {
 struct master_metrics {
   /// \brief Amount of cmpleted tasks scheduled by the master.
   unsigned completed_tasks;
+  
+  /// \brief Sum of all turnaround times of completed tasks.
+  double total_turnaround_time;
 };
 
 struct master_state {
@@ -54,6 +58,7 @@ struct master {
 
     /// Initialize the metrics.
     s->metrics.completed_tasks = 0;
+    s->metrics.total_turnaround_time = 0;
 
     /// Send a generate message to itself.
     tw_event *const e = tw_event_new(lp->gid, tw_rand_exponential(lp->rng, 0.1), lp);
@@ -102,12 +107,21 @@ struct master {
   }
 
   static void finish(master_state *s, tw_lp *lp) {
-      std::printf(
-          "Master Metrics (%lu)\n"
-          " - Completed Tasks: %u tasks (%lu).\n"
-          "\n",
-          lp->gid, s->metrics.completed_tasks, lp->gid
-      );
+    ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_COMPLETED_TASKS, s->metrics.completed_tasks);
+    ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_MASTER_SERVICES);
+    ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_TURNAROUND_TIME, s->metrics.total_turnaround_time);
+
+    const double avgTurnaroundTime = s->metrics.total_turnaround_time / s->metrics.completed_tasks;
+
+    std::printf(
+        "Master Metrics (%lu)\n"
+        " - Completed Tasks.....: %u tasks (%lu).\n"
+        " - Avg. Turnaround Time: %lf seconds (%lu).\n"
+        "\n",
+        lp->gid,
+        s->metrics.completed_tasks, lp->gid,
+        avgTurnaroundTime, lp->gid
+    );
   }
 
 private:
@@ -133,6 +147,7 @@ private:
 
     m->task.origin = lp->gid;
     m->task.dest = scheduled_slave_id;
+    m->task.submit_time = tw_now(lp);
     m->route_offset = 1;
     m->previous_service_id = lp->gid;
     m->downward_direction = 1;
@@ -168,13 +183,24 @@ private:
   }
 
   static void arrival(master_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
+    /// Calculate the end time of the task.
+    msg->task.end_time = tw_now(lp);
+
+    /// Calculate the task`s turnaround time.
+    const double turnaround_time = msg->task.end_time - msg->task.submit_time;
+
     /// Update the master's metrics.
     s->metrics.completed_tasks++;
+    s->metrics.total_turnaround_time += turnaround_time;
   }
 
   static void arrival_rc(master_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
+    /// Calculate the task`s turnaround time.
+    const double turnaround_time = msg->task.end_time - msg->task.submit_time;
+
     /// Reverse the master's metrics.
     s->metrics.completed_tasks--;
+    s->metrics.total_turnaround_time -= turnaround_time;
   }
 
 };

@@ -1,6 +1,7 @@
 #ifndef ISPD_LOG_HPP
 #define ISPD_LOG_HPP
 
+#include <cstdio>
 #include <ispd/debug/debug.hpp>
 
 #define ispd_log(level, ...) ispd::log::__ispd_log(level, __FILE__, __LINE__, __VA_ARGS__);

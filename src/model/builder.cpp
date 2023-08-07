@@ -52,8 +52,7 @@ void SimulationModel::registerMachine(const tw_lpid gid, const double power,
         static_cast<ispd::services::machine_state *>(state);
 
     /// Initialize machine's configuration.
-    s->conf.power = power;
-    s->conf.load = load;
+    s->conf = ispd::services::MachineConfiguration(power, load, coreCount);
     s->cores_free_time.resize(coreCount, 0.0);
   });
 

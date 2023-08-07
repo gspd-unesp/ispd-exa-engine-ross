@@ -12,6 +12,9 @@ struct task {
 
   tw_lpid origin;
   tw_lpid dest;
+  
+  double submit_time;
+  double end_time;
 };
 
 }; // namespace customer

@@ -2,6 +2,7 @@
 #define ISPD_ROUTING_HPP
 
 #include <memory>
+#include <cstdint>
 #include <fstream>
 #include <unordered_map>
 #include <ispd/log/log.hpp>

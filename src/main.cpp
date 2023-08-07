@@ -1,4 +1,4 @@
-#include <iostream>
+#include <iostream> 
 #include <memory>
 #include <ross.h>
 #include <ross-extern.h>
@@ -11,6 +11,7 @@
 #include <ispd/services/machine.hpp>
 #include <ispd/message/message.hpp>
 #include <ispd/routing/routing.hpp>
+#include <ispd/metrics/metrics.hpp>
 
 static unsigned g_star_machine_amount = 10;
 static unsigned g_star_task_amount = 100;
@@ -75,7 +76,7 @@ int main(int argc, char **argv) {
 
   ispd::this_model::registerMaster(
       0, std::move(slaves), new ispd::scheduler::round_robin,
-      ispd::workload::uniform(g_star_task_amount, 500.0, 1000.0, 200.0, 250.0));
+      ispd::workload::constant(g_star_task_amount, 1000.0, 80.0));
 
   /// Registers service initializers for the links.
   for (tw_lpid link_id = 1; link_id <= highest_link_id; link_id += 2)
@@ -121,7 +122,7 @@ int main(int argc, char **argv) {
       /// Set the links and machines.
       for (unsigned i = 1; i < nlp_per_pe; i++) {
         if (current_gid > highest_machine_id) {
-          tw_lp_settype(i, &lps_type[3]);
+          tw_lp_settype(i, &lps_type[4]);
 
           dummy_count++;
           current_gid++;
@@ -138,7 +139,7 @@ int main(int argc, char **argv) {
       /// Set the links and machines.
       for (unsigned i = 0; i < nlp_per_pe; i++) {
         if (current_gid > highest_machine_id) {
-          tw_lp_settype(i, &lps_type[3]);
+          tw_lp_settype(i, &lps_type[4]);
 
           dummy_count++;
           current_gid++;
@@ -175,7 +176,10 @@ int main(int argc, char **argv) {
   }
 
   tw_run();
+  ispd::node_metrics::reportNodeMetrics();
   tw_end();
+
+  ispd::global_metrics::reportGlobalMetrics();
 
   return 0;
 }
