@@ -7,62 +7,45 @@
 namespace ispd::metrics {
 
 template <>
-void NodeMetricsCollector::notifyMetric(const enum NodeMetricsFlag flag, const double value) {
+void NodeMetricsCollector::notifyMetric(const NodeMetricsFlag flag, const double value) {
   switch (flag) {
     case NodeMetricsFlag::NODE_TOTAL_PROCESSED_MFLOPS:
-      /// In this case, the total processed MFOPS in this node is just the
-      /// addition of all processed MFLOPS by all processing services that
-      /// have been simulated in this node.
+      /// Updates total processed MFLOPS.
       m_NodeTotalProcessedMFlops += value;
       break;
     case NodeMetricsFlag::NODE_TOTAL_COMMUNICATED_MBITS:
-      /// In this case, the total communicated MBits in this node is just the
-      /// addition of all communicated MBits by all communication services that
-      /// have been simulated in this node.
-      m_NodeTotalCommunicatedMBits += value; 
+      /// Updates total communicated MBits.
+      m_NodeTotalCommunicatedMBits += value;
       break;
     case NodeMetricsFlag::NODE_TOTAL_PROCESSING_WAITING_TIME:
-      /// In this case, the total waiting time for processing in this node is
-      /// just the addition of all waiting time for processing by all processing
-      /// services that have been simulated in this node.
+      /// Updates total processing waiting time.
       m_NodeTotalProcessingWaitingTime += value;
       break;
     case NodeMetricsFlag::NODE_TOTAL_COMMUNICATION_WAITING_TIME:
-      /// In this case, the total waiting time for communication in this node is
-      /// just the addition of all waiting time for communication by all communication
-      /// services that have been simulated in this node.
+      /// Updates total communication waiting time.
       m_NodeTotalCommunicationWaitingTime += value;
       break;
     case NodeMetricsFlag::NODE_TOTAL_COMPUTATIONAL_POWER:
-      /// In this case, the total computational power in this node is just the
-      /// addition of all computational power of the processing services that have been
-      /// simulated in this node.
+      /// Updates total computational power.
       m_NodeTotalComputationalPower += value;
     case NodeMetricsFlag::NODE_TOTAL_PROCESSING_TIME:
-      /// In this case, the total processing time in this node is just the
-      /// addition of all processing time of the processing services that have been
-      /// simulated in this node.
+      /// Updates total processing time.
       m_NodeTotalProcessingTime += value;
       break;
      case NodeMetricsFlag::NODE_TOTAL_COMMUNICATION_TIME:
-      /// In this case, the total communication time in this node is just the
-      /// addition of all communication time of the communication services that have been
-      /// simulated in this node.
+      /// Updates total communication time.
       m_NodeTotalCommunicationTime += value;
       break;
     case NodeMetricsFlag::NODE_TOTAL_TURNAROUND_TIME:
-      /// In this case, the total turnaround time in this node is just the
-      /// addition of all turnaround times of the completed tasks that have been
-      /// completed in this node.
+      /// Updates total turnaround time.
       m_NodeTotalTurnaroundTime += value;
       break;
     case NodeMetricsFlag::NODE_SIMULATION_TIME:
-      /// In this case, the value acts as the last activity time of
-      /// the service center.
+      /// Updates simulation time.
       m_NodeSimulationTime = std::max(m_NodeSimulationTime, value);
       break;
     default:
-      ispd_error("Unknown node metrics flag (%d) or it may be the case the flag is correct but the argument is not of the required type.", flag);
+      ispd_error("Unknown node metrics flag (%d) or incorrect argument type.", flag);
   }
 }
 
@@ -70,9 +53,11 @@ template <>
 void NodeMetricsCollector::notifyMetric(const enum NodeMetricsFlag flag, const unsigned value) {
   switch (flag) {
     case NodeMetricsFlag::NODE_TOTAL_COMPLETED_TASKS:
+      /// Updates total completed tasks.
       m_NodeTotalCompletedTasks += value;
       break;
     case NodeMetricsFlag::NODE_TOTAL_CPU_CORES:
+      /// Updates the total CPU cores.
       m_NodeTotalCpuCores += value;
       break;
     default:
@@ -83,15 +68,19 @@ void NodeMetricsCollector::notifyMetric(const enum NodeMetricsFlag flag, const u
 void NodeMetricsCollector::notifyMetric(const enum NodeMetricsFlag flag) {
   switch (flag) {
      case NodeMetricsFlag::NODE_TOTAL_MASTER_SERVICES:
+      /// Updates the count of master services.
       m_NodeTotalMasterServices++;
       break;
      case NodeMetricsFlag::NODE_TOTAL_LINK_SERVICES:
+      /// Updates the count of link services.
       m_NodeTotalLinkServices++;
       break;
      case NodeMetricsFlag::NODE_TOTAL_MACHINE_SERVICES:
+      /// Updates the count of machine services.
       m_NodeTotalMachineServices++;
       break;
      case NodeMetricsFlag::NODE_TOTAL_SWITCH_SERVICES:
+      /// Updates the count of switch services.
       m_NodeTotalSwitchServices++;
       break;
     default:
