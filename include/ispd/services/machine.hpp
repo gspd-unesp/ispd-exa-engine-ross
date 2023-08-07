@@ -16,9 +16,22 @@ extern double g_NodeSimulationTime;
 namespace ispd {
 namespace services {
 
-struct machine_configuration {
-  double power;
-  double load;
+class MachineConfiguration {
+  double m_PowerPerCore;
+  double m_Load;
+  unsigned m_CoreCount;
+
+public:
+  MachineConfiguration(const double power, const double load, const unsigned coreCount)
+    : m_PowerPerCore(power / coreCount), m_Load(load), m_CoreCount(coreCount) {}
+
+  inline double timeToProcess(const double processingSize) {
+    return processingSize / ((1.0 - m_Load) * m_PowerPerCore);
+  }
+
+  inline double getPower() const { return m_PowerPerCore * m_CoreCount; }
+  inline double getPowerPerCore() const { return m_PowerPerCore; }
+  inline double getLoad() const { return m_Load; }
 };
 
 struct machine_metrics {
@@ -31,7 +44,7 @@ struct machine_metrics {
 
 struct machine_state {
   /// \brief Machine's Configuration.
-  machine_configuration conf;
+  MachineConfiguration conf;
 
   /// \brief Machine's Metrics.
   machine_metrics metrics;
@@ -41,11 +54,6 @@ struct machine_state {
 };
 
 struct machine {
-
-  static double time_to_proc(const machine_configuration *const conf,
-                             const double proc_size) {
-    return proc_size / ((1.0 - conf->load) * conf->power);
-  }
 
   static double least_core_time(const std::vector<double> &cores_free_time, unsigned &core_index) {
     double candidate = std::numeric_limits<double>::max();
@@ -90,7 +98,7 @@ struct machine {
     if (msg->task.dest == lp->gid) {
       /// Fetch the processing size and calculates the processing time.
       const double proc_size = msg->task.proc_size;
-      const double proc_time = time_to_proc(&s->conf, proc_size);
+      const double proc_time = s->conf.timeToProcess(proc_size);
 
       unsigned core_index;
       const double least_free_time = least_core_time(s->cores_free_time, core_index);
@@ -155,7 +163,7 @@ struct machine {
     /// Check if the task's destination is this machine.
     if (msg->task.dest == lp->gid) {
       const double proc_size = msg->task.proc_size;
-      const double proc_time = time_to_proc(&s->conf, proc_size);
+      const double proc_time = s->conf.timeToProcess(proc_size);
 
       const double least_free_time = msg->saved_core_next_available_time;
       const double waiting_delay = ROSS_MAX(0.0, least_free_time - tw_now(lp));
@@ -184,7 +192,7 @@ struct machine {
     ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_PROCESSED_MFLOPS, s->metrics.proc_mflops);
     ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_PROCESSING_WAITING_TIME, s->metrics.waiting_time);
     ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_MACHINE_SERVICES);
-    ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_COMPUTATIONAL_POWER, s->conf.power);
+    ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_COMPUTATIONAL_POWER, s->conf.getPower());
     ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_CPU_CORES, static_cast<unsigned>(s->cores_free_time.size()));
     ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_PROCESSING_TIME, s->metrics.proc_time);
 

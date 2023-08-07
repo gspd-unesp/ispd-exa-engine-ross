@@ -172,9 +172,13 @@ void GlobalMetricsCollector::reportGlobalMetrics() {
 
   const double avgProcessingTime = m_GlobalTotalProcessingTime / m_GlobalTotalCpuCores;
   const double avgProcessingWaitingTime = m_GlobalTotalProcessingWaitingTime / m_GlobalTotalMachineServices;
-  const double avgCommunicationTime = m_GlobalTotalCommunicationTime / m_GlobalTotalLinkServices;
-  const double avgCommunicationWaitingTime = m_GlobalTotalCommunicationWaitingTime / m_GlobalTotalLinkServices;
+  const double avgCommunicationTime = m_GlobalTotalCommunicationTime / m_GlobalTotalCompletedTasks;
+  const double avgCommunicationWaitingTime = m_GlobalTotalCommunicationWaitingTime / m_GlobalTotalCompletedTasks;
   const double avgTotalTurnaroundTime = m_GlobalTotalTurnaroundTime / m_GlobalTotalCompletedTasks;
+  const double maxComputationalPower = m_GlobalTotalProcessedMFlops / m_GlobalSimulationTime;
+
+  /// The efficiency is calculated as: Rmax / Rpeak
+  const double efficiency = maxComputationalPower / m_GlobalTotalComputationalPower;
 
   ispd_log(LOG_INFO, "");
   ispd_log(LOG_INFO, "Global Simulation Time...........: %lf seconds.", m_GlobalSimulationTime);
@@ -198,7 +202,10 @@ void GlobalMetricsCollector::reportGlobalMetrics() {
   ispd_log(LOG_INFO, " Avg. Turnaround Time............: %lf seconds.", avgTotalTurnaroundTime);
   ispd_log(LOG_INFO, "");
   ispd_log(LOG_INFO, "System Metrics");
-  ispd_log(LOG_INFO, " Total Computational Power.......: %lf MFLOPS.", m_GlobalTotalComputationalPower);
+  ispd_log(LOG_INFO, " Peak Computational Power........: %lf MFLOPS.", m_GlobalTotalComputationalPower);
+  ispd_log(LOG_INFO, " Max. Computational Power........: %lf MFLOPS.", maxComputationalPower);
+  ispd_log(LOG_INFO, " Avg. Turnaround Time............: %lf seconds.", avgTotalTurnaroundTime);
+  ispd_log(LOG_INFO, " Efficiency......................: %lf%%.", efficiency * 100.0);
   ispd_log(LOG_INFO, " Total CPU Cores.................: %u cores.", m_GlobalTotalCpuCores);
   ispd_log(LOG_INFO, "");
 }
