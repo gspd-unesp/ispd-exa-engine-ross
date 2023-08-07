@@ -198,13 +198,13 @@ struct machine {
 
     std::printf(
         "Machine Metrics (%lu)\n"
-        " - Last Activity Time: %lf seconds (%lu).\n"
-        " - Processed MFLOPS..: %lf MFLOPS (%lu).\n"
-        " - Processed Tasks...: %u tasks (%lu).\n"
-        " - Forwarded Packets.: %u packets (%lu).\n"
-        " - Waiting Time......: %lf seconds (%lu).\n"
-        " - Processing Time...: %lf seconds (%lu).\n"
-        " - Idleness..........: %lf% (%lu).\n"
+        " - Last Activity Time..: %lf seconds (%lu).\n"
+        " - Processed MFLOPS....: %lf MFLOPS (%lu).\n"
+        " - Processed Tasks.....: %u tasks (%lu).\n"
+        " - Forwarded Packets...: %u packets (%lu).\n"
+        " - Waiting Time........: %lf seconds (%lu).\n"
+        " - Avg. Processing Time: %lf seconds (%lu).\n"
+        " - Idleness............: %lf%% (%lu).\n"
         "\n",
         lp->gid, 
         lastActivityTime, lp->gid,
@@ -212,7 +212,7 @@ struct machine {
         s->metrics.proc_tasks, lp->gid,
         s->metrics.forwarded_packets, lp->gid,
         s->metrics.waiting_time, lp->gid,
-        lastActivityTime * (1.0 - idleness), lp->gid,
+        s->metrics.proc_time / s->metrics.proc_tasks, lp->gid,
         idleness * 100.0, lp->gid
     );
   }
