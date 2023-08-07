@@ -3,21 +3,54 @@
 
 namespace ispd::metrics {
 
-enum NodeMetricsFlag { 
+/// \brief Enumeration class representing various node-level metrics.
+///
+/// This enumeration class defines a set of flags that correspond to different types of node-level metrics.
+/// These metrics provide insights into the performance and behavior of simulation components within a node.
+enum class NodeMetricsFlag { 
+  /// \brief The accumulation of all communicated megabits of all simulated links in this node.
   NODE_TOTAL_COMMUNICATED_MBITS,
+  
+  /// \brief The accumulation of all processed megaflops of all simulated machines in this node.
   NODE_TOTAL_PROCESSED_MFLOPS,
+
+  /// \brief The accumulation of all processing time of all simulated machines in this node.
   NODE_TOTAL_PROCESSING_TIME,
+
+  /// \brief The accumulation of all processing waiting time of all simulated machines in this node.
   NODE_TOTAL_PROCESSING_WAITING_TIME,
+
+  /// \brief The accumulation of all communication time of all simulated links in this node.
   NODE_TOTAL_COMMUNICATION_TIME,
+
+  /// \brief The accumulation of all communication waiting time of all simulated links in this node.
   NODE_TOTAL_COMMUNICATION_WAITING_TIME,
+
+  /// \brief The count of how many masters have been simulated in this node.
   NODE_TOTAL_MASTER_SERVICES,
+
+  /// \bnrief The count of how many links have been simulated in this node.
   NODE_TOTAL_LINK_SERVICES,
+
+  /// \brief The count of how many machines have been simulated in this node.
   NODE_TOTAL_MACHINE_SERVICES,
+
+  /// \brief The count of how many switches have been simulated in this node.
   NODE_TOTAL_SWITCH_SERVICES,
+
+  /// \brief The count of how many completed tasks have been received by the masters simulated by this node.
   NODE_TOTAL_COMPLETED_TASKS,
+
+  /// \brief The accumulation of the computational power of all machines simulated in this node.
   NODE_TOTAL_COMPUTATIONAL_POWER,
+  
+  /// \brief The accumulation of all the CPU cores count of all machines simulated in this node.
   NODE_TOTAL_CPU_CORES,
+  
+  /// \brief The accumulation of the turnaround time of all completed tasks received by the masters simulated in this node.
   NODE_TOTAL_TURNAROUND_TIME,
+
+  /// \brief The simulation time in this node.
   NODE_SIMULATION_TIME
 };
 
