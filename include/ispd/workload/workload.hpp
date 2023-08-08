@@ -305,6 +305,41 @@ public:
   }
 };
 
+/// \brief Null Workload Class
+///
+/// The NullWorkload class is a concrete implementation of the Workload interface, specifically designed to represent
+/// a "null" or "empty" workload. It is used when no actual tasks need to be generated or processed, serving as a placeholder
+/// to indicate the absence of workload.
+class NullWorkload : public Workload {
+public:
+    /// \brief Null Workload Constructor
+    ///
+    /// Initializes a new instance of the NullWorkload class with zero tasks.
+    NullWorkload() : Workload(0) {}
+
+    /// \brief Generate Workload
+    ///
+    /// This method is overridden from the base Workload class. Since the NullWorkload represents an empty workload,
+    /// attempting to generate tasks will result in an error being raised.
+    ///
+    /// \param rng A pointer to the random number generator stream.
+    /// \param procSize A reference to the variable storing the generated processing size.
+    /// \param commSize A reference to the variable storing the generated communication size.
+    void generateWorkload(tw_rng_stream *rng, double &procSize, double &commSize) override {
+        ispd_error("[Null Workload] A null workload cannot be generated.");
+    }
+
+    /// \brief Reverse Generate Workload
+    ///
+    /// This method is overridden from the base Workload class. Since the NullWorkload represents an empty workload,
+    /// attempting to reverse generate tasks will result in an error being raised.
+    ///
+    /// \param rng A pointer to the random number generator stream.
+    void reverseGenerateWorkload(tw_rng_stream *rng) override {
+        ispd_error("[Null Workload] A null workload generation cannot be reversed.");
+    }
+};
+
 /// \brief Create a new ConstantWorkload object with specified parameters.
 ///
 /// This function is a helper function that creates and returns a new instance
@@ -363,6 +398,19 @@ static inline UniformWorkload *uniform(const unsigned remainingTasks,
                                        const double maxCommSize) {
   return new UniformWorkload(remainingTasks, minProcSize, maxProcSize,
                              minCommSize, maxCommSize);
+}
+
+/// \brief Get Null Workload
+///
+/// The `null()` function returns an instance of the `NullWorkload` class, which represents a placeholder for an empty workload.
+/// This function is used to obtain a `NullWorkload` instance when there is no actual workload to be generated.
+/// The returned instance has predefined behavior to handle cases where a workload is not applicable.
+/// 
+/// \return An instance of the `NullWorkload` class.
+static inline NullWorkload *null() {
+    /// The function simply creates and returns a new instance of the `NullWorkload` class.
+    /// @Note: After, it is possibel the use of a singleton instance and lazy-initialization.
+    return new NullWorkload();
 }
 
 }; // namespace ispd::workload
