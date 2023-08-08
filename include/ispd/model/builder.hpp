@@ -11,8 +11,22 @@
 
 namespace ispd::model {
 
+class User {
+  std::string m_Name;
+  double m_EnergyConsumptionLimit;
+public:
+  explicit User(const std::string& name, const double energyConsumptionLimit) :
+    m_Name(name), m_EnergyConsumptionLimit(energyConsumptionLimit) {}
+
+  explicit User(const std::string& name) : User(name, 0.0) {}
+
+  const std::string& getName() const { return m_Name; }
+  double getEnergyConsumptionLimit() const { return m_EnergyConsumptionLimit; }
+};
+
 class SimulationModel {
   std::unordered_map<tw_lpid, std::function<void(void *)>> service_initializers;
+  std::unordered_map<std::string, User> m_Users;
 
   inline void
   registerServiceInitializer(const tw_lpid gid,
@@ -41,6 +55,8 @@ public:
                       ispd::scheduler::scheduler *const scheduler,
                       ispd::workload::Workload *const workload);
 
+  void registerUser(const std::string& name, const double energyConsumptionLimit);
+
   const std::function<void(void *)> &getServiceInitializer(const tw_lpid gid);
 };
 
@@ -60,6 +76,8 @@ void registerSwitch(const tw_lpid gid, const double bandwidth,
 void registerMaster(const tw_lpid gid, std::vector<tw_lpid> &&slaves,
                     ispd::scheduler::scheduler *const scheduler,
                     ispd::workload::Workload *const workload);
+
+void registerUser(const std::string& name, const double energyConsumptionLimit);
 
 const std::function<void(void *)> &getServiceInitializer(const tw_lpid gid);
 }; // namespace ispd::this_model
