@@ -143,7 +143,7 @@ struct machine {
 
       /// @Todo: This zero-delay timestamped message could affect the conservative synchronization.
       ///        This should be changed after.
-      tw_event *const e = tw_event_new(msg->previous_service_id, 0.0, lp);
+      tw_event *const e = tw_event_new(route->get(msg->route_offset), 0.0, lp);
       ispd_message *const m = static_cast<ispd_message *>(tw_event_data(e));
 
       m->type = message_type::ARRIVAL;

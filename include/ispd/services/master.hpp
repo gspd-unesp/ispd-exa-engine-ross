@@ -60,13 +60,19 @@ struct master {
     s->metrics.completed_tasks = 0;
     s->metrics.total_turnaround_time = 0;
 
-    /// Send a generate message to itself.
-    tw_event *const e = tw_event_new(lp->gid, tw_rand_exponential(lp->rng, 0.1), lp);
-    ispd_message *const m = static_cast<ispd_message *>(tw_event_data(e));
+    /// Checks if the specified workload has remaining tasks. If so, a generate message
+    /// will be sent to the master itself to start generating the workload. Otherwise,
+    /// no workload is generate at all, since at initialization it has been identified
+    /// that the specified workload has no tasks.
+    if (s->workload->getRemainingTasks() > 0) {
+      /// Send a generate message to itself.
+      tw_event *const e = tw_event_new(lp->gid, tw_rand_exponential(lp->rng, 0.1), lp);
+      ispd_message *const m = static_cast<ispd_message *>(tw_event_data(e));
 
-    m->type = message_type::GENERATE;
+      m->type = message_type::GENERATE;
 
-    tw_event_send(e);
+      tw_event_send(e);
+    }
 
     /// Print a debug message.
     ispd_debug("Master %lu has been initialized.", lp->gid);
