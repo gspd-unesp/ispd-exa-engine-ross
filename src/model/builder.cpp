@@ -195,17 +195,17 @@ void SimulationModel::registerUser(const std::string& name, const double energyC
   /// Checks if a user with that name has already been regisitered. If so, the
   /// program is immediately aborted, since unique named users are mandatory.
   if (m_Users.find(name) != m_Users.end())
-    ispd_error("A user named %s has already been registered.", name);
+    ispd_error("A user named %s has already been registered.", name.c_str());
   
   /// Checks if the specified energy consumption limit is not finite. If so, the
   /// program is immediately aborted, since a finite limit must be specified.
   if (!std::isfinite(energyConsumptionLimit))
-    ispd_error("The specified energy consumption limit for user %s must be finite.", name);
+    ispd_error("The specified energy consumption limit for user %s must be finite.", name.c_str());
 
   /// Checks if the specified energy consumption limit is negative. If so, the
   /// program is immediately aborted, since a non-negative limit must be specified.
   if (energyConsumptionLimit < 0.0)
-    ispd_error("The specified energy consumption limit for user %s must be positive.", name);
+    ispd_error("The specified energy consumption limit for user %s must be positive.", name.c_str());
 
   /// A copy of the specified name to be checked.
   std::string checkedName = name;
@@ -221,7 +221,7 @@ void SimulationModel::registerUser(const std::string& name, const double energyC
   /// Construct the user and insert into the users mapping.
   m_Users.emplace(name, User(name, energyConsumptionLimit));
   
-  ispd_debug("A user named %s with consumption limit of %.2lf has been regisitered.", name, energyConsumptionLimit);
+  ispd_debug("A user named %s with consumption limit of %.2lf has been registered.", name.c_str(), energyConsumptionLimit);
 }
 
 const std::function<void(void *)> &
@@ -276,6 +276,11 @@ void registerUser(const std::string& name, const double energyConsumptionLimit) 
 const std::function<void(void *)> &getServiceInitializer(const tw_lpid gid) {
   /// Forward the service initializer query to the global model.
   return g_Model->getServiceInitializer(gid);
+}
+
+const std::unordered_map<std::string, ispd::model::User>& getUsers() {
+  /// Forward the users query  to the global model.
+  return g_Model->getUsers();
 }
 
 }; // namespace ispd::this_model

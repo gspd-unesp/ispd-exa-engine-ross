@@ -68,6 +68,9 @@ int main(int argc, char **argv) {
   const tw_lpid highest_machine_id = g_star_machine_amount * 2;
   const tw_lpid highest_link_id = highest_machine_id - 1;
 
+  /// Register the user.
+  ispd::this_model::registerUser("User1", 100.0);
+
   /// Register a master.
   std::vector<tw_lpid> slaves;
   for (tw_lpid machine_id = 2; machine_id <= highest_machine_id;
@@ -86,6 +89,11 @@ int main(int argc, char **argv) {
   for (tw_lpid machine_id = 2; machine_id <= highest_machine_id;
        machine_id += 2)
     ispd::this_model::registerMachine(machine_id, 20.0, 0.0, 8);
+
+  /// Checks if no user has been registered. If so, the program is immediately aborted,
+  /// since at least one user must be registered.
+  if (ispd::this_model::getUsers().size() == 0)
+    ispd_error("At least one user must be registered.");
 
   /// The total number of logical processes.
   const unsigned nlp = g_star_machine_amount * 2 + 1;

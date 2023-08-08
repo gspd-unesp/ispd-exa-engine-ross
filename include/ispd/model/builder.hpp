@@ -58,6 +58,10 @@ public:
   void registerUser(const std::string& name, const double energyConsumptionLimit);
 
   const std::function<void(void *)> &getServiceInitializer(const tw_lpid gid);
+
+  inline const std::unordered_map<std::string, User>& getUsers() const {
+    return m_Users; 
+  } 
 };
 
 }; // namespace ispd::model
@@ -80,6 +84,8 @@ void registerMaster(const tw_lpid gid, std::vector<tw_lpid> &&slaves,
 void registerUser(const std::string& name, const double energyConsumptionLimit);
 
 const std::function<void(void *)> &getServiceInitializer(const tw_lpid gid);
+
+const std::unordered_map<std::string, ispd::model::User>& getUsers();
 }; // namespace ispd::this_model
 
 #endif // ISPD_MODEL_BUILDER_HPP
