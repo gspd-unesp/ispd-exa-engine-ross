@@ -68,7 +68,7 @@ UniformWorkload::UniformWorkload(const std::string& user,
                remainingTasks);
   }
 
-NullWorkload::NullWorkload() : Workload("", 0) {}
+NullWorkload::NullWorkload(const std::string& user) : Workload(user, 0) {}
 
 ConstantWorkload *constant(const std::string& user,
                                          const unsigned remainingTasks,
@@ -91,10 +91,8 @@ UniformWorkload *uniform(const std::string& user,
                              minCommSize, maxCommSize);
 }
 
-NullWorkload *null() {
-    /// The function simply creates and returns a new instance of the `NullWorkload` class.
-    /// @Note: After, it is possibel the use of a singleton instance and lazy-initialization.
-    return new NullWorkload();
+NullWorkload *null(const std::string& user) {
+  return new NullWorkload(user);
 }
 
 }; // namespace ispd::workload

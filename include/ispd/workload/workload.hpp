@@ -293,7 +293,9 @@ public:
     /// \brief Null Workload Constructor
     ///
     /// Initializes a new instance of the NullWorkload class with zero tasks.
-    explicit NullWorkload();
+    ///
+    /// \param user The user who create the workload.
+    explicit NullWorkload(const std::string& user);
 
     /// \brief Generate Workload
     ///
@@ -383,8 +385,10 @@ UniformWorkload *uniform(const std::string& user,
 /// This function is used to obtain a `NullWorkload` instance when there is no actual workload to be generated.
 /// The returned instance has predefined behavior to handle cases where a workload is not applicable.
 /// 
+/// \param user The user who create the workload.
+///
 /// \return An instance of the `NullWorkload` class.
-NullWorkload *null();
+NullWorkload *null(const std::string& user);
 
 }; // namespace ispd::workload
 
