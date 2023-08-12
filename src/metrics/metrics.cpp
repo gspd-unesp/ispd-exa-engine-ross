@@ -286,9 +286,12 @@ void GlobalMetricsCollector::reportGlobalMetrics() {
     const uint64_t forwardEventsCount = m_GlobalTotalForwardEventsCount[serviceType];
     const uint64_t reverseEventsCount = m_GlobalTotalReverseEventsCount[serviceType];   
 
-    /// Calculate the average time taken (in nanoseconds) to forward and reverse processing.
+    /// Calculates the average time taken (in nanoseconds) to forward and reverse processing.
     const double avgForwardTime = totalForwardTime / forwardEventsCount;
     const double avgReverseTime = totalReverseTime / reverseEventsCount;
+    
+    /// Calculates how many times the reverse processing is faster than the forward processing at average.
+    const double forwardAndReverseRelation = avgForwardTime / avgReverseTime;
     
     const char *capitalizedServiceTypeName = ispd::services::getServiceTypeName<true>(serviceType);
     
@@ -296,6 +299,7 @@ void GlobalMetricsCollector::reportGlobalMetrics() {
     ispd_log(LOG_INFO, " Avg. %s Reverse Time........: %lf ns.", capitalizedServiceTypeName, avgReverseTime);
     ispd_log(LOG_INFO, " %s Forward Events Count.....: %lu events.", capitalizedServiceTypeName, forwardEventsCount);
     ispd_log(LOG_INFO, " %s Reverse Events Count.....: %lu events.", capitalizedServiceTypeName, reverseEventsCount);
+    ispd_log(LOG_INFO, " Avg. Forward/Reverse........: %lfx.", capitalizedServiceTypeName, forwardAndReverseRelation);
     ispd_log(LOG_INFO, "");   
   }
 #endif // DEBUG_ON
