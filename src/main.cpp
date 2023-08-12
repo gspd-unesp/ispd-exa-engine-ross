@@ -79,7 +79,7 @@ int main(int argc, char **argv) {
 
   ispd::this_model::registerMaster(
       0, std::move(slaves), new ispd::scheduler::round_robin,
-      ispd::workload::constant(g_star_task_amount, 1000.0, 80.0));
+      ispd::workload::constant("User1", g_star_task_amount, 1000.0, 80.0));
 
   /// Registers service initializers for the links.
   for (tw_lpid link_id = 1; link_id <= highest_link_id; link_id += 2)
