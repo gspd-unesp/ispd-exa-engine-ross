@@ -15,6 +15,8 @@ struct task {
   
   double submit_time;
   double end_time;
+  
+  const std::string *user;
 };
 
 }; // namespace customer

@@ -151,9 +151,12 @@ private:
     /// processing and communication sizes.
     s->workload->generateWorkload(lp->rng, m->task.proc_size, m->task.comm_size);
 
+    /// Task information specification.
     m->task.origin = lp->gid;
     m->task.dest = scheduled_slave_id;
     m->task.submit_time = tw_now(lp);
+    m->task.user = &s->workload->getUser();
+
     m->route_offset = 1;
     m->previous_service_id = lp->gid;
     m->downward_direction = 1;
