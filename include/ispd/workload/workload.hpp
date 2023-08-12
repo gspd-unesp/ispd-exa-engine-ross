@@ -43,8 +43,7 @@ public:
   /// \param user The user who created the workload.
   /// \param remainingTasks The total number of tasks that need to be generated
   ///                       by the workload.
-  explicit Workload(const std::string& user, const unsigned remainingTasks)
-      : m_User(user), m_RemainingTasks(remainingTasks) {}
+  explicit Workload(const std::string& user, const unsigned remainingTasks);
 
   /// \brief Generate the workload, setting the processing and communication
   ///        sizes depending on the generation policy.
@@ -137,25 +136,10 @@ public:
   /// the program. The constructor prints debug information about the constant
   /// processing and communication sizes, as well as the number of remaining
   /// tasks.
-  explicit ConstantWorkload(const std::string& user,
+ explicit ConstantWorkload(const std::string& user,
                             const unsigned remainingTasks,
                             const double constantProcSize,
-                            const double constantCommSize)
-      : Workload(user, remainingTasks), m_ConstantProcSize(constantProcSize),
-        m_ConstantCommSize(constantCommSize) {
-    if (constantProcSize <= 0.0)
-      ispd_error("Constant processing size must be positive (Specified "
-                 "constant processing size: %lf).",
-                 constantProcSize);
-
-    if (constantCommSize <= 0.0)
-      ispd_error("Constant communication size must be positive (Specified "
-                 "constant communication size: %lf).",
-                 constantCommSize);
-
-    ispd_debug("[Constant Workload] PS: %lf, CS: %lf, RT: %u.",
-               constantProcSize, constantCommSize, remainingTasks);
-  }
+                            const double constantCommSize);
 
   /// \brief Generate the constant workload, setting the processing and
   /// communication sizes.
@@ -235,34 +219,7 @@ public:
   explicit UniformWorkload(const std::string& user,
                            const unsigned remainingTasks,
                            const double minProcSize, const double maxProcSize,
-                           const double minCommSize, const double maxCommSize)
-      : Workload(user, remainingTasks), m_MinProcSize(minProcSize),
-        m_MaxProcSize(maxProcSize), m_MinCommSize(minCommSize),
-        m_MaxCommSize(maxCommSize) {
-    if (minProcSize <= 0.0)
-      ispd_error("Minimum processing size must be positive (Specified "
-                 "minimum processing size: %lf).",
-                 minProcSize);
-
-    if (maxProcSize <= 0.0)
-      ispd_error("Maximum processing size must be positive (Specified "
-                 "maximum processing size: %lf).",
-                 maxProcSize);
-
-    if (minCommSize <= 0.0)
-      ispd_error("Minimum communication size must be positive (Specified "
-                 "minimum communication size: %lf).",
-                 minCommSize);
-
-    if (maxCommSize <= 0.0)
-      ispd_error("Maximum communication size must be positive (Specified "
-                 "maximum communication size: %lf).",
-                 maxCommSize);
-
-    ispd_debug("[Uniform Workload] PI: [%lf, %lf], CI: [%lf, %lf], RT: %u.",
-               minProcSize, maxProcSize, minCommSize, maxCommSize,
-               remainingTasks);
-  }
+                           const double minCommSize, const double maxCommSize);
 
   /// \brief Generate the uniform workload, setting the processing and
   /// communication sizes.
@@ -336,7 +293,7 @@ public:
     /// \brief Null Workload Constructor
     ///
     /// Initializes a new instance of the NullWorkload class with zero tasks.
-    NullWorkload() : Workload("", 0) {}
+    explicit NullWorkload();
 
     /// \brief Generate Workload
     ///
@@ -382,15 +339,10 @@ public:
 ///       ConstantWorkload object on the heap. The caller is responsible for
 ///       managing the object's memory and must eventually delete the object
 ///       when it is no longer needed to avoid memory leaks.
-static inline ConstantWorkload *constant(const std::string& user,
+ConstantWorkload *constant(const std::string& user,
                                          const unsigned remainingTasks,
                                          const double constantProcSize,
-                                         const double constantCommSize) {
-  return new ConstantWorkload(user,
-                              remainingTasks,
-                              constantProcSize,
-                              constantCommSize);
-}
+                                         const double constantCommSize);
 
 /// \brief Create a new UniformWorkload object with specified parameters.
 ///
@@ -417,16 +369,13 @@ static inline ConstantWorkload *constant(const std::string& user,
 /// UniformWorkload object on the heap. The caller is responsible for managing
 /// the object's memory and must eventually delete the object when it is no
 /// longer needed to avoid memory leaks.
-static inline UniformWorkload *uniform(const std::string& user,
+UniformWorkload *uniform(const std::string& user,
                                        const unsigned remainingTasks,
                                        const double minProcSize,
                                        const double maxProcSize,
                                        const double minCommSize,
-                                       const double maxCommSize) {
-  return new UniformWorkload(user, remainingTasks, 
-                             minProcSize, maxProcSize,
-                             minCommSize, maxCommSize);
-}
+                                       const double maxCommSize);
+
 
 /// \brief Get Null Workload
 ///
@@ -435,11 +384,7 @@ static inline UniformWorkload *uniform(const std::string& user,
 /// The returned instance has predefined behavior to handle cases where a workload is not applicable.
 /// 
 /// \return An instance of the `NullWorkload` class.
-static inline NullWorkload *null() {
-    /// The function simply creates and returns a new instance of the `NullWorkload` class.
-    /// @Note: After, it is possibel the use of a singleton instance and lazy-initialization.
-    return new NullWorkload();
-}
+NullWorkload *null();
 
 }; // namespace ispd::workload
 
