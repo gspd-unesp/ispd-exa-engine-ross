@@ -4,6 +4,7 @@
 #include <ross.h>
 #include <vector>
 #include <memory>
+#include <chrono>
 #include <ispd/debug/debug.hpp>
 #include <ispd/model/builder.hpp>
 #include <ispd/routing/routing.hpp>
@@ -93,6 +94,7 @@ struct master {
         abort();
         break;
     }
+
   }
 
   static void reverse(master_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
@@ -133,6 +135,10 @@ struct master {
 private:
   static void generate(master_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
     ispd_debug("Master %lu will generate a task at %lf, remaining %u.", lp->gid, tw_now(lp), s->workload->getRemainingTasks());
+
+#ifdef DEBUG_ON
+  const auto start = std::chrono::high_resolution_clock::now();
+#endif // DEBUG_ON
 
     /// Use the master's scheduling policy to the schedule the next slave.
     const tw_lpid scheduled_slave_id = s->scheduler->forward_schedule(s->slaves, bf, msg, lp);
@@ -175,9 +181,21 @@ private:
 
      tw_event_send(e);    
     }
+
+#ifdef DEBUG_ON
+  const auto end = std::chrono::high_resolution_clock::now();
+  const auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+  const auto timeTaken = static_cast<double>(duration.count());
+
+  ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_MASTER_FORWARD_TIME, timeTaken);
+#endif // DEBUG_ON
   }
 
   static void generate_rc(master_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
+#ifdef DEBUG_ON
+  const auto start = std::chrono::high_resolution_clock::now();
+#endif // DEBUG_ON
+
     /// Reverse the schedule.
     s->scheduler->reverse_schedule(s->slaves, bf, msg, lp);
 
@@ -189,6 +207,14 @@ private:
     /// time of the tasks.
     if (s->workload->getRemainingTasks() > 0)
       tw_rand_reverse_unif(lp->rng);
+
+#ifdef DEBUG_ON
+  const auto end = std::chrono::high_resolution_clock::now();
+  const auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+  const auto timeTaken = static_cast<double>(duration.count());
+
+  ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_MASTER_REVERSE_TIME, timeTaken);
+#endif // DEBUG_ON
   }
 
   static void arrival(master_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {

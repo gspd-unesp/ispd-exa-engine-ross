@@ -1,6 +1,12 @@
 #ifndef ISPD_METRICS_HPP
 #define ISPD_METRICS_HPP
 
+#ifdef DEBUG_ON
+  #include <cstdint>
+  #include <unordered_map>
+  #include <ispd/services/services.hpp>
+#endif // DEBUG_ON
+
 namespace ispd::metrics {
 
 /// \brief Enumeration class representing various node-level metrics.
@@ -51,7 +57,33 @@ enum class NodeMetricsFlag {
   NODE_TOTAL_TURNAROUND_TIME,
 
   /// \brief The simulation time in this node.
-  NODE_SIMULATION_TIME
+  NODE_SIMULATION_TIME,
+
+#ifdef DEBUG_ON
+  /// \brief The accumulation of the real time taken (ns) to process forwarding an event in a master.
+  NODE_MASTER_FORWARD_TIME,
+
+  /// \brief The accumulation of the real time taken (ns) to reverse the process of an event in a master.
+  NODE_MASTER_REVERSE_TIME,
+
+  /// \brief The accumulation of the real time taken (ns) to process forwarding an event in a link.
+  NODE_LINK_FORWARD_TIME,
+
+  /// \brief The accumulation of the real time taken (ns) to reverse the process of an event in a link.
+  NODE_LINK_REVERSE_TIME,
+
+  /// \brief The accumulation of the real time taken (ns) to process forwarding an event in a machine.
+  NODE_MACHINE_FORWARD_TIME,
+  
+  /// \brief The accumulation of the real time taken (ns) to reverse the process of an event in a machine.
+  NODE_MACHINE_REVERSE_TIME,
+
+  /// \brief The accumulation of the real time taken (ns) to process forwarding an event in a switch.
+  NODE_SWITCH_FORWARD_TIME,
+  
+  /// \brief The accumulation of the real time taken (ns) to reverse the process of an event in a switch.
+  NODE_SWITCH_REVERSE_TIME,
+#endif // DEBUG_ON
 };
 
 /// \brief Collects and reports various node-level metrics related to simulation components within a node.
@@ -61,24 +93,30 @@ enum class NodeMetricsFlag {
 /// behavior, and resource utilization of the simulated system at a granular level.
 class NodeMetricsCollector {
 private:
-    unsigned m_NodeTotalMasterServices;           ///< Total count of master services simulated in this node.
-    unsigned m_NodeTotalLinkServices;             ///< Total count of link services simulated in this node.
-    unsigned m_NodeTotalMachineServices;          ///< Total count of machine services simulated in this node.
-    unsigned m_NodeTotalSwitchServices;           ///< Total count of switch services simulated in this node.
-    unsigned m_NodeTotalCompletedTasks;           ///< Total count of completed tasks simulated in this node.
+  unsigned m_NodeTotalMasterServices;           ///< Total count of master services simulated in this node.
+  unsigned m_NodeTotalLinkServices;             ///< Total count of link services simulated in this node.
+  unsigned m_NodeTotalMachineServices;          ///< Total count of machine services simulated in this node.
+  unsigned m_NodeTotalSwitchServices;           ///< Total count of switch services simulated in this node.
+  unsigned m_NodeTotalCompletedTasks;           ///< Total count of completed tasks simulated in this node.
 
-    double m_NodeTotalComputationalPower;         ///< Total computational power simulatted in this node.
-    unsigned m_NodeTotalCpuCores;                 ///< Total count of CPU cores simulated in this node.
+  double m_NodeTotalComputationalPower;         ///< Total computational power simulatted in this node.
+  unsigned m_NodeTotalCpuCores;                 ///< Total count of CPU cores simulated in this node.
 
-    double m_NodeTotalCommunicatedMBits;          ///< Total communicated MBits simulated in this node.
-    double m_NodeTotalProcessedMFlops;            ///< Total processed MFLOPS simulated in this node.
-    double m_NodeTotalProcessingTime;             ///< Total processing time simulated in this node.
-    double m_NodeTotalProcessingWaitingTime;      ///< Total waiting time for processing simulated in this node.
-    double m_NodeTotalCommunicationTime;          ///< Total communication time simulated in this node.
-    double m_NodeTotalCommunicationWaitingTime;   ///< Total waiting time for communication simulated in this node.
-    double m_NodeTotalTurnaroundTime;             ///< Total turnaround time simulated in this node.
-    double m_NodeSimulationTime;                  ///< The highest last activity time of a service center simulated in this node.
+  double m_NodeTotalCommunicatedMBits;          ///< Total communicated MBits simulated in this node.
+  double m_NodeTotalProcessedMFlops;            ///< Total processed MFLOPS simulated in this node.
+  double m_NodeTotalProcessingTime;             ///< Total processing time simulated in this node.
+  double m_NodeTotalProcessingWaitingTime;      ///< Total waiting time for processing simulated in this node.
+  double m_NodeTotalCommunicationTime;          ///< Total communication time simulated in this node.
+  double m_NodeTotalCommunicationWaitingTime;   ///< Total waiting time for communication simulated in this node.
+  double m_NodeTotalTurnaroundTime;             ///< Total turnaround time simulated in this node.
+  double m_NodeSimulationTime;                  ///< The highest last activity time of a service center simulated in this node.
 
+#ifdef DEBUG_ON
+  std::unordered_map<ispd::services::ServiceType, double> m_NodeTotalForwardTime;
+  std::unordered_map<ispd::services::ServiceType, uint64_t> m_NodeTotalForwardEventsCount;
+  std::unordered_map<ispd::services::ServiceType, double> m_NodeTotalReverseTime;
+  std::unordered_map<ispd::services::ServiceType, uint64_t> m_NodeTotalReverseEventsCount;
+#endif // DEBUG_ON
 public:
     /// \brief Notify the NodeMetricsCollector about a node-level metric with a flag.
     ///
@@ -134,6 +172,12 @@ private:
     double m_GlobalTotalTurnaroundTime;             ///< Total turnaround time across all nodes.
     double m_GlobalSimulationTime;                  ///< Total simulation time.
 
+#ifdef DEBUG_ON
+  std::unordered_map<ispd::services::ServiceType, double> m_GlobalTotalForwardTime;
+  std::unordered_map<ispd::services::ServiceType, uint64_t> m_GlobalTotalForwardEventsCount;
+  std::unordered_map<ispd::services::ServiceType, double> m_GlobalTotalReverseTime;
+  std::unordered_map<ispd::services::ServiceType, uint64_t> m_GlobalTotalReverseEventsCount;
+#endif // DEBUG_ON
 public:
     /// \brief Report the aggregated global-level metrics to an external source.
     ///

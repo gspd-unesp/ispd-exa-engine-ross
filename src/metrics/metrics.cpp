@@ -44,6 +44,48 @@ void NodeMetricsCollector::notifyMetric(const NodeMetricsFlag flag, const double
       /// Updates simulation time.
       m_NodeSimulationTime = std::max(m_NodeSimulationTime, value);
       break;
+#ifdef DEBUG_ON
+    case NodeMetricsFlag::NODE_MASTER_FORWARD_TIME:
+      /// Updates the total forward time and forward events count by the master.
+      m_NodeTotalForwardTime[ispd::services::ServiceType::MASTER] += value;
+      m_NodeTotalForwardEventsCount[ispd::services::ServiceType::MASTER]++;
+      break;
+    case NodeMetricsFlag::NODE_MASTER_REVERSE_TIME:
+      /// Updates the total reverse time and reverse events count by the master.
+      m_NodeTotalReverseTime[ispd::services::ServiceType::MASTER] += value;
+      m_NodeTotalReverseEventsCount[ispd::services::ServiceType::MASTER]++;
+      break;
+    case NodeMetricsFlag::NODE_LINK_FORWARD_TIME:
+      /// Updates the total forward time and forward events count by the link.
+      m_NodeTotalForwardTime[ispd::services::ServiceType::LINK] += value;
+      m_NodeTotalForwardEventsCount[ispd::services::ServiceType::LINK]++;
+      break;
+    case NodeMetricsFlag::NODE_LINK_REVERSE_TIME:
+      /// Updates the total reverse time and reverse events count by the link.
+      m_NodeTotalReverseTime[ispd::services::ServiceType::LINK] += value;
+      m_NodeTotalReverseEventsCount[ispd::services::ServiceType::LINK]++;
+      break;
+    case NodeMetricsFlag::NODE_MACHINE_FORWARD_TIME:
+      /// Updates the total forward time and forward events count by the machine.
+      m_NodeTotalForwardTime[ispd::services::ServiceType::MACHINE] += value;
+      m_NodeTotalForwardEventsCount[ispd::services::ServiceType::MACHINE]++;
+      break;
+    case NodeMetricsFlag::NODE_MACHINE_REVERSE_TIME:
+      /// Updates the total reverse time and reverse events count by the machine.
+      m_NodeTotalReverseTime[ispd::services::ServiceType::MACHINE] += value;
+      m_NodeTotalReverseEventsCount[ispd::services::ServiceType::MACHINE]++;
+      break;
+    case NodeMetricsFlag::NODE_SWITCH_FORWARD_TIME:
+      /// Updates the total forward time and forward events count by the switch.
+      m_NodeTotalForwardTime[ispd::services::ServiceType::SWITCH] += value;
+      m_NodeTotalForwardEventsCount[ispd::services::ServiceType::SWITCH]++;
+      break;
+    case NodeMetricsFlag::NODE_SWITCH_REVERSE_TIME:
+      /// Updates the total reverse time and reverse events count by the master.
+      m_NodeTotalReverseTime[ispd::services::ServiceType::SWITCH] += value;
+      m_NodeTotalReverseEventsCount[ispd::services::ServiceType::SWITCH]++;
+      break;
+#endif // DEBUG_ON
     default:
       ispd_error("Unknown node metrics flag (%d) or incorrect argument type.", flag);
   }
@@ -151,6 +193,32 @@ void NodeMetricsCollector::reportNodeMetrics() {
   /// Report to the master node the turnaround time.
   if (MPI_SUCCESS != MPI_Reduce(&m_NodeTotalTurnaroundTime, &gmc->m_GlobalTotalTurnaroundTime, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_ROSS))
     ispd_error("Global total turnaround time could not be reduced, exiting...");
+  
+#ifdef DEBUG_ON
+  /// Report to the master node the forward processing time.
+  if (MPI_SUCCESS != MPI_Reduce(&m_NodeTotalForwardTime[ispd::services::ServiceType::MASTER],
+                                &gmc->m_GlobalTotalForwardTime[ispd::services::ServiceType::MASTER],
+                                1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_ROSS))
+    ispd_error("Global total master forward time could not be reduced, exiting...");
+
+  /// Report to the master node the forward events count.
+  if (MPI_SUCCESS != MPI_Reduce(&m_NodeTotalForwardEventsCount[ispd::services::ServiceType::MASTER],
+                                &gmc->m_GlobalTotalForwardEventsCount[ispd::services::ServiceType::MASTER],
+                                1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_ROSS))
+    ispd_error("Global total master forward events count could not be reduced, exiting...");
+
+  /// Report to the master node the reverse processing time.
+  if (MPI_SUCCESS != MPI_Reduce(&m_NodeTotalReverseTime[ispd::services::ServiceType::MASTER],
+                                &gmc->m_GlobalTotalReverseTime[ispd::services::ServiceType::MASTER],
+                                1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_ROSS))
+    ispd_error("Global total master reverse time could not be reduced, exiting...");
+
+  /// Report to the master node the reverse events count.
+  if (MPI_SUCCESS != MPI_Reduce(&m_NodeTotalReverseEventsCount[ispd::services::ServiceType::MASTER],
+                                &gmc->m_GlobalTotalReverseEventsCount[ispd::services::ServiceType::MASTER],
+                                1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_ROSS))
+    ispd_error("Global total master reverse events count could not be reduced, exiting...");
+#endif // DEBUG_ON
 }
 
 void GlobalMetricsCollector::reportGlobalMetrics() {
@@ -168,6 +236,19 @@ void GlobalMetricsCollector::reportGlobalMetrics() {
 
   /// The efficiency is calculated as: Rmax / Rpeak
   const double efficiency = maxComputationalPower / m_GlobalTotalComputationalPower;
+
+#ifdef DEBUG_ON
+  /// Calculating the forward and reverse average time of the master service center.
+  const double masterTotalForwardTime = m_GlobalTotalForwardTime[ispd::services::ServiceType::MASTER];
+  const double masterTotalReverseTime = m_GlobalTotalReverseTime[ispd::services::ServiceType::MASTER];
+
+  const uint64_t masterForwardEventsCount = m_GlobalTotalForwardEventsCount[ispd::services::ServiceType::MASTER];
+  const uint64_t masterReverseEventsCount = m_GlobalTotalReverseEventsCount[ispd::services::ServiceType::MASTER];
+
+  const double avgMasterForwardTime = masterTotalForwardTime / masterForwardEventsCount;
+  const double avgMasterReverseTime = masterTotalReverseTime / masterReverseEventsCount;
+
+#endif // DEBUG_ON
 
   ispd_log(LOG_INFO, "");
   ispd_log(LOG_INFO, "Global Simulation Time...........: %lf seconds.", m_GlobalSimulationTime);
@@ -196,6 +277,15 @@ void GlobalMetricsCollector::reportGlobalMetrics() {
   ispd_log(LOG_INFO, " Efficiency......................: %lf%%.", efficiency * 100.0);
   ispd_log(LOG_INFO, " Total CPU Cores.................: %u cores.", m_GlobalTotalCpuCores);
   ispd_log(LOG_INFO, "");
+
+#ifdef DEBUG_ON
+  ispd_log(LOG_INFO, "Service Center Metrics");
+  ispd_log(LOG_INFO, " Avg. Master Forward Time........: %lf ns.", avgMasterForwardTime);
+  ispd_log(LOG_INFO, " Avg. Master Reverse Time........: %lf ns.", avgMasterReverseTime);
+  ispd_log(LOG_INFO, " Master Forward Events Count.....: %lu events.", masterForwardEventsCount);
+  ispd_log(LOG_INFO, " Master Reverse Events Count.....: %lu events.", masterReverseEventsCount);
+  ispd_log(LOG_INFO, "");
+#endif // DEBUG_ON
 }
 
 }; // namespace ispd::metrics
