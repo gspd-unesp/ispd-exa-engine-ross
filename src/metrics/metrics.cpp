@@ -244,39 +244,6 @@ void GlobalMetricsCollector::reportGlobalMetrics() {
   /// The efficiency is calculated as: Rmax / Rpeak
   const double efficiency = maxComputationalPower / m_GlobalTotalComputationalPower;
 
-#ifdef DEBUG_ON
-  /// This struct defines a container to store metrics related to a service center type's processing activities.
-  struct ServiceCenterMetrics {
-      /// The total real time taken (in ns) for forwarding events in this service center type.
-      double m_TotalForwardTime;
-      
-      /// The total real time taken (in ns) for reversing events in this service center type.
-      double m_TotalReverseTime;
-
-      /// The count of all events forwarded by this service center type.
-      uint64_t m_ForwardEventsCount;
-      
-      /// The count of all events reversed by this service center type.
-      uint64_t m_ReverseEventsCount;
-  };
-
-  /// This unordered_map associates each service center type with its corresponding metrics.
-  std::unordered_map<ispd::services::ServiceType, ServiceCenterMetrics> serviceCenterMetrics;
-
-  /// Fetches the service center metrics from the global metrics pool.
-  for (const auto& serviceType : ispd::services::g_ServiceTypes) {
-    ServiceCenterMetrics& metrics = serviceCenterMetrics[serviceType];
-
-    /// Fetches the forward and reverse processing time of the service center.
-    metrics.m_TotalForwardTime = m_GlobalTotalForwardTime[serviceType];
-    metrics.m_TotalReverseTime = m_GlobalTotalReverseTime[serviceType];
-    
-    /// Fetches the forward and reverse events processed of the service center.
-    metrics.m_ForwardEventsCount = m_GlobalTotalForwardEventsCount[serviceType];
-    metrics.m_ReverseEventsCount = m_GlobalTotalReverseEventsCount[serviceType];
-  }
-#endif // DEBUG_ON
-
   ispd_log(LOG_INFO, "");
   ispd_log(LOG_INFO, "Global Simulation Time...........: %lf seconds.", m_GlobalSimulationTime);
   ispd_log(LOG_INFO, "");
@@ -311,17 +278,24 @@ void GlobalMetricsCollector::reportGlobalMetrics() {
   /// Calculate the average time taken for forward and reverse processing and, print the information
   /// about the average time of forward and reverse processing as well as the forward and reverse event count.
   for (const auto& serviceType : ispd::services::g_ServiceTypes) {
-    const ServiceCenterMetrics& metrics = serviceCenterMetrics[serviceType];
+    /// Fetches the forward and reverse processing time (in nanoseconds) of the service center type.
+    const double totalForwardTime = m_GlobalTotalForwardTime[serviceType];
+    const double totalReverseTime = m_GlobalTotalReverseTime[serviceType];
     
-    const double avgForwardTime = metrics.m_TotalForwardTime / metrics.m_ForwardEventsCount;
-    const double avgReverseTime = metrics.m_TotalReverseTime / metrics.m_ReverseEventsCount;
+    /// Fetches the forward and reverse events processed of the service center type.
+    const uint64_t forwardEventsCount = m_GlobalTotalForwardEventsCount[serviceType];
+    const uint64_t reverseEventsCount = m_GlobalTotalReverseEventsCount[serviceType];   
+
+    /// Calculate the average time taken (in nanoseconds) to forward and reverse processing.
+    const double avgForwardTime = totalForwardTime / forwardEventsCount;
+    const double avgReverseTime = totalReverseTime / reverseEventsCount;
     
     const char *capitalizedServiceTypeName = ispd::services::getServiceTypeName<true>(serviceType);
     
     ispd_log(LOG_INFO, " Avg. %s Forward Time........: %lf ns.", capitalizedServiceTypeName, avgForwardTime);
     ispd_log(LOG_INFO, " Avg. %s Reverse Time........: %lf ns.", capitalizedServiceTypeName, avgReverseTime);
-    ispd_log(LOG_INFO, " %s Forward Events Count.....: %lu events.", capitalizedServiceTypeName, metrics.m_ForwardEventsCount);
-    ispd_log(LOG_INFO, " %s Reverse Events Count.....: %lu events.", capitalizedServiceTypeName, metrics.m_ReverseEventsCount);
+    ispd_log(LOG_INFO, " %s Forward Events Count.....: %lu events.", capitalizedServiceTypeName, forwardEventsCount);
+    ispd_log(LOG_INFO, " %s Reverse Events Count.....: %lu events.", capitalizedServiceTypeName, reverseEventsCount);
     ispd_log(LOG_INFO, "");   
   }
 #endif // DEBUG_ON
