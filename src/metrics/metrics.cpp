@@ -274,6 +274,16 @@ void GlobalMetricsCollector::reportGlobalMetrics() {
 
   const double avgMachineForwardTime = machineTotalForwardTime / machineForwardEventsCount;
   const double avgMachineReverseTime = machineTotalReverseTime / machineReverseEventsCount;
+
+  /// Calculating the forward and reverse average time of the switch service center.
+  const double switchTotalForwardTime = m_GlobalTotalForwardTime[ispd::services::ServiceType::SWITCH];
+  const double switchTotalReverseTime = m_GlobalTotalReverseTime[ispd::services::ServiceType::SWITCH];
+
+  const uint64_t switchForwardEventsCount = m_GlobalTotalForwardEventsCount[ispd::services::ServiceType::SWITCH];
+  const uint64_t switchReverseEventsCount = m_GlobalTotalReverseEventsCount[ispd::services::ServiceType::SWITCH];
+
+  const double avgSwitchForwardTime = switchTotalForwardTime / switchForwardEventsCount;
+  const double avgSwitchReverseTime = switchTotalReverseTime / switchReverseEventsCount;
 #endif // DEBUG_ON
 
   ispd_log(LOG_INFO, "");
@@ -311,15 +321,20 @@ void GlobalMetricsCollector::reportGlobalMetrics() {
   ispd_log(LOG_INFO, " Master Forward Events Count.....: %lu events.", masterForwardEventsCount);
   ispd_log(LOG_INFO, " Master Reverse Events Count.....: %lu events.", masterReverseEventsCount);
   ispd_log(LOG_INFO, "");
-  ispd_log(LOG_INFO, " Avg. Link Forward Time.......: %lf ns.", avgLinkForwardTime);
-  ispd_log(LOG_INFO, " Avg. Link Reverse Time.......: %lf ns.", avgLinkReverseTime);
-  ispd_log(LOG_INFO, " Link Forward Events Count....: %lu events.", linkForwardEventsCount);
-  ispd_log(LOG_INFO, " Link Reverse Events Count....: %lu events.", linkReverseEventsCount);
+  ispd_log(LOG_INFO, " Avg. Link Forward Time..........: %lf ns.", avgLinkForwardTime);
+  ispd_log(LOG_INFO, " Avg. Link Reverse Time..........: %lf ns.", avgLinkReverseTime);
+  ispd_log(LOG_INFO, " Link Forward Events Count.......: %lu events.", linkForwardEventsCount);
+  ispd_log(LOG_INFO, " Link Reverse Events Count.......: %lu events.", linkReverseEventsCount);
   ispd_log(LOG_INFO, "");
   ispd_log(LOG_INFO, " Avg. Machine Forward Time.......: %lf ns.", avgMachineForwardTime);
   ispd_log(LOG_INFO, " Avg. Machine Reverse Time.......: %lf ns.", avgMachineReverseTime);
   ispd_log(LOG_INFO, " Machine Forward Events Count....: %lu events.", machineForwardEventsCount);
   ispd_log(LOG_INFO, " Machine Reverse Events Count....: %lu events.", machineReverseEventsCount);
+  ispd_log(LOG_INFO, "");
+  ispd_log(LOG_INFO, " Avg. Switch Forward Time........: %lf ns.", avgSwitchForwardTime);
+  ispd_log(LOG_INFO, " Avg. Switch Reverse Time........: %lf ns.", avgSwitchReverseTime);
+  ispd_log(LOG_INFO, " Switch Forward Events Count.....: %lu events.", switchForwardEventsCount);
+  ispd_log(LOG_INFO, " Switch Reverse Events Count.....: %lu events.", switchReverseEventsCount);
   ispd_log(LOG_INFO, "");
 #endif // DEBUG_ON
 }
