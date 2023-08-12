@@ -195,29 +195,36 @@ void NodeMetricsCollector::reportNodeMetrics() {
     ispd_error("Global total turnaround time could not be reduced, exiting...");
   
 #ifdef DEBUG_ON
-  /// Report to the master node the forward processing time.
-  if (MPI_SUCCESS != MPI_Reduce(&m_NodeTotalForwardTime[ispd::services::ServiceType::MASTER],
-                                &gmc->m_GlobalTotalForwardTime[ispd::services::ServiceType::MASTER],
-                                1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_ROSS))
-    ispd_error("Global total master forward time could not be reduced, exiting...");
+  for (const auto& serviceType : ispd::services::g_ServiceTypes) {
+    /// Report to the master node the forward processing time.
+    if (MPI_SUCCESS != MPI_Reduce(&m_NodeTotalForwardTime[serviceType],
+                                  &gmc->m_GlobalTotalForwardTime[serviceType],
+                                  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_ROSS))
+      ispd_error("Global total %s forward time could not be reduced, exiting...",
+         ispd::services::getServiceTypeName(serviceType));
 
-  /// Report to the master node the forward events count.
-  if (MPI_SUCCESS != MPI_Reduce(&m_NodeTotalForwardEventsCount[ispd::services::ServiceType::MASTER],
-                                &gmc->m_GlobalTotalForwardEventsCount[ispd::services::ServiceType::MASTER],
-                                1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_ROSS))
-    ispd_error("Global total master forward events count could not be reduced, exiting...");
+    /// Report to the master node the forward events count.
+    if (MPI_SUCCESS != MPI_Reduce(&m_NodeTotalForwardEventsCount[serviceType],
+                                  &gmc->m_GlobalTotalForwardEventsCount[serviceType],
+                                  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_ROSS))
+      ispd_error("Global total %s forward events count could not be reduced, exiting...",
+          ispd::services::getServiceTypeName(serviceType));
 
-  /// Report to the master node the reverse processing time.
-  if (MPI_SUCCESS != MPI_Reduce(&m_NodeTotalReverseTime[ispd::services::ServiceType::MASTER],
-                                &gmc->m_GlobalTotalReverseTime[ispd::services::ServiceType::MASTER],
-                                1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_ROSS))
-    ispd_error("Global total master reverse time could not be reduced, exiting...");
+    /// Report to the master node the reverse processing time.
+    if (MPI_SUCCESS != MPI_Reduce(&m_NodeTotalReverseTime[serviceType],
+                                  &gmc->m_GlobalTotalReverseTime[serviceType],
+                                  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_ROSS))
+      ispd_error("Global total %s reverse time could not be reduced, exiting...",
+          ispd::services::getServiceTypeName(serviceType));
 
-  /// Report to the master node the reverse events count.
-  if (MPI_SUCCESS != MPI_Reduce(&m_NodeTotalReverseEventsCount[ispd::services::ServiceType::MASTER],
-                                &gmc->m_GlobalTotalReverseEventsCount[ispd::services::ServiceType::MASTER],
-                                1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_ROSS))
-    ispd_error("Global total master reverse events count could not be reduced, exiting...");
+    /// Report to the master node the reverse events count.
+    if (MPI_SUCCESS != MPI_Reduce(&m_NodeTotalReverseEventsCount[serviceType],
+                                  &gmc->m_GlobalTotalReverseEventsCount[serviceType],
+                                  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_ROSS))
+      ispd_error("Global total %s reverse events count could not be reduced, exiting...",
+          ispd::services::getServiceTypeName(serviceType));
+  }
+
 #endif // DEBUG_ON
 }
 
@@ -248,6 +255,15 @@ void GlobalMetricsCollector::reportGlobalMetrics() {
   const double avgMasterForwardTime = masterTotalForwardTime / masterForwardEventsCount;
   const double avgMasterReverseTime = masterTotalReverseTime / masterReverseEventsCount;
 
+  /// Calculating the forward and reverse average time of the machine service center.
+  const double machineTotalForwardTime = m_GlobalTotalForwardTime[ispd::services::ServiceType::MACHINE];
+  const double machineTotalReverseTime = m_GlobalTotalReverseTime[ispd::services::ServiceType::MACHINE];
+
+  const uint64_t machineForwardEventsCount = m_GlobalTotalForwardEventsCount[ispd::services::ServiceType::MACHINE];
+  const uint64_t machineReverseEventsCount = m_GlobalTotalReverseEventsCount[ispd::services::ServiceType::MACHINE];
+
+  const double avgMachineForwardTime = machineTotalForwardTime / machineForwardEventsCount;
+  const double avgMachineReverseTime = machineTotalReverseTime / machineReverseEventsCount;
 #endif // DEBUG_ON
 
   ispd_log(LOG_INFO, "");
@@ -284,6 +300,11 @@ void GlobalMetricsCollector::reportGlobalMetrics() {
   ispd_log(LOG_INFO, " Avg. Master Reverse Time........: %lf ns.", avgMasterReverseTime);
   ispd_log(LOG_INFO, " Master Forward Events Count.....: %lu events.", masterForwardEventsCount);
   ispd_log(LOG_INFO, " Master Reverse Events Count.....: %lu events.", masterReverseEventsCount);
+  ispd_log(LOG_INFO, "");
+  ispd_log(LOG_INFO, " Avg. Machine Forward Time.......: %lf ns.", avgMachineForwardTime);
+  ispd_log(LOG_INFO, " Avg. Machine Reverse Time.......: %lf ns.", avgMachineReverseTime);
+  ispd_log(LOG_INFO, " Machine Forward Events Count....: %lu events.", machineForwardEventsCount);
+  ispd_log(LOG_INFO, " Machine Reverse Events Count....: %lu events.", machineReverseEventsCount);
   ispd_log(LOG_INFO, "");
 #endif // DEBUG_ON
 }
