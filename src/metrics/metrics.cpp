@@ -245,45 +245,36 @@ void GlobalMetricsCollector::reportGlobalMetrics() {
   const double efficiency = maxComputationalPower / m_GlobalTotalComputationalPower;
 
 #ifdef DEBUG_ON
-  /// Calculating the forward and reverse average time of the master service center.
-  const double masterTotalForwardTime = m_GlobalTotalForwardTime[ispd::services::ServiceType::MASTER];
-  const double masterTotalReverseTime = m_GlobalTotalReverseTime[ispd::services::ServiceType::MASTER];
+  /// This struct defines a container to store metrics related to a service center type's processing activities.
+  struct ServiceCenterMetrics {
+      /// The total real time taken (in ns) for forwarding events in this service center type.
+      double m_TotalForwardTime;
+      
+      /// The total real time taken (in ns) for reversing events in this service center type.
+      double m_TotalReverseTime;
 
-  const uint64_t masterForwardEventsCount = m_GlobalTotalForwardEventsCount[ispd::services::ServiceType::MASTER];
-  const uint64_t masterReverseEventsCount = m_GlobalTotalReverseEventsCount[ispd::services::ServiceType::MASTER];
+      /// The count of all events forwarded by this service center type.
+      uint64_t m_ForwardEventsCount;
+      
+      /// The count of all events reversed by this service center type.
+      uint64_t m_ReverseEventsCount;
+  };
 
-  const double avgMasterForwardTime = masterTotalForwardTime / masterForwardEventsCount;
-  const double avgMasterReverseTime = masterTotalReverseTime / masterReverseEventsCount;
+  /// This unordered_map associates each service center type with its corresponding metrics.
+  std::unordered_map<ispd::services::ServiceType, ServiceCenterMetrics> serviceCenterMetrics;
 
-  /// Calculating the forward and reverse average time of the link service center.
-  const double linkTotalForwardTime = m_GlobalTotalForwardTime[ispd::services::ServiceType::LINK];
-  const double linkTotalReverseTime = m_GlobalTotalReverseTime[ispd::services::ServiceType::LINK];
+  /// Fetches the service center metrics from the global metrics pool.
+  for (const auto& serviceType : ispd::services::g_ServiceTypes) {
+    ServiceCenterMetrics& metrics = serviceCenterMetrics[serviceType];
 
-  const uint64_t linkForwardEventsCount = m_GlobalTotalForwardEventsCount[ispd::services::ServiceType::LINK];
-  const uint64_t linkReverseEventsCount = m_GlobalTotalReverseEventsCount[ispd::services::ServiceType::LINK];
-
-  const double avgLinkForwardTime = linkTotalForwardTime / linkForwardEventsCount;
-  const double avgLinkReverseTime = linkTotalReverseTime / linkReverseEventsCount;
-
-  /// Calculating the forward and reverse average time of the machine service center.
-  const double machineTotalForwardTime = m_GlobalTotalForwardTime[ispd::services::ServiceType::MACHINE];
-  const double machineTotalReverseTime = m_GlobalTotalReverseTime[ispd::services::ServiceType::MACHINE];
-
-  const uint64_t machineForwardEventsCount = m_GlobalTotalForwardEventsCount[ispd::services::ServiceType::MACHINE];
-  const uint64_t machineReverseEventsCount = m_GlobalTotalReverseEventsCount[ispd::services::ServiceType::MACHINE];
-
-  const double avgMachineForwardTime = machineTotalForwardTime / machineForwardEventsCount;
-  const double avgMachineReverseTime = machineTotalReverseTime / machineReverseEventsCount;
-
-  /// Calculating the forward and reverse average time of the switch service center.
-  const double switchTotalForwardTime = m_GlobalTotalForwardTime[ispd::services::ServiceType::SWITCH];
-  const double switchTotalReverseTime = m_GlobalTotalReverseTime[ispd::services::ServiceType::SWITCH];
-
-  const uint64_t switchForwardEventsCount = m_GlobalTotalForwardEventsCount[ispd::services::ServiceType::SWITCH];
-  const uint64_t switchReverseEventsCount = m_GlobalTotalReverseEventsCount[ispd::services::ServiceType::SWITCH];
-
-  const double avgSwitchForwardTime = switchTotalForwardTime / switchForwardEventsCount;
-  const double avgSwitchReverseTime = switchTotalReverseTime / switchReverseEventsCount;
+    /// Fetches the forward and reverse processing time of the service center.
+    metrics.m_TotalForwardTime = m_GlobalTotalForwardTime[serviceType];
+    metrics.m_TotalReverseTime = m_GlobalTotalReverseTime[serviceType];
+    
+    /// Fetches the forward and reverse events processed of the service center.
+    metrics.m_ForwardEventsCount = m_GlobalTotalForwardEventsCount[serviceType];
+    metrics.m_ReverseEventsCount = m_GlobalTotalReverseEventsCount[serviceType];
+  }
 #endif // DEBUG_ON
 
   ispd_log(LOG_INFO, "");
@@ -316,26 +307,23 @@ void GlobalMetricsCollector::reportGlobalMetrics() {
 
 #ifdef DEBUG_ON
   ispd_log(LOG_INFO, "Service Center Metrics");
-  ispd_log(LOG_INFO, " Avg. Master Forward Time........: %lf ns.", avgMasterForwardTime);
-  ispd_log(LOG_INFO, " Avg. Master Reverse Time........: %lf ns.", avgMasterReverseTime);
-  ispd_log(LOG_INFO, " Master Forward Events Count.....: %lu events.", masterForwardEventsCount);
-  ispd_log(LOG_INFO, " Master Reverse Events Count.....: %lu events.", masterReverseEventsCount);
-  ispd_log(LOG_INFO, "");
-  ispd_log(LOG_INFO, " Avg. Link Forward Time..........: %lf ns.", avgLinkForwardTime);
-  ispd_log(LOG_INFO, " Avg. Link Reverse Time..........: %lf ns.", avgLinkReverseTime);
-  ispd_log(LOG_INFO, " Link Forward Events Count.......: %lu events.", linkForwardEventsCount);
-  ispd_log(LOG_INFO, " Link Reverse Events Count.......: %lu events.", linkReverseEventsCount);
-  ispd_log(LOG_INFO, "");
-  ispd_log(LOG_INFO, " Avg. Machine Forward Time.......: %lf ns.", avgMachineForwardTime);
-  ispd_log(LOG_INFO, " Avg. Machine Reverse Time.......: %lf ns.", avgMachineReverseTime);
-  ispd_log(LOG_INFO, " Machine Forward Events Count....: %lu events.", machineForwardEventsCount);
-  ispd_log(LOG_INFO, " Machine Reverse Events Count....: %lu events.", machineReverseEventsCount);
-  ispd_log(LOG_INFO, "");
-  ispd_log(LOG_INFO, " Avg. Switch Forward Time........: %lf ns.", avgSwitchForwardTime);
-  ispd_log(LOG_INFO, " Avg. Switch Reverse Time........: %lf ns.", avgSwitchReverseTime);
-  ispd_log(LOG_INFO, " Switch Forward Events Count.....: %lu events.", switchForwardEventsCount);
-  ispd_log(LOG_INFO, " Switch Reverse Events Count.....: %lu events.", switchReverseEventsCount);
-  ispd_log(LOG_INFO, "");
+  
+  /// Calculate the average time taken for forward and reverse processing and, print the information
+  /// about the average time of forward and reverse processing as well as the forward and reverse event count.
+  for (const auto& serviceType : ispd::services::g_ServiceTypes) {
+    const ServiceCenterMetrics& metrics = serviceCenterMetrics[serviceType];
+    
+    const double avgForwardTime = metrics.m_TotalForwardTime / metrics.m_ForwardEventsCount;
+    const double avgReverseTime = metrics.m_TotalReverseTime / metrics.m_ReverseEventsCount;
+    
+    const char *capitalizedServiceTypeName = ispd::services::getServiceTypeName<true>(serviceType);
+    
+    ispd_log(LOG_INFO, " Avg. %s Forward Time........: %lf ns.", capitalizedServiceTypeName, avgForwardTime);
+    ispd_log(LOG_INFO, " Avg. %s Reverse Time........: %lf ns.", capitalizedServiceTypeName, avgReverseTime);
+    ispd_log(LOG_INFO, " %s Forward Events Count.....: %lu events.", capitalizedServiceTypeName, metrics.m_ForwardEventsCount);
+    ispd_log(LOG_INFO, " %s Reverse Events Count.....: %lu events.", capitalizedServiceTypeName, metrics.m_ReverseEventsCount);
+    ispd_log(LOG_INFO, "");   
+  }
 #endif // DEBUG_ON
 }
 

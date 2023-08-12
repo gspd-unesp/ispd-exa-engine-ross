@@ -20,15 +20,27 @@ constexpr std::array<ServiceType, 4> g_ServiceTypes = {
   ServiceType::SWITCH,
 };
 
+template <bool _Capitalized = false>
 constexpr const char* getServiceTypeName(const ServiceType type) {
-  switch (type) {
-    case ServiceType::MASTER: return "master";
-    case ServiceType::LINK: return "link";
-    case ServiceType::MACHINE: return "machine";
-    case ServiceType::SWITCH: return "switch";
-    default:
-      return nullptr;
-  } 
+  if constexpr (_Capitalized) {
+     switch (type) {
+      case ServiceType::MASTER: return "Master";
+      case ServiceType::LINK: return "Link";
+      case ServiceType::MACHINE: return "Machine";
+      case ServiceType::SWITCH: return "Switch";
+      default:
+        return nullptr;
+    }     
+  } else {
+    switch (type) {
+      case ServiceType::MASTER: return "master";
+      case ServiceType::LINK: return "link";
+      case ServiceType::MACHINE: return "machine";
+      case ServiceType::SWITCH: return "switch";
+      default:
+        return nullptr;
+    } 
+  }
 }
 
 }; // namespace ispd::services
