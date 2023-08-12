@@ -2,6 +2,7 @@
 #define ISPD_SERVICE_LINK_HPP
 
 #include <ross.h>
+#include <chrono>
 #include <ispd/debug/debug.hpp>
 #include <ispd/model/builder.hpp>
 #include <ispd/message/message.hpp>
@@ -95,6 +96,10 @@ struct link {
   static void forward(link_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
     ispd_debug("[Forward] Link %lu received a message at %lf of type (%d).", lp->gid, tw_now(lp), msg->type);
 
+#ifdef DEBUG_ON
+  const auto start = std::chrono::high_resolution_clock::now();
+#endif // DEBUG_ON
+
     /// Fetch the communication size and calculates the communication time.
     const double comm_size = msg->task.comm_size;
     const double comm_time = time_to_comm(&s->conf, comm_size);
@@ -170,10 +175,22 @@ struct link {
     msg->saved_waiting_time = waiting_delay;
 
     tw_event_send(e);
+
+#ifdef DEBUG_ON
+  const auto end = std::chrono::high_resolution_clock::now();
+  const auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+  const auto timeTaken = static_cast<double>(duration.count());
+
+  ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_LINK_FORWARD_TIME, timeTaken);
+#endif // DEBUG_ON
   }
 
   static void reverse(link_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
     ispd_debug("[Reverse] Link %lu received a message at %lf of type (%d).", lp->gid, tw_now(lp), msg->type);
+
+#ifdef DEBUG_ON
+  const auto start = std::chrono::high_resolution_clock::now();
+#endif // DEBUG_ON
 
     /// Fetch the communication size and calculates the communication time.
     const double comm_size = msg->task.comm_size;
@@ -203,6 +220,14 @@ struct link {
       s->metrics.upward_comm_packets--;
       s->metrics.upward_waiting_time -= waiting_delay;
     }
+
+#ifdef DEBUG_ON
+  const auto end = std::chrono::high_resolution_clock::now();
+  const auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+  const auto timeTaken = static_cast<double>(duration.count());
+
+  ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_LINK_REVERSE_TIME, timeTaken);
+#endif // DEBUG_ON
   }
 
   static void finish(link_state *s, tw_lp *lp) {

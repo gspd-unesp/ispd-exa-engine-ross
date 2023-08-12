@@ -255,6 +255,16 @@ void GlobalMetricsCollector::reportGlobalMetrics() {
   const double avgMasterForwardTime = masterTotalForwardTime / masterForwardEventsCount;
   const double avgMasterReverseTime = masterTotalReverseTime / masterReverseEventsCount;
 
+  /// Calculating the forward and reverse average time of the link service center.
+  const double linkTotalForwardTime = m_GlobalTotalForwardTime[ispd::services::ServiceType::LINK];
+  const double linkTotalReverseTime = m_GlobalTotalReverseTime[ispd::services::ServiceType::LINK];
+
+  const uint64_t linkForwardEventsCount = m_GlobalTotalForwardEventsCount[ispd::services::ServiceType::LINK];
+  const uint64_t linkReverseEventsCount = m_GlobalTotalReverseEventsCount[ispd::services::ServiceType::LINK];
+
+  const double avgLinkForwardTime = linkTotalForwardTime / linkForwardEventsCount;
+  const double avgLinkReverseTime = linkTotalReverseTime / linkReverseEventsCount;
+
   /// Calculating the forward and reverse average time of the machine service center.
   const double machineTotalForwardTime = m_GlobalTotalForwardTime[ispd::services::ServiceType::MACHINE];
   const double machineTotalReverseTime = m_GlobalTotalReverseTime[ispd::services::ServiceType::MACHINE];
@@ -300,6 +310,11 @@ void GlobalMetricsCollector::reportGlobalMetrics() {
   ispd_log(LOG_INFO, " Avg. Master Reverse Time........: %lf ns.", avgMasterReverseTime);
   ispd_log(LOG_INFO, " Master Forward Events Count.....: %lu events.", masterForwardEventsCount);
   ispd_log(LOG_INFO, " Master Reverse Events Count.....: %lu events.", masterReverseEventsCount);
+  ispd_log(LOG_INFO, "");
+  ispd_log(LOG_INFO, " Avg. Link Forward Time.......: %lf ns.", avgLinkForwardTime);
+  ispd_log(LOG_INFO, " Avg. Link Reverse Time.......: %lf ns.", avgLinkReverseTime);
+  ispd_log(LOG_INFO, " Link Forward Events Count....: %lu events.", linkForwardEventsCount);
+  ispd_log(LOG_INFO, " Link Reverse Events Count....: %lu events.", linkReverseEventsCount);
   ispd_log(LOG_INFO, "");
   ispd_log(LOG_INFO, " Avg. Machine Forward Time.......: %lf ns.", avgMachineForwardTime);
   ispd_log(LOG_INFO, " Avg. Machine Reverse Time.......: %lf ns.", avgMachineReverseTime);
