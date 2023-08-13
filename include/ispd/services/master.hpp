@@ -66,8 +66,12 @@ struct master {
     /// no workload is generate at all, since at initialization it has been identified
     /// that the specified workload has no tasks.
     if (s->workload->getRemainingTasks() > 0) {
+      double offset;
+
+      s->workload->generateInterarrival(lp->rng, offset);
+
       /// Send a generate message to itself.
-      tw_event *const e = tw_event_new(lp->gid, tw_rand_exponential(lp->rng, 0.1), lp);
+      tw_event *const e = tw_event_new(lp->gid, offset, lp);
       ispd_message *const m = static_cast<ispd_message *>(tw_event_data(e));
 
       m->type = message_type::GENERATE;
@@ -173,8 +177,12 @@ private:
     /// Checks if the there are more remaining tasks to be generated. If so, a generate message
     /// is sent to the master by itself to generate a new task.
     if (s->workload->getRemainingTasks() > 0) {
+      double offset;
+
+      s->workload->generateInterarrival(lp->rng, offset);
+
       /// Send a generate message to itself.
-      tw_event *const e = tw_event_new(lp->gid, tw_rand_exponential(lp->rng, 0.1), lp);
+      tw_event *const e = tw_event_new(lp->gid, offset, lp);
       ispd_message *const m = static_cast<ispd_message *>(tw_event_data(e));
 
       m->type = message_type::GENERATE;
@@ -206,7 +214,7 @@ private:
     /// If so, the random number generator is reversed since it is used to generate the interarrival
     /// time of the tasks.
     if (s->workload->getRemainingTasks() > 0)
-      tw_rand_reverse_unif(lp->rng);
+      s->workload->reverseGenerateInterarrival(lp->rng);
 
 #ifdef DEBUG_ON
   const auto end = std::chrono::high_resolution_clock::now();

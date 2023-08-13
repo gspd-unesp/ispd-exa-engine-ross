@@ -4,8 +4,11 @@
 
 namespace ispd::workload {
 
-Workload::Workload(const std::string& user, unsigned remainingTasks)
-    : m_User(user), m_RemainingTasks(remainingTasks) {
+Workload::Workload(const std::string& user,
+                   const unsigned remainingTasks,
+                   std::unique_ptr<InterarrivalDistribution> interarrivalDist)
+    : m_User(user), m_RemainingTasks(remainingTasks),
+      m_InterarrivalDist(std::move(interarrivalDist)) {
     
     // Fetch the registered users in the simulated model.
     const auto& registeredUsers = ispd::this_model::getUsers();
@@ -19,8 +22,10 @@ Workload::Workload(const std::string& user, unsigned remainingTasks)
 ConstantWorkload::ConstantWorkload(const std::string& user,
                             const unsigned remainingTasks,
                             const double constantProcSize,
-                            const double constantCommSize)
-      : Workload(user, remainingTasks), m_ConstantProcSize(constantProcSize),
+                            const double constantCommSize,
+                            std::unique_ptr<InterarrivalDistribution> interarrivalDist)
+      : Workload(user, remainingTasks, std::move(interarrivalDist)),
+        m_ConstantProcSize(constantProcSize),
         m_ConstantCommSize(constantCommSize) {
     if (constantProcSize <= 0.0)
       ispd_error("Constant processing size must be positive (Specified "
@@ -39,9 +44,12 @@ ConstantWorkload::ConstantWorkload(const std::string& user,
 UniformWorkload::UniformWorkload(const std::string& user,
                            const unsigned remainingTasks,
                            const double minProcSize, const double maxProcSize,
-                           const double minCommSize, const double maxCommSize)
-      : Workload(user, remainingTasks), m_MinProcSize(minProcSize),
-        m_MaxProcSize(maxProcSize), m_MinCommSize(minCommSize),
+                           const double minCommSize, const double maxCommSize,
+                           std::unique_ptr<InterarrivalDistribution> interarrivalDist)
+      : Workload(user, remainingTasks, std::move(interarrivalDist)), 
+        m_MinProcSize(minProcSize),
+        m_MaxProcSize(maxProcSize),
+        m_MinCommSize(minCommSize),
         m_MaxCommSize(maxCommSize) {
     if (minProcSize <= 0.0)
       ispd_error("Minimum processing size must be positive (Specified "
@@ -68,27 +76,31 @@ UniformWorkload::UniformWorkload(const std::string& user,
                remainingTasks);
   }
 
-NullWorkload::NullWorkload(const std::string& user) : Workload(user, 0) {}
+NullWorkload::NullWorkload(const std::string& user) : Workload(user, 0, nullptr) {}
 
 ConstantWorkload *constant(const std::string& user,
-                                         const unsigned remainingTasks,
-                                         const double constantProcSize,
-                                         const double constantCommSize) {
+                           const unsigned remainingTasks,
+                           const double constantProcSize,
+                           const double constantCommSize,
+                           std::unique_ptr<InterarrivalDistribution> interarrivalDist) {
   return new ConstantWorkload(user,
                               remainingTasks,
                               constantProcSize,
-                              constantCommSize);
+                              constantCommSize,
+                              std::move(interarrivalDist));
 }
 
 UniformWorkload *uniform(const std::string& user,
-                                       const unsigned remainingTasks,
-                                       const double minProcSize,
-                                       const double maxProcSize,
-                                       const double minCommSize,
-                                       const double maxCommSize) {
+                         const unsigned remainingTasks,
+                         const double minProcSize,
+                         const double maxProcSize,
+                         const double minCommSize,
+                         const double maxCommSize,
+                         std::unique_ptr<InterarrivalDistribution> interarrivalDist) {
   return new UniformWorkload(user, remainingTasks, 
                              minProcSize, maxProcSize,
-                             minCommSize, maxCommSize);
+                             minCommSize, maxCommSize,
+                             std::move(interarrivalDist));
 }
 
 NullWorkload *null(const std::string& user) {

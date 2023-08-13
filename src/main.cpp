@@ -12,6 +12,8 @@
 #include <ispd/message/message.hpp>
 #include <ispd/routing/routing.hpp>
 #include <ispd/metrics/metrics.hpp>
+#include <ispd/workload/workload.hpp>
+#include <ispd/workload/interarrival.hpp>
 
 static unsigned g_star_machine_amount = 10;
 static unsigned g_star_task_amount = 100;
@@ -79,7 +81,8 @@ int main(int argc, char **argv) {
 
   ispd::this_model::registerMaster(
       0, std::move(slaves), new ispd::scheduler::round_robin,
-      ispd::workload::constant("User1", g_star_task_amount, 1000.0, 80.0));
+      ispd::workload::constant("User1", g_star_task_amount, 1000.0, 80.0,
+        std::make_unique<ispd::workload::PoissonInterarrivalDistribution>(0.1)));
 
   /// Registers service initializers for the links.
   for (tw_lpid link_id = 1; link_id <= highest_link_id; link_id += 2)
