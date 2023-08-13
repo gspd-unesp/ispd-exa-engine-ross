@@ -1,4 +1,5 @@
 #include <sstream>
+#include <string>
 #include <algorithm>
 #include <ispd/model/builder.hpp>
 #include <ispd/services/master.hpp>
@@ -190,6 +191,39 @@ void SimulationModel::registerMaster(
              slaveCount, someSlaves.c_str());
 }
 
+void SimulationModel::registerUser(const std::string& name, const double energyConsumptionLimit) {
+  /// Checks if a user with that name has already been regisitered. If so, the
+  /// program is immediately aborted, since unique named users are mandatory.
+  if (m_Users.find(name) != m_Users.end())
+    ispd_error("A user named %s has already been registered.", name.c_str());
+  
+  /// Checks if the specified energy consumption limit is not finite. If so, the
+  /// program is immediately aborted, since a finite limit must be specified.
+  if (!std::isfinite(energyConsumptionLimit))
+    ispd_error("The specified energy consumption limit for user %s must be finite.", name.c_str());
+
+  /// Checks if the specified energy consumption limit is negative. If so, the
+  /// program is immediately aborted, since a non-negative limit must be specified.
+  if (energyConsumptionLimit < 0.0)
+    ispd_error("The specified energy consumption limit for user %s must be positive.", name.c_str());
+
+  /// A copy of the specified name to be checked.
+  std::string checkedName = name;
+  
+  /// Remove all blank spaces from the specified name.
+  std::remove(checkedName.begin(), checkedName.end(), ' ');
+
+  /// Checks if the specified name is empty or only contains blank spaces. If so, the
+  /// program is immediately aborted.
+  if (checkedName.size() == 0)
+    ispd_error("An invalid username has been specified. It must contain at least one letter.");
+  
+  /// Construct the user and insert into the users mapping.
+  m_Users.emplace(name, User(name, energyConsumptionLimit));
+  
+  ispd_debug("A user named %s with consumption limit of %.2lf has been registered.", name.c_str(), energyConsumptionLimit);
+}
+
 const std::function<void(void *)> &
 SimulationModel::getServiceInitializer(const tw_lpid gid) {
   /// Checks if a service initializer for the specified global identifier has
@@ -234,9 +268,19 @@ void registerMaster(const tw_lpid gid, std::vector<tw_lpid> &&slaves,
   g_Model->registerMaster(gid, std::move(slaves), scheduler, workload);
 }
 
+void registerUser(const std::string& name, const double energyConsumptionLimit) {
+  /// Forward the user registration to the global model.
+  g_Model->registerUser(name, energyConsumptionLimit);
+}
+
 const std::function<void(void *)> &getServiceInitializer(const tw_lpid gid) {
   /// Forward the service initializer query to the global model.
   return g_Model->getServiceInitializer(gid);
+}
+
+const std::unordered_map<std::string, ispd::model::User>& getUsers() {
+  /// Forward the users query  to the global model.
+  return g_Model->getUsers();
 }
 
 }; // namespace ispd::this_model

@@ -4,6 +4,7 @@
 #include <ross.h>
 #include <vector>
 #include <memory>
+#include <chrono>
 #include <ispd/debug/debug.hpp>
 #include <ispd/model/builder.hpp>
 #include <ispd/routing/routing.hpp>
@@ -65,8 +66,12 @@ struct master {
     /// no workload is generate at all, since at initialization it has been identified
     /// that the specified workload has no tasks.
     if (s->workload->getRemainingTasks() > 0) {
+      double offset;
+
+      s->workload->generateInterarrival(lp->rng, offset);
+
       /// Send a generate message to itself.
-      tw_event *const e = tw_event_new(lp->gid, tw_rand_exponential(lp->rng, 0.1), lp);
+      tw_event *const e = tw_event_new(lp->gid, offset, lp);
       ispd_message *const m = static_cast<ispd_message *>(tw_event_data(e));
 
       m->type = message_type::GENERATE;
@@ -93,6 +98,7 @@ struct master {
         abort();
         break;
     }
+
   }
 
   static void reverse(master_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
@@ -134,6 +140,10 @@ private:
   static void generate(master_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
     ispd_debug("Master %lu will generate a task at %lf, remaining %u.", lp->gid, tw_now(lp), s->workload->getRemainingTasks());
 
+#ifdef DEBUG_ON
+  const auto start = std::chrono::high_resolution_clock::now();
+#endif // DEBUG_ON
+
     /// Use the master's scheduling policy to the schedule the next slave.
     const tw_lpid scheduled_slave_id = s->scheduler->forward_schedule(s->slaves, bf, msg, lp);
 
@@ -151,9 +161,12 @@ private:
     /// processing and communication sizes.
     s->workload->generateWorkload(lp->rng, m->task.proc_size, m->task.comm_size);
 
+    /// Task information specification.
     m->task.origin = lp->gid;
     m->task.dest = scheduled_slave_id;
     m->task.submit_time = tw_now(lp);
+    m->task.user = &s->workload->getUser();
+
     m->route_offset = 1;
     m->previous_service_id = lp->gid;
     m->downward_direction = 1;
@@ -164,17 +177,33 @@ private:
     /// Checks if the there are more remaining tasks to be generated. If so, a generate message
     /// is sent to the master by itself to generate a new task.
     if (s->workload->getRemainingTasks() > 0) {
+      double offset;
+
+      s->workload->generateInterarrival(lp->rng, offset);
+
       /// Send a generate message to itself.
-      tw_event *const e = tw_event_new(lp->gid, tw_rand_exponential(lp->rng, 0.1), lp);
+      tw_event *const e = tw_event_new(lp->gid, offset, lp);
       ispd_message *const m = static_cast<ispd_message *>(tw_event_data(e));
 
       m->type = message_type::GENERATE;
 
      tw_event_send(e);    
     }
+
+#ifdef DEBUG_ON
+  const auto end = std::chrono::high_resolution_clock::now();
+  const auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+  const auto timeTaken = static_cast<double>(duration.count());
+
+  ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_MASTER_FORWARD_TIME, timeTaken);
+#endif // DEBUG_ON
   }
 
   static void generate_rc(master_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
+#ifdef DEBUG_ON
+  const auto start = std::chrono::high_resolution_clock::now();
+#endif // DEBUG_ON
+
     /// Reverse the schedule.
     s->scheduler->reverse_schedule(s->slaves, bf, msg, lp);
 
@@ -185,7 +214,15 @@ private:
     /// If so, the random number generator is reversed since it is used to generate the interarrival
     /// time of the tasks.
     if (s->workload->getRemainingTasks() > 0)
-      tw_rand_reverse_unif(lp->rng);
+      s->workload->reverseGenerateInterarrival(lp->rng);
+
+#ifdef DEBUG_ON
+  const auto end = std::chrono::high_resolution_clock::now();
+  const auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+  const auto timeTaken = static_cast<double>(duration.count());
+
+  ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_MASTER_REVERSE_TIME, timeTaken);
+#endif // DEBUG_ON
   }
 
   static void arrival(master_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {

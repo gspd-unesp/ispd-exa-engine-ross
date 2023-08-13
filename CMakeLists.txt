@@ -1,5 +1,5 @@
 PROJECT(ISPD_EXA_ENGINE LANGUAGES CXX C)
-SET(CMAKE_CXX_STANDARD 14)
+SET(CMAKE_CXX_STANDARD 17)
 
 INCLUDE_DIRECTORIES(${ROSS_BINARY_DIR} ./include)
 IF(USE_DAMARIS)
@@ -12,11 +12,24 @@ ELSE(NOT(BGPM))
 ENDIF(BGPM)
 
 SET(ispd_srcs
-./src/main.cpp
-./src/log/log.cpp
-./src/model/builder.cpp
-./src/routing/routing.cpp
-./src/metrics/metrics.cpp
+  # Main entry point.
+  ./src/main.cpp
+  
+  # Logging-related files.
+  ./src/log/log.cpp
+  
+  # Model-building related files.
+  ./src/model/builder.cpp
+  
+  # Routing-related files.
+  ./src/routing/routing.cpp
+  
+  # Metric-related files.
+  ./src/metrics/metrics.cpp
+  
+  # Workload-related files.
+  ./src/workload/workload.cpp
+  ./src/workload/interarrival.cpp
 )
 
 ADD_EXECUTABLE(ispd ${ispd_srcs})

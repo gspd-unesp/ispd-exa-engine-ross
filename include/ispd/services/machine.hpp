@@ -3,6 +3,7 @@
 
 #include <ross.h>
 #include <vector>
+#include <chrono>
 #include <limits>
 #include <algorithm>
 #include <numeric>
@@ -93,6 +94,10 @@ struct machine {
   static void forward(machine_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
     ispd_debug("[Forward] Machine %lu received a message at %lf of type (%d) and route offset (%u).", lp->gid, tw_now(lp), msg->type, msg->route_offset);
 
+#ifdef DEBUG_ON
+  const auto start = std::chrono::high_resolution_clock::now();
+#endif // DEBUG_ON
+
     /// Checks if the task's destination is this machine. If so, the task is processed
     /// and the task's results is sent back to the master by the same route it came along.
     if (msg->task.dest == lp->gid) {
@@ -155,10 +160,21 @@ struct machine {
 
       tw_event_send(e);
     }
+#ifdef DEBUG_ON
+  const auto end = std::chrono::high_resolution_clock::now();
+  const auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+  const auto timeTaken = static_cast<double>(duration.count());
+
+  ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_MACHINE_FORWARD_TIME, timeTaken);
+#endif // DEBUG_ON
   }
 
   static void reverse(machine_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
     ispd_debug("[Reverse] Machine %lu received a message at %lf of type (%d).", lp->gid, tw_now(lp), msg->type);
+
+#ifdef DEBUG_ON
+  const auto start = std::chrono::high_resolution_clock::now();
+#endif // DEBUG_ON
 
     /// Check if the task's destination is this machine.
     if (msg->task.dest == lp->gid) {
@@ -180,6 +196,14 @@ struct machine {
       /// Reverse machine's metrics.
       s->metrics.forwarded_packets--;
     }
+
+#ifdef DEBUG_ON
+  const auto end = std::chrono::high_resolution_clock::now();
+  const auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+  const auto timeTaken = static_cast<double>(duration.count());
+
+  ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_MACHINE_REVERSE_TIME, timeTaken);
+#endif // DEBUG_ON
   }
 
   static void finish(machine_state *s, tw_lp *lp) {

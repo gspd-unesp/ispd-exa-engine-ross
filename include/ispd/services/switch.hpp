@@ -2,6 +2,7 @@
 #define ISPD_SERVICE_SWITCH_HPP
 
 #include <ross.h>
+#include <chrono>
 #include <ispd/debug/debug.hpp>
 #include <ispd/message/message.hpp>
 #include <ispd/routing/routing.hpp>
@@ -58,6 +59,10 @@ struct Switch {
                "and route offset (%u).",
                lp->gid, tw_now(lp), msg->type, msg->route_offset);
 
+#ifdef DEBUG_ON
+  const auto start = std::chrono::high_resolution_clock::now();
+#endif // DEBUG_ON
+
     /// Fetch the communication size and calculate the communication time.
     const double commSize = msg->task.comm_size;
     const double commTime = timeToComm(s->m_Conf, commSize);
@@ -87,11 +92,23 @@ struct Switch {
     m->previous_service_id = lp->gid;
 
     tw_event_send(e);
+
+#ifdef DEBUG_ON
+  const auto end = std::chrono::high_resolution_clock::now();
+  const auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+  const auto timeTaken = static_cast<double>(duration.count());
+
+  ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_SWITCH_FORWARD_TIME, timeTaken);
+#endif // DEBUG_ON
   }
 
   static void reverse(SwitchState *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
     ispd_debug("[Reverse] Switch %lu received a message at %lf of type (%d).",
                lp->gid, tw_now(lp), msg->type);
+
+#ifdef DEBUG_ON
+  const auto start = std::chrono::high_resolution_clock::now();
+#endif // DEBUG_ON
 
     const double commSize = msg->task.comm_size;
     const double commTime = timeToComm(s->m_Conf, commSize);
@@ -104,6 +121,14 @@ struct Switch {
       s->m_Metrics.m_UpwardCommMbits -= commSize;
       s->m_Metrics.m_UpwardCommPackets--;
     }
+
+#ifdef DEBUG_ON
+  const auto end = std::chrono::high_resolution_clock::now();
+  const auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+  const auto timeTaken = static_cast<double>(duration.count());
+
+  ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_SWITCH_REVERSE_TIME, timeTaken);
+#endif // DEBUG_ON
   }
 
   static void finish(SwitchState *s, tw_lp *lp) {
