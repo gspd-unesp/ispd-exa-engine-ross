@@ -22,6 +22,17 @@ public:
   void reverseGenerateInterarrival(tw_rng_stream *const rng) override; 
 };
 
+class PoissonInterarrivalDistribution final : public InterarrivalDistribution {
+private:
+  double m_Lambda;
+
+public:
+  explicit PoissonInterarrivalDistribution(const double lambda);
+
+  void generateInterarrival(tw_rng_stream *const rng, double &offset) override;
+  void reverseGenerateInterarrival(tw_rng_stream *const rng) override;
+};
+
 } // namespace ispd::workload
 
 #endif // ISPD_WORKLOAD_INTERARRIVAL_HPP
