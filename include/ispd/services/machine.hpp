@@ -7,38 +7,22 @@
 #include <limits>
 #include <algorithm>
 #include <numeric>
+
 #include <ispd/message/message.hpp>
 #include <ispd/routing/routing.hpp>
 #include <ispd/model/builder.hpp>
 #include <ispd/metrics/metrics.hpp>
 #include <ispd/metrics/user_metrics.hpp>
 #include <ispd/metrics/machine_metrics.hpp>
+#include <ispd/configuration/machine.hpp>
 
 extern double g_NodeSimulationTime;
 
 namespace ispd {
 namespace services {
 
-class MachineConfiguration {
-  double m_PowerPerCore;
-  double m_Load;
-  unsigned m_CoreCount;
-
-public:
-  MachineConfiguration(const double power, const double load, const unsigned coreCount)
-    : m_PowerPerCore(power / coreCount), m_Load(load), m_CoreCount(coreCount) {}
-
-  inline double timeToProcess(const double processingSize) {
-    return processingSize / ((1.0 - m_Load) * m_PowerPerCore);
-  }
-
-  inline double getPower() const { return m_PowerPerCore * m_CoreCount; }
-  inline double getPowerPerCore() const { return m_PowerPerCore; }
-  inline double getLoad() const { return m_Load; }
-};
-
 struct machine_state {
-  MachineConfiguration conf; ///< Machine's configuration.
+  ispd::configuration::MachineConfiguration conf; ///< Machine's configuration.
   ispd::metrics::MachineMetrics m_Metrics; ///< Machine's metrics.
   std::vector<double> cores_free_time; ///< Machine's queueing model information
 };

@@ -1,6 +1,7 @@
 -I
 ./include
 -I
-/home/ricardo/Desktop/ROSS/core
+/home/ricardo/ROSS/ROSS/core
 -I
-/usr/include/x86_64-linux-gnu/mpi
+/usr/include/mpi.h
+-std=c++17

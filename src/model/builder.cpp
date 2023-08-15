@@ -6,6 +6,7 @@
 #include <ispd/services/link.hpp>
 #include <ispd/services/machine.hpp>
 #include <ispd/services/switch.hpp>
+#include <ispd/configuration/machine.hpp>
 
 static inline std::string firstSlaves(const std::vector<tw_lpid> &slaves) {
   const auto maxToShow = std::vector<tw_lpid>::size_type(10);
@@ -53,7 +54,7 @@ void SimulationModel::registerMachine(const tw_lpid gid, const double power,
         static_cast<ispd::services::machine_state *>(state);
 
     /// Initialize machine's configuration.
-    s->conf = ispd::services::MachineConfiguration(power, load, coreCount);
+    s->conf = ispd::configuration::MachineConfiguration(power, load, coreCount);
     s->cores_free_time.resize(coreCount, 0.0);
   });
 
