@@ -12,16 +12,25 @@
 namespace ispd::model {
 
 class User {
-  std::string m_Name;
-  double m_EnergyConsumptionLimit;
 public:
-  explicit User(const std::string& name, const double energyConsumptionLimit) :
-    m_Name(name), m_EnergyConsumptionLimit(energyConsumptionLimit) {}
+  using uid_t = uint32_t;
 
-  explicit User(const std::string& name) : User(name, 0.0) {}
+  explicit User(const uid_t id, const std::string& name, const double energyConsumptionLimit = 0.0) :
+    m_Id(id), m_Name(name), m_EnergyConsumptionLimit(energyConsumptionLimit) {}
 
+  const uid_t getId() const { return m_Id; }
   const std::string& getName() const { return m_Name; }
   double getEnergyConsumptionLimit() const { return m_EnergyConsumptionLimit; }
+
+private:
+  /// \brief The user unique identifier.
+  uid_t m_Id;
+
+  /// \brief The user name.
+  std::string m_Name;
+
+  /// \brief The user's energy consumption limit.
+  double m_EnergyConsumptionLimit = 0.0;
 };
 
 class SimulationModel {

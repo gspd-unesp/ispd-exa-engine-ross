@@ -218,8 +218,11 @@ void SimulationModel::registerUser(const std::string& name, const double energyC
   if (checkedName.size() == 0)
     ispd_error("An invalid username has been specified. It must contain at least one letter.");
   
+  /// Assign automatically a user identifier.
+  const uid_t id = static_cast<uid_t>(m_Users.size());
+
   /// Construct the user and insert into the users mapping.
-  m_Users.emplace(name, User(name, energyConsumptionLimit));
+  m_Users.emplace(name, User(id, name, energyConsumptionLimit));
   
   ispd_debug("A user named %s with consumption limit of %.2lf has been registered.", name.c_str(), energyConsumptionLimit);
 }
