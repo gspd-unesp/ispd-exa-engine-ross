@@ -13,22 +13,10 @@
 namespace ispd::model {
 
 class SimulationModel {
-  std::unordered_map<tw_lpid, std::function<void(void *)>> service_initializers;
-  std::unordered_map<User::uid_t, User> m_Users;
-
-  inline void
-  registerServiceInitializer(const tw_lpid gid,
-                             std::function<void(void *)> initializer) {
-    /// Checks if a service with the specified global identifier has already
-    /// been registered. If so, the program is immediately aborted.
-    if (service_initializers.find(gid) != service_initializers.end())
-      ispd_error("A service with GID %lu has already been registered.", gid);
-
-    /// Emplace the pair (gid, initializer).
-    service_initializers.emplace(gid, initializer);
-  }
-
 public:
+  using service_init_map_type = std::unordered_map<tw_lpid, std::function<void(void *)>>;
+  using user_map_type = std::unordered_map<User::uid_t, User>;
+
   void registerMachine(const tw_lpid gid, const double power, const double load,
                        const unsigned coreCount);
 
@@ -47,13 +35,33 @@ public:
 
   const std::function<void(void *)> &getServiceInitializer(const tw_lpid gid);
 
-  inline const std::unordered_map<User::uid_t, User>& getUsers() const {
+  inline const user_map_type& getUsers() const {
     return m_Users; 
   } 
 
-  inline std::unordered_map<User::uid_t, User>::const_iterator getUserByName(const std::string& name) {
+  inline User& getUserById(const User::uid_t id) {
+    return m_Users.at(id);
+  }
+
+  inline user_map_type::const_iterator getUserByName(const std::string& name) {
     return std::find_if(m_Users.cbegin(), m_Users.cend(),
         [&name](const auto& pair) { return pair.second.getName() == name; });
+  }
+
+private:
+  service_init_map_type service_initializers;
+  user_map_type m_Users;
+
+  inline void
+  registerServiceInitializer(const tw_lpid gid,
+                             std::function<void(void *)> initializer) {
+    /// Checks if a service with the specified global identifier has already
+    /// been registered. If so, the program is immediately aborted.
+    if (service_initializers.find(gid) != service_initializers.end())
+      ispd_error("A service with GID %lu has already been registered.", gid);
+
+    /// Emplace the pair (gid, initializer).
+    service_initializers.emplace(gid, initializer);
   }
 };
 
@@ -78,9 +86,11 @@ void registerUser(const std::string& name, const double energyConsumptionLimit);
 
 const std::function<void(void *)> &getServiceInitializer(const tw_lpid gid);
 
-const std::unordered_map<ispd::model::User::uid_t, ispd::model::User>& getUsers();
+const ispd::model::SimulationModel::user_map_type& getUsers();
 
-const std::unordered_map<ispd::model::User::uid_t, ispd::model::User>::const_iterator getUserByName(const std::string& name);
+ispd::model::User& getUserById(ispd::model::User::uid_t id);
+
+const ispd::model::SimulationModel::user_map_type::const_iterator getUserByName(const std::string& name);
 }; // namespace ispd::this_model
 
 #endif // ISPD_MODEL_BUILDER_HPP

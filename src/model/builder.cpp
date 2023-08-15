@@ -286,6 +286,11 @@ const std::unordered_map<ispd::model::User::uid_t, ispd::model::User>& getUsers(
   return g_Model->getUsers();
 }
 
+ispd::model::User& getUserById(ispd::model::User::uid_t id) {
+  /// Forward the user query to the global model.
+  return g_Model->getUserById(id);
+}
+
 const std::unordered_map<ispd::model::User::uid_t, ispd::model::User>::const_iterator getUserByName(const std::string& name) {
   /// Forward the user query by name to the global model.
   return g_Model->getUserByName(name);
