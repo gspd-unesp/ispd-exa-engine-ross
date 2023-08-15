@@ -1,11 +1,11 @@
 #ifndef ISPD_METRICS_HPP
 #define ISPD_METRICS_HPP
 
+#include <unordered_map>
 #include <ispd/model/user.hpp>
 
 #ifdef DEBUG_ON
   #include <cstdint>
-  #include <unordered_map>
   #include <ispd/services/services.hpp>
 #endif // DEBUG_ON
 

@@ -213,8 +213,6 @@ struct machine {
       const double proc_size = msg->task.proc_size;
       const double proc_time = s->conf.timeToProcess(proc_size);
 
-      std::cout << "Processing Time: " << proc_time << std::endl;
-
       const double least_free_time = msg->saved_core_next_available_time;
       const double waiting_delay = ROSS_MAX(0.0, least_free_time - tw_now(lp));
 
