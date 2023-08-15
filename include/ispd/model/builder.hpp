@@ -52,10 +52,8 @@ public:
   } 
 
   inline std::unordered_map<User::uid_t, User>::const_iterator getUserByName(const std::string& name) {
-    for (const auto& [key, value] : m_Users)
-      if (value.getName() == name)
-        return m_Users.find(key);
-    return m_Users.cend();
+    return std::find_if(m_Users.cbegin(), m_Users.cend(),
+        [&name](const auto& pair) { return pair.second.getName() == name; });
   }
 };
 
