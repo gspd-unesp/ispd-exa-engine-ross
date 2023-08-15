@@ -6,32 +6,11 @@
 #include <functional>
 #include <unordered_map>
 #include <ispd/log/log.hpp>
+#include <ispd/model/user.hpp>
 #include <ispd/workload/workload.hpp>
 #include <ispd/scheduler/scheduler.hpp>
 
 namespace ispd::model {
-
-class User {
-public:
-  using uid_t = uint32_t;
-
-  explicit User(const uid_t id, const std::string& name, const double energyConsumptionLimit = 0.0) :
-    m_Id(id), m_Name(name), m_EnergyConsumptionLimit(energyConsumptionLimit) {}
-
-  const uid_t getId() const { return m_Id; }
-  const std::string& getName() const { return m_Name; }
-  double getEnergyConsumptionLimit() const { return m_EnergyConsumptionLimit; }
-
-private:
-  /// \brief The user unique identifier.
-  uid_t m_Id;
-
-  /// \brief The user name.
-  std::string m_Name;
-
-  /// \brief The user's energy consumption limit.
-  double m_EnergyConsumptionLimit = 0.0;
-};
 
 class SimulationModel {
   std::unordered_map<tw_lpid, std::function<void(void *)>> service_initializers;

@@ -4,19 +4,20 @@
 
 namespace ispd::workload {
 
-Workload::Workload(const std::string& user,
+Workload::Workload(const std::string& owner,
                    const unsigned remainingTasks,
-                   std::unique_ptr<InterarrivalDistribution> interarrivalDist)
-    : m_User(user), m_RemainingTasks(remainingTasks),
-      m_InterarrivalDist(std::move(interarrivalDist)) {
-    
+                   std::unique_ptr<InterarrivalDistribution> interarrivalDist) {
     // Fetch the registered users in the simulated model.
     const auto& registeredUsers = ispd::this_model::getUsers();
 
     // Check if the user registering the workload is valid.
-    if (registeredUsers.find(user) == registeredUsers.end()) {
-        ispd_error("Creating a workload with an unregistered user: %s.", user.c_str());
+    if (registeredUsers.find(owner) == registeredUsers.end()) {
+        ispd_error("Creating a workload with an unregistered user: %s.", owner.c_str());
     }
+
+    m_Owner = registeredUsers.at(owner).getId();
+    m_RemainingTasks = remainingTasks;
+    m_InterarrivalDist = std::move(interarrivalDist);
 }
 
 ConstantWorkload::ConstantWorkload(const std::string& user,

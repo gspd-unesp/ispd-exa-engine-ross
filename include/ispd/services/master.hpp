@@ -165,7 +165,7 @@ private:
     m->task.origin = lp->gid;
     m->task.dest = scheduled_slave_id;
     m->task.submit_time = tw_now(lp);
-    m->task.user = &s->workload->getUser();
+    m->task.owner = s->workload->getOwner();
 
     m->route_offset = 1;
     m->previous_service_id = lp->gid;
