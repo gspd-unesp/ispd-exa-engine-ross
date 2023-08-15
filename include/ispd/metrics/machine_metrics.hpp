@@ -13,7 +13,7 @@ namespace ispd::metrics {
 /// simulated environment.
 struct MachineMetrics final {
   /// \name Processing-related Metrics
-  double m_ProcMFlops = 0.0; ///< The total amount of megaflops processed by
+  double m_ProcMflops = 0.0; ///< The total amount of megaflops processed by
                              ///< this machine.
 
   /// \brief The total time in seconds that the machine spent processing tasks.
