@@ -1,6 +1,8 @@
 #ifndef ISPD_METRICS_HPP
 #define ISPD_METRICS_HPP
 
+#include <ispd/model/user.hpp>
+
 #ifdef DEBUG_ON
   #include <cstdint>
   #include <unordered_map>
@@ -117,6 +119,8 @@ private:
   std::unordered_map<ispd::services::ServiceType, double> m_NodeTotalReverseTime;
   std::unordered_map<ispd::services::ServiceType, uint64_t> m_NodeTotalReverseEventsCount;
 #endif // DEBUG_ON
+
+  void reportNodeUserMetrics();
 public:
     /// \brief Notify the NodeMetricsCollector about a node-level metric with a flag.
     ///
@@ -172,6 +176,7 @@ private:
     double m_GlobalTotalTurnaroundTime;             ///< Total turnaround time across all nodes.
     double m_GlobalSimulationTime;                  ///< Total simulation time.
 
+    std::unordered_map<ispd::model::User::uid_t, ispd::metrics::UserMetrics> m_GlobalUserMetrics; ///< Total user metrics.
 #ifdef DEBUG_ON
   std::unordered_map<ispd::services::ServiceType, double> m_GlobalTotalForwardTime;
   std::unordered_map<ispd::services::ServiceType, uint64_t> m_GlobalTotalForwardEventsCount;

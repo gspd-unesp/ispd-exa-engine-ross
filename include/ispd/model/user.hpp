@@ -44,6 +44,16 @@ public:
   ///
   inline ispd::metrics::UserMetrics &getMetrics() { return m_Metrics; }
 
+  /// \brief Retrieve the node's view of user metrics associated with this instance.
+  ///
+  /// This member function allows access to the `UserMetrics` object associated
+  /// with the current instance. Users can use this function to retrieve and
+  /// manipulate the metrics related to their activities within the system.
+  ///
+  /// \return A constant reference to the `UserMetrics` object storing the user's metrics.
+  ///
+  inline const ispd::metrics::UserMetrics &getMetrics() const { return m_Metrics; }
+
   /// \brief Get the energy consumption limit of the user.
   ///
   /// \return The energy consumption limit set for the user.

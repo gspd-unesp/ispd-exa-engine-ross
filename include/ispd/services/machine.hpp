@@ -11,6 +11,7 @@
 #include <ispd/routing/routing.hpp>
 #include <ispd/model/builder.hpp>
 #include <ispd/metrics/metrics.hpp>
+#include <ispd/metrics/user_metrics.hpp>
 
 extern double g_NodeSimulationTime;
 
@@ -204,6 +205,26 @@ struct machine {
 
   ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_MACHINE_REVERSE_TIME, timeTaken);
 #endif // DEBUG_ON
+  }
+
+  static void commit(machine_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
+    if (msg->task.dest == lp->gid) {
+      /// Fetch the processing size and calculates the processing time.
+      const double proc_size = msg->task.proc_size;
+      const double proc_time = s->conf.timeToProcess(proc_size);
+
+      std::cout << "Processing Time: " << proc_time << std::endl;
+
+      const double least_free_time = msg->saved_core_next_available_time;
+      const double waiting_delay = ROSS_MAX(0.0, least_free_time - tw_now(lp));
+
+      /// Update the user's metrics.
+      ispd::metrics::UserMetrics& userMetrics = ispd::this_model::getUserById(msg->task.owner).getMetrics();
+
+      userMetrics.m_ProcTime += proc_time;
+      userMetrics.m_ProcWaitingTime += waiting_delay;
+      userMetrics.m_CompletedTasks++;
+    }
   }
 
   static void finish(machine_state *s, tw_lp *lp) {
