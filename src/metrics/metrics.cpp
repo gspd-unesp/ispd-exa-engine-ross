@@ -3,8 +3,36 @@
 #include <algorithm>
 #include <ispd/log/log.hpp>
 #include <ispd/metrics/metrics.hpp>
+#include <ispd/model/builder.hpp>
 
 namespace ispd::metrics {
+
+void NodeMetricsCollector::reportNodeUserMetrics() {
+  /// An alias for the global metrics collector.
+  auto gmc = ispd::global_metrics::g_GlobalMetricsCollector;
+
+  /// Fetch the mapping containing all registered users in the system being simulated.
+  const auto& registeredUsers = ispd::this_model::getUsers();
+
+  /// Report each user metrics.
+  for (const auto& [id, user] : registeredUsers) {
+    const auto& metrics = user.getMetrics();
+
+    #define REDUCE_USER_METRIC(op, type, field, fieldName) \
+      if (MPI_SUCCESS != MPI_Reduce(&metrics.field, &gmc->m_GlobalUserMetrics[id].field, 1, type, op, 0, MPI_COMM_ROSS)) \
+          ispd_error("User (%u, %s) %s could not be reduced, exiting...", id, user.getName().c_str(), fieldName);
+
+    REDUCE_USER_METRIC(MPI_SUM, MPI_DOUBLE, m_ProcTime, "processing time");
+    REDUCE_USER_METRIC(MPI_SUM, MPI_DOUBLE, m_ProcWaitingTime, "processing waiting time");
+    REDUCE_USER_METRIC(MPI_SUM, MPI_DOUBLE, m_CommTime, "communication time");
+    REDUCE_USER_METRIC(MPI_SUM, MPI_DOUBLE, m_CommWaitingTime, "communication waiting time");
+    REDUCE_USER_METRIC(MPI_SUM, MPI_DOUBLE, m_EnergyConsumption, "energy consumption");
+    REDUCE_USER_METRIC(MPI_SUM, MPI_UNSIGNED, m_IssuedTasks, "issued tasks");
+    REDUCE_USER_METRIC(MPI_SUM, MPI_UNSIGNED, m_CompletedTasks, "completed tasks");
+
+    #undef REDUCE_USER_METRIC
+  }
+}
 
 template <>
 void NodeMetricsCollector::notifyMetric(const NodeMetricsFlag flag, const double value) {
@@ -224,8 +252,9 @@ void NodeMetricsCollector::reportNodeMetrics() {
       ispd_error("Global total %s reverse events count could not be reduced, exiting...",
           ispd::services::getServiceTypeName(serviceType));
   }
-
 #endif // DEBUG_ON
+
+  reportNodeUserMetrics();
 }
 
 void GlobalMetricsCollector::reportGlobalMetrics() {
@@ -271,7 +300,26 @@ void GlobalMetricsCollector::reportGlobalMetrics() {
   ispd_log(LOG_INFO, " Efficiency......................: %lf%%.", efficiency * 100.0);
   ispd_log(LOG_INFO, " Total CPU Cores.................: %u cores.", m_GlobalTotalCpuCores);
   ispd_log(LOG_INFO, "");
+  ispd_log(LOG_INFO, "User Metrics");
+  
+  for (const auto& [id, userMetrics] : m_GlobalUserMetrics) {
+    const double userAvgProcTime = userMetrics.m_ProcTime / userMetrics.m_IssuedTasks;
+    const double userAvgProcWaitingTime = userMetrics.m_ProcWaitingTime / userMetrics.m_IssuedTasks;
+    const double userAvgCommTime = userMetrics.m_CommTime / userMetrics.m_IssuedTasks;
+    const double userAvgCommWaitingTime = userMetrics.m_CommWaitingTime / userMetrics.m_IssuedTasks;
 
+
+    ispd_log(LOG_INFO, "");
+    ispd_log(LOG_INFO, " %s", ispd::this_model::getUserById(id).getName().c_str());
+    ispd_log(LOG_INFO, "  Avg. Processing Time...........: %lf seconds.", userAvgProcTime);
+    ispd_log(LOG_INFO, "  Avg. Processing Waiting Time...: %lf seconds.", userAvgProcWaitingTime);
+    ispd_log(LOG_INFO, "  Avg. Communication Time........: %lf seconds.", userAvgCommTime);
+    ispd_log(LOG_INFO, "  Avg. Communication Waiting Time: %lf seconds.", userAvgCommWaitingTime);
+    ispd_log(LOG_INFO, "  Issued Tasks...................: %u tasks.", userMetrics.m_IssuedTasks);
+    ispd_log(LOG_INFO, "  Completed Tasks................: %u tasks.", userMetrics.m_CompletedTasks);
+  }
+
+  ispd_log(LOG_INFO, "");
 #ifdef DEBUG_ON
   ispd_log(LOG_INFO, "Service Center Metrics");
   

@@ -118,6 +118,15 @@ struct master {
     }
   }
 
+  static void commit(master_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
+    if (msg->type == message_type::GENERATE) {
+      auto& userMetrics = ispd::this_model::getUserById(msg->task.owner).getMetrics();
+
+      /// Update the user's metrics.
+      userMetrics.m_IssuedTasks++;
+    }
+  }
+
   static void finish(master_state *s, tw_lp *lp) {
     ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_COMPLETED_TASKS, s->metrics.completed_tasks);
     ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_MASTER_SERVICES);
@@ -165,7 +174,7 @@ private:
     m->task.origin = lp->gid;
     m->task.dest = scheduled_slave_id;
     m->task.submit_time = tw_now(lp);
-    m->task.user = &s->workload->getUser();
+    m->task.owner = s->workload->getOwner();
 
     m->route_offset = 1;
     m->previous_service_id = lp->gid;

@@ -2,6 +2,7 @@
 #define ISPD_CUSTOMER_TASK_HPP
 
 #include <ross.h>
+#include <ispd/model/user.hpp>
 
 namespace ispd {
 namespace customer {
@@ -16,7 +17,7 @@ struct task {
   double submit_time;
   double end_time;
   
-  const std::string *user;
+  ispd::model::User::uid_t owner;
 };
 
 }; // namespace customer
