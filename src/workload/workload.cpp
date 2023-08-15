@@ -9,13 +9,14 @@ Workload::Workload(const std::string& owner,
                    std::unique_ptr<InterarrivalDistribution> interarrivalDist) {
     // Fetch the registered users in the simulated model.
     const auto& registeredUsers = ispd::this_model::getUsers();
+    const auto& userIterator = ispd::this_model::getUserByName(owner);
 
     // Check if the user registering the workload is valid.
-    if (registeredUsers.find(owner) == registeredUsers.end()) {
+    if (userIterator == registeredUsers.end()) {
         ispd_error("Creating a workload with an unregistered user: %s.", owner.c_str());
     }
 
-    m_Owner = registeredUsers.at(owner).getId();
+    m_Owner = userIterator->second.getId();
     m_RemainingTasks = remainingTasks;
     m_InterarrivalDist = std::move(interarrivalDist);
 }

@@ -194,7 +194,7 @@ void SimulationModel::registerMaster(
 void SimulationModel::registerUser(const std::string& name, const double energyConsumptionLimit) {
   /// Checks if a user with that name has already been regisitered. If so, the
   /// program is immediately aborted, since unique named users are mandatory.
-  if (m_Users.find(name) != m_Users.end())
+  if (getUserByName(name) != m_Users.end())
     ispd_error("A user named %s has already been registered.", name.c_str());
   
   /// Checks if the specified energy consumption limit is not finite. If so, the
@@ -222,7 +222,7 @@ void SimulationModel::registerUser(const std::string& name, const double energyC
   const uid_t id = static_cast<uid_t>(m_Users.size());
 
   /// Construct the user and insert into the users mapping.
-  m_Users.emplace(name, User(id, name, energyConsumptionLimit));
+  m_Users.emplace(id, User(id, name, energyConsumptionLimit));
   
   ispd_debug("A user named %s with consumption limit of %.2lf has been registered.", name.c_str(), energyConsumptionLimit);
 }
@@ -281,9 +281,14 @@ const std::function<void(void *)> &getServiceInitializer(const tw_lpid gid) {
   return g_Model->getServiceInitializer(gid);
 }
 
-const std::unordered_map<std::string, ispd::model::User>& getUsers() {
-  /// Forward the users query  to the global model.
+const std::unordered_map<ispd::model::User::uid_t, ispd::model::User>& getUsers() {
+  /// Forward the users query to the global model.
   return g_Model->getUsers();
+}
+
+const std::unordered_map<ispd::model::User::uid_t, ispd::model::User>::const_iterator getUserByName(const std::string& name) {
+  /// Forward the user query by name to the global model.
+  return g_Model->getUserByName(name);
 }
 
 }; // namespace ispd::this_model

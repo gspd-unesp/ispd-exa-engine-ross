@@ -14,7 +14,7 @@ namespace ispd::model {
 
 class SimulationModel {
   std::unordered_map<tw_lpid, std::function<void(void *)>> service_initializers;
-  std::unordered_map<std::string, User> m_Users;
+  std::unordered_map<User::uid_t, User> m_Users;
 
   inline void
   registerServiceInitializer(const tw_lpid gid,
@@ -47,9 +47,16 @@ public:
 
   const std::function<void(void *)> &getServiceInitializer(const tw_lpid gid);
 
-  inline const std::unordered_map<std::string, User>& getUsers() const {
+  inline const std::unordered_map<User::uid_t, User>& getUsers() const {
     return m_Users; 
   } 
+
+  inline std::unordered_map<User::uid_t, User>::const_iterator getUserByName(const std::string& name) {
+    for (const auto& [key, value] : m_Users)
+      if (value.getName() == name)
+        return m_Users.find(key);
+    return m_Users.cend();
+  }
 };
 
 }; // namespace ispd::model
@@ -73,7 +80,9 @@ void registerUser(const std::string& name, const double energyConsumptionLimit);
 
 const std::function<void(void *)> &getServiceInitializer(const tw_lpid gid);
 
-const std::unordered_map<std::string, ispd::model::User>& getUsers();
+const std::unordered_map<ispd::model::User::uid_t, ispd::model::User>& getUsers();
+
+const std::unordered_map<ispd::model::User::uid_t, ispd::model::User>::const_iterator getUserByName(const std::string& name);
 }; // namespace ispd::this_model
 
 #endif // ISPD_MODEL_BUILDER_HPP
