@@ -13,31 +13,31 @@ namespace ispd::metrics {
 /// simulated environment.
 struct MachineMetrics final {
   /// \name Processing-related Metrics
-  double m_ProcMFlops; ///< The total amount of megaflops processed by this
-                       ///< machine.
+  double m_ProcMFlops = 0.0; ///< The total amount of megaflops processed by
+                             ///< this machine.
 
   /// \brief The total time in seconds that the machine spent processing tasks.
-  double m_ProcTime; ///< The total time in seconds that the machine spent
-                     ///< processing tasks.
+  double m_ProcTime = 0.0; ///< The total time in seconds that the machine spent
+                           ///< processing tasks.
 
-  double m_ProcWaitingTime; ///< The waiting time in seconds that tasks spent in
-                            ///< the processing queue before being executed by
-                            ///< the machine.
+  double m_ProcWaitingTime = 0.0; ///< The waiting time in seconds that tasks
+                                  ///< spent in the processing queue before
+                                  ///< being executed by the machine.
 
   /// \name Tasks-related Metrics
-  unsigned m_ProcTasks; ///< The total nubmer of tasks successfully processed by
-                        ///< the machine.
+  unsigned m_ProcTasks = 0; ///< The total nubmer of tasks successfully
+                            ///< processed by the machine.
 
-  unsigned
-      m_ForwardedTasks; ///< The total number of tasks forwarded by the machine
-                        ///< to other components within the simulation.
+  unsigned m_ForwardedTasks =
+      0; ///< The total number of tasks forwarded by the machine
+         ///< to other components within the simulation.
 
   /// \name Energy-related Metrics
-  double
-      m_PowerIdle; ///< The power consumption (in W) when the machine is idle.
+  double m_PowerIdle =
+      0.0; ///< The power consumption (in W) when the machine is idle.
 
-  double
-      m_PowerMax; ///< The power consumptio (in W) that the machine can reach.
+  double m_PowerMax =
+      0.0; ///< The power consumptio (in W) that the machine can reach.
 };
 
 } // namespace ispd::metrics
