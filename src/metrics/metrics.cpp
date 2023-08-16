@@ -358,6 +358,7 @@ void GlobalMetricsCollector::reportGlobalMetrics() {
     ispd_log(LOG_INFO, "  Avg. Communication Waiting Time: %lf seconds.", userAvgCommWaitingTime);
     ispd_log(LOG_INFO, "  Issued Tasks...................: %u tasks.", userMetrics.m_IssuedTasks);
     ispd_log(LOG_INFO, "  Completed Tasks................: %u tasks.", userMetrics.m_CompletedTasks);
+    ispd_log(LOG_INFO, "  Energy Consumption.............: %lf J.", userMetrics.m_EnergyConsumption);
   }
 
   ispd_log(LOG_INFO, "");

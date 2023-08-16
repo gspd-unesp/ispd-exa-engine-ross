@@ -184,12 +184,16 @@ struct machine {
       const double least_free_time = msg->saved_core_next_available_time;
       const double waiting_delay = ROSS_MAX(0.0, least_free_time - tw_now(lp));
 
+      /// Calculates the energy consumption by processing this task.
+      const double energyConsumption = proc_time * (s->conf.getWattageIdle() + s->conf.getWattagePerCore());
+
       /// Update the user's metrics.
       ispd::metrics::UserMetrics& userMetrics = ispd::this_model::getUserById(msg->task.owner).getMetrics();
 
       userMetrics.m_ProcTime += proc_time;
       userMetrics.m_ProcWaitingTime += waiting_delay;
       userMetrics.m_CompletedTasks++;
+      userMetrics.m_EnergyConsumption += energyConsumption;
     }
   }
 
