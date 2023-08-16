@@ -10,7 +10,7 @@ namespace ispd::configuration {
 /// the configuration of a communication link in the simulation environment. It
 /// provides methods to obtain information about the link's bandwidth, latency,
 /// and load factor based on the specified parameters.
-struct LinkConfiguration {
+class LinkConfiguration final {
 private:
   double m_Bandwidth; ///< Total link's bandwidth (in megabits per second).
   double m_Load;      ///< Load factor of the link (0.0 to 1.0).

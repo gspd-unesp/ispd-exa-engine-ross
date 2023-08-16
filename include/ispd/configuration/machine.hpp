@@ -10,7 +10,7 @@ namespace ispd::configuration {
 /// configuration of a machine in the simulation environment. It provides methods
 /// to calculate processing time and obtain power-related information based on the
 /// specified parameters.
-class MachineConfiguration {
+class MachineConfiguration final {
 private:
   double m_PowerPerCore; ///< Computational power per core (in megaflops).
   double m_Load;         ///< Load factor of the machine (0.0 to 1.0).
