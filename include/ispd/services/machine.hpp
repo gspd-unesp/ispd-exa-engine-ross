@@ -197,6 +197,7 @@ struct machine {
     const double lastActivityTime = *std::max_element(s->cores_free_time.cbegin(), s->cores_free_time.cend());
     const double totalCpuTime = std::accumulate(s->cores_free_time.cbegin(), s->cores_free_time.cend(), 0.0);
     const double idleness = (totalCpuTime - s->m_Metrics.m_ProcTime) / totalCpuTime;
+    const double totalEnergyConsumption = s->m_Metrics.m_EnergyConsumption + lastActivityTime * s->conf.getWattageIdle();
 
     /// Report to the node`s metrics collector this machine`s metrics.
     ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_SIMULATION_TIME, lastActivityTime);
