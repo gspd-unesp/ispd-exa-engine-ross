@@ -197,7 +197,6 @@ struct machine {
     const double lastActivityTime = *std::max_element(s->cores_free_time.cbegin(), s->cores_free_time.cend());
     const double totalCpuTime = std::accumulate(s->cores_free_time.cbegin(), s->cores_free_time.cend(), 0.0);
     const double idleness = (totalCpuTime - s->m_Metrics.m_ProcTime) / totalCpuTime;
-    const double totalEnergyConsumption = s->m_Metrics.m_EnergyConsumption + lastActivityTime * s->conf.getWattageIdle();
 
     /// Report to the node`s metrics collector this machine`s metrics.
     ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_SIMULATION_TIME, lastActivityTime);
@@ -207,6 +206,8 @@ struct machine {
     ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_COMPUTATIONAL_POWER, s->conf.getPower());
     ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_CPU_CORES, static_cast<unsigned>(s->cores_free_time.size()));
     ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_PROCESSING_TIME, s->m_Metrics.m_ProcTime);
+    ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_NON_IDLE_ENERGY_CONSUMPTION, s->m_Metrics.m_EnergyConsumption);
+    ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_POWER_IDLE, s->conf.getWattageIdle());
 
     std::printf(
         "Machine Metrics (%lu)\n"
@@ -217,7 +218,7 @@ struct machine {
         " - Waiting Time........: %lf seconds (%lu).\n"
         " - Avg. Processing Time: %lf seconds (%lu).\n"
         " - Idleness............: %lf%% (%lu).\n"
-        " - Energy Consumption..: %lf J (%lu).\n"
+        " - Non Idle Energy Cons: %lf J (%lu).\n"
         "\n",
         lp->gid, 
         lastActivityTime, lp->gid,

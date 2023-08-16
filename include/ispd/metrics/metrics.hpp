@@ -58,6 +58,12 @@ enum class NodeMetricsFlag {
   /// \brief The accumulation of the turnaround time of all completed tasks received by the masters simulated in this node.
   NODE_TOTAL_TURNAROUND_TIME,
 
+  /// \brief The accumulation of the total non idle energy consupmtion of all services simulated in this node.
+  NODE_TOTAL_NON_IDLE_ENERGY_CONSUMPTION,
+
+  /// \brief The accumulation of the total power consumption of all services in this node while being idle.
+  NODE_TOTAL_POWER_IDLE,
+
   /// \brief The simulation time in this node.
   NODE_SIMULATION_TIME,
 
@@ -111,6 +117,8 @@ private:
   double m_NodeTotalCommunicationTime;          ///< Total communication time simulated in this node.
   double m_NodeTotalCommunicationWaitingTime;   ///< Total waiting time for communication simulated in this node.
   double m_NodeTotalTurnaroundTime;             ///< Total turnaround time simulated in this node.
+  double m_NodeTotalNonIdleEnergyConsumption;   ///< Total non idle energy consumption (in Joules) in this node.
+  double m_NodeTotalPowerIdle;                  ///< Total idle power consumption from the services in this node.
   double m_NodeSimulationTime;                  ///< The highest last activity time of a service center simulated in this node.
 
 #ifdef DEBUG_ON
@@ -174,6 +182,8 @@ private:
     double m_GlobalTotalCommunicationTime;          ///< Total communication time across all nodes.
     double m_GlobalTotalCommunicationWaitingTime;   ///< Total waiting time for communication across all nodes.
     double m_GlobalTotalTurnaroundTime;             ///< Total turnaround time across all nodes.
+    double m_GlobalTotalNonIdleEnergyConsumption;   ///< Total non idle energy consumption across all nodes.
+    double m_GlobalTotalPowerIdle;                  ///< Total power idle across all nodes.
     double m_GlobalSimulationTime;                  ///< Total simulation time.
 
     std::unordered_map<ispd::model::User::uid_t, ispd::metrics::UserMetrics> m_GlobalUserMetrics; ///< Total user metrics.
