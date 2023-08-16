@@ -24,7 +24,9 @@ namespace ispd::model {
 
 void SimulationModel::registerMachine(const tw_lpid gid, const double power,
                                       const double load,
-                                      const unsigned coreCount) {
+                                      const unsigned coreCount,
+                                      const double wattageIdle,
+                                      const double wattageMax) {
   /// Check if the power is not positive. If so, an error indicating the
   /// case is sent and the program is immediately aborted.
   if (power <= 0.0)
@@ -54,7 +56,7 @@ void SimulationModel::registerMachine(const tw_lpid gid, const double power,
         static_cast<ispd::services::machine_state *>(state);
 
     /// Initialize machine's configuration.
-    s->conf = ispd::configuration::MachineConfiguration(power, load, coreCount);
+    s->conf = ispd::configuration::MachineConfiguration(power, load, coreCount, wattageIdle, wattageMax);
     s->cores_free_time.resize(coreCount, 0.0);
   });
 
