@@ -7,52 +7,24 @@
 #include <limits>
 #include <algorithm>
 #include <numeric>
+
 #include <ispd/message/message.hpp>
 #include <ispd/routing/routing.hpp>
 #include <ispd/model/builder.hpp>
 #include <ispd/metrics/metrics.hpp>
 #include <ispd/metrics/user_metrics.hpp>
+#include <ispd/metrics/machine_metrics.hpp>
+#include <ispd/configuration/machine.hpp>
 
 extern double g_NodeSimulationTime;
 
 namespace ispd {
 namespace services {
 
-class MachineConfiguration {
-  double m_PowerPerCore;
-  double m_Load;
-  unsigned m_CoreCount;
-
-public:
-  MachineConfiguration(const double power, const double load, const unsigned coreCount)
-    : m_PowerPerCore(power / coreCount), m_Load(load), m_CoreCount(coreCount) {}
-
-  inline double timeToProcess(const double processingSize) {
-    return processingSize / ((1.0 - m_Load) * m_PowerPerCore);
-  }
-
-  inline double getPower() const { return m_PowerPerCore * m_CoreCount; }
-  inline double getPowerPerCore() const { return m_PowerPerCore; }
-  inline double getLoad() const { return m_Load; }
-};
-
-struct machine_metrics {
-  double proc_mflops;
-  double proc_time;
-  unsigned proc_tasks;
-  unsigned forwarded_packets;
-  double waiting_time;
-};
-
 struct machine_state {
-  /// \brief Machine's Configuration.
-  MachineConfiguration conf;
-
-  /// \brief Machine's Metrics.
-  machine_metrics metrics;
-
-  /// \brief Machine's Queueing Model Information.
-  std::vector<double> cores_free_time;
+  ispd::configuration::MachineConfiguration conf; ///< Machine's configuration.
+  ispd::metrics::MachineMetrics m_Metrics; ///< Machine's metrics.
+  std::vector<double> cores_free_time; ///< Machine's queueing model information
 };
 
 struct machine {
@@ -81,12 +53,6 @@ struct machine {
 
     /// Call the service initializer for this logical process.
     service_initializer(s);
-         
-     /// Initialize machine's metrics.
-     s->metrics.proc_mflops = 0;
-     s->metrics.proc_tasks = 0;
-     s->metrics.forwarded_packets = 0;
-     s->metrics.waiting_time = 0;
 
     /// Print a debug message.
     ispd_debug("Machine %lu has been initialized.", lp->gid);
@@ -112,10 +78,11 @@ struct machine {
       const double departure_delay = waiting_delay + proc_time;
 
       /// Update the machine's metrics.
-      s->metrics.proc_mflops += proc_size;
-      s->metrics.proc_time += proc_time;
-      s->metrics.proc_tasks++;
-      s->metrics.waiting_time += waiting_delay;
+      s->m_Metrics.m_ProcMflops += proc_size;
+      s->m_Metrics.m_ProcTime += proc_time;
+      s->m_Metrics.m_ProcTasks++;
+      s->m_Metrics.m_ProcWaitingTime += waiting_delay;
+      s->m_Metrics.m_EnergyConsumption += proc_time * s->conf.getWattagePerCore();
 
       /// Update the machine's queueing model information.
       s->cores_free_time[core_index] = tw_now(lp) + departure_delay;
@@ -145,7 +112,7 @@ struct machine {
       const ispd::routing::Route *route = ispd::routing_table::getRoute(msg->task.origin, msg->task.dest);
 
       /// Update machine's metrics.
-      s->metrics.forwarded_packets++;
+      s->m_Metrics.m_ForwardedTasks++;
 
       /// @Todo: This zero-delay timestamped message could affect the conservative synchronization.
       ///        This should be changed after.
@@ -186,16 +153,17 @@ struct machine {
       const double waiting_delay = ROSS_MAX(0.0, least_free_time - tw_now(lp));
 
       /// Reverse the machine's metrics.
-      s->metrics.proc_mflops -= proc_size;
-      s->metrics.proc_time -= proc_time;
-      s->metrics.proc_tasks--;
-      s->metrics.waiting_time -= waiting_delay;
+      s->m_Metrics.m_ProcMflops -= proc_size;
+      s->m_Metrics.m_ProcTime -= proc_time;
+      s->m_Metrics.m_ProcTasks--;
+      s->m_Metrics.m_ProcWaitingTime -= waiting_delay;
+      s->m_Metrics.m_EnergyConsumption -= proc_time * s->conf.getWattagePerCore();
 
       /// Reverse the machine's queueing model information.
       s->cores_free_time[msg->saved_core_index] = least_free_time;
     } else {
       /// Reverse machine's metrics.
-      s->metrics.forwarded_packets--;
+      s->m_Metrics.m_ForwardedTasks--;
     }
 
 #ifdef DEBUG_ON
@@ -216,28 +184,34 @@ struct machine {
       const double least_free_time = msg->saved_core_next_available_time;
       const double waiting_delay = ROSS_MAX(0.0, least_free_time - tw_now(lp));
 
+      /// Calculates the energy consumption by processing this task.
+      const double energyConsumption = proc_time * (s->conf.getWattageIdle() + s->conf.getWattagePerCore());
+
       /// Update the user's metrics.
       ispd::metrics::UserMetrics& userMetrics = ispd::this_model::getUserById(msg->task.owner).getMetrics();
 
       userMetrics.m_ProcTime += proc_time;
       userMetrics.m_ProcWaitingTime += waiting_delay;
       userMetrics.m_CompletedTasks++;
+      userMetrics.m_EnergyConsumption += energyConsumption;
     }
   }
 
   static void finish(machine_state *s, tw_lp *lp) {
     const double lastActivityTime = *std::max_element(s->cores_free_time.cbegin(), s->cores_free_time.cend());
     const double totalCpuTime = std::accumulate(s->cores_free_time.cbegin(), s->cores_free_time.cend(), 0.0);
-    const double idleness = (totalCpuTime - s->metrics.proc_time) / totalCpuTime;
+    const double idleness = (totalCpuTime - s->m_Metrics.m_ProcTime) / totalCpuTime;
 
     /// Report to the node`s metrics collector this machine`s metrics.
     ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_SIMULATION_TIME, lastActivityTime);
-    ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_PROCESSED_MFLOPS, s->metrics.proc_mflops);
-    ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_PROCESSING_WAITING_TIME, s->metrics.waiting_time);
+    ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_PROCESSED_MFLOPS, s->m_Metrics.m_ProcMflops);
+    ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_PROCESSING_WAITING_TIME, s->m_Metrics.m_ProcWaitingTime);
     ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_MACHINE_SERVICES);
     ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_COMPUTATIONAL_POWER, s->conf.getPower());
     ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_CPU_CORES, static_cast<unsigned>(s->cores_free_time.size()));
-    ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_PROCESSING_TIME, s->metrics.proc_time);
+    ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_PROCESSING_TIME, s->m_Metrics.m_ProcTime);
+    ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_NON_IDLE_ENERGY_CONSUMPTION, s->m_Metrics.m_EnergyConsumption);
+    ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_POWER_IDLE, s->conf.getWattageIdle());
 
     std::printf(
         "Machine Metrics (%lu)\n"
@@ -248,15 +222,17 @@ struct machine {
         " - Waiting Time........: %lf seconds (%lu).\n"
         " - Avg. Processing Time: %lf seconds (%lu).\n"
         " - Idleness............: %lf%% (%lu).\n"
+        " - Non Idle Energy Cons: %lf J (%lu).\n"
         "\n",
         lp->gid, 
         lastActivityTime, lp->gid,
-        s->metrics.proc_mflops, lp->gid,
-        s->metrics.proc_tasks, lp->gid,
-        s->metrics.forwarded_packets, lp->gid,
-        s->metrics.waiting_time, lp->gid,
-        s->metrics.proc_time / s->metrics.proc_tasks, lp->gid,
-        idleness * 100.0, lp->gid
+        s->m_Metrics.m_ProcMflops, lp->gid,
+        s->m_Metrics.m_ProcTasks, lp->gid,
+        s->m_Metrics.m_ForwardedTasks, lp->gid,
+        s->m_Metrics.m_ProcWaitingTime, lp->gid,
+        s->m_Metrics.m_ProcTime / s->m_Metrics.m_ProcTasks, lp->gid,
+        idleness * 100.0, lp->gid,
+        s->m_Metrics.m_EnergyConsumption, lp->gid
     );
   }
 };

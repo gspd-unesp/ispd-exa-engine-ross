@@ -14,11 +14,13 @@ namespace ispd::model {
 
 class SimulationModel {
 public:
-  using service_init_map_type = std::unordered_map<tw_lpid, std::function<void(void *)>>;
+  using service_init_map_type =
+      std::unordered_map<tw_lpid, std::function<void(void *)>>;
   using user_map_type = std::unordered_map<User::uid_t, User>;
 
   void registerMachine(const tw_lpid gid, const double power, const double load,
-                       const unsigned coreCount);
+                       const unsigned coreCount, const double wattageIdle = 0.0,
+                       const double wattageMax = 0.0);
 
   void registerLink(const tw_lpid gid, const tw_lpid from, const tw_lpid to,
                     const double bandwidth, const double load,
@@ -31,21 +33,19 @@ public:
                       ispd::scheduler::scheduler *const scheduler,
                       ispd::workload::Workload *const workload);
 
-  void registerUser(const std::string& name, const double energyConsumptionLimit);
+  void registerUser(const std::string &name,
+                    const double energyConsumptionLimit);
 
   const std::function<void(void *)> &getServiceInitializer(const tw_lpid gid);
 
-  inline const user_map_type& getUsers() const {
-    return m_Users; 
-  } 
+  inline const user_map_type &getUsers() const { return m_Users; }
 
-  inline User& getUserById(const User::uid_t id) {
-    return m_Users.at(id);
-  }
+  inline User &getUserById(const User::uid_t id) { return m_Users.at(id); }
 
-  inline user_map_type::const_iterator getUserByName(const std::string& name) {
-    return std::find_if(m_Users.cbegin(), m_Users.cend(),
-        [&name](const auto& pair) { return pair.second.getName() == name; });
+  inline user_map_type::const_iterator getUserByName(const std::string &name) {
+    return std::find_if(
+        m_Users.cbegin(), m_Users.cend(),
+        [&name](const auto &pair) { return pair.second.getName() == name; });
   }
 
 private:
@@ -69,7 +69,8 @@ private:
 
 namespace ispd::this_model {
 void registerMachine(const tw_lpid gid, const double power, const double load,
-                     const unsigned coreCount);
+                     const unsigned coreCount, const double wattageIdle = 0.0,
+                     const double wattageMax = 0.0);
 
 void registerLink(const tw_lpid gid, const tw_lpid from, const tw_lpid to,
                   const double bandwidth, const double load,
@@ -82,15 +83,16 @@ void registerMaster(const tw_lpid gid, std::vector<tw_lpid> &&slaves,
                     ispd::scheduler::scheduler *const scheduler,
                     ispd::workload::Workload *const workload);
 
-void registerUser(const std::string& name, const double energyConsumptionLimit);
+void registerUser(const std::string &name, const double energyConsumptionLimit);
 
 const std::function<void(void *)> &getServiceInitializer(const tw_lpid gid);
 
-const ispd::model::SimulationModel::user_map_type& getUsers();
+const ispd::model::SimulationModel::user_map_type &getUsers();
 
-ispd::model::User& getUserById(ispd::model::User::uid_t id);
+ispd::model::User &getUserById(ispd::model::User::uid_t id);
 
-const ispd::model::SimulationModel::user_map_type::const_iterator getUserByName(const std::string& name);
+const ispd::model::SimulationModel::user_map_type::const_iterator
+getUserByName(const std::string &name);
 }; // namespace ispd::this_model
 
 #endif // ISPD_MODEL_BUILDER_HPP

@@ -7,6 +7,7 @@
 #include <ispd/model/builder.hpp>
 #include <ispd/message/message.hpp>
 #include <ispd/metrics/metrics.hpp>
+#include <ispd/configuration/link.hpp>
 
 extern double g_NodeSimulationTime;
 
@@ -39,19 +40,13 @@ struct link_metrics {
   double downward_waiting_time;
 };
 
-struct link_configuration {
-  double bandwidth;
-  double load;
-  double latency;
-};
-
 struct link_state {
   /// \brief Link's ends.
   tw_lpid from;
   tw_lpid to;
 
   /// \brief Link's Configuration.
-  link_configuration conf;
+  ispd::configuration::LinkConfiguration conf;
 
   /// \brief Link's Metrics.
   link_metrics metrics;
@@ -62,11 +57,6 @@ struct link_state {
 };
 
 struct link {
-
-  static double time_to_comm(const link_configuration *const conf,
-                           const double comm_size) {
-    return conf->latency + comm_size / ((1.0 - conf->load) * conf->bandwidth);
-  }
 
   static void init(link_state *s, tw_lp *lp) {
     /// Fetch the service initializer from this logical process.
@@ -102,7 +92,7 @@ struct link {
 
     /// Fetch the communication size and calculates the communication time.
     const double comm_size = msg->task.comm_size;
-    const double comm_time = time_to_comm(&s->conf, comm_size);
+    const double comm_time = s->conf.timeToCommunicate(comm_size);
 
     /// Here is selected which available time should be used, i.e., if the
     /// messages is being sent from the master to the slave, then the downward
@@ -194,7 +184,7 @@ struct link {
 
     /// Fetch the communication size and calculates the communication time.
     const double comm_size = msg->task.comm_size;
-    const double comm_time = time_to_comm(&s->conf, comm_size);
+    const double comm_time = s->conf.timeToCommunicate(comm_size);
     const double next_available_time = msg->saved_link_next_available_time;
     const double waiting_delay = msg->saved_waiting_time;
 

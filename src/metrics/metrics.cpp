@@ -68,6 +68,14 @@ void NodeMetricsCollector::notifyMetric(const NodeMetricsFlag flag, const double
       /// Updates total turnaround time.
       m_NodeTotalTurnaroundTime += value;
       break;
+    case NodeMetricsFlag::NODE_TOTAL_NON_IDLE_ENERGY_CONSUMPTION:
+      /// Updates the total energy consumption.
+      m_NodeTotalNonIdleEnergyConsumption += value;
+      break;
+    case NodeMetricsFlag::NODE_TOTAL_POWER_IDLE:
+      /// Updates the total power idle.
+      m_NodeTotalPowerIdle += value;
+      break;
     case NodeMetricsFlag::NODE_SIMULATION_TIME:
       /// Updates simulation time.
       m_NodeSimulationTime = std::max(m_NodeSimulationTime, value);
@@ -222,6 +230,14 @@ void NodeMetricsCollector::reportNodeMetrics() {
   if (MPI_SUCCESS != MPI_Reduce(&m_NodeTotalTurnaroundTime, &gmc->m_GlobalTotalTurnaroundTime, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_ROSS))
     ispd_error("Global total turnaround time could not be reduced, exiting...");
   
+  /// Report to the master node the energy consumption.
+  if (MPI_SUCCESS != MPI_Reduce(&m_NodeTotalNonIdleEnergyConsumption, &gmc->m_GlobalTotalNonIdleEnergyConsumption, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_ROSS))
+    ispd_error("Global total energy consumption could not be reduced, exiting...");
+
+  /// Report to the master node the power idle.
+  if (MPI_SUCCESS != MPI_Reduce(&m_NodeTotalPowerIdle, &gmc->m_GlobalTotalPowerIdle, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_ROSS))
+    ispd_error("Global total power idle could not be reduced, exiting...");
+
 #ifdef DEBUG_ON
   for (const auto& serviceType : ispd::services::g_ServiceTypes) {
     /// Report to the master node the forward processing time.
@@ -273,6 +289,22 @@ void GlobalMetricsCollector::reportGlobalMetrics() {
   /// The efficiency is calculated as: Rmax / Rpeak
   const double efficiency = maxComputationalPower / m_GlobalTotalComputationalPower;
 
+  /// The total energy consumption is divided into two main components: dynamic (D) and
+  /// static (S) energy consumption. The dynamic energy consumption refers to the energy
+  /// consumed while the component is actively processing tasks or performing operations.
+  /// In contrast, the static energy consumption corresponds to the energy consumed when
+  /// the component is in an idle or low-power state.
+  ///
+  /// \note The dynamic energy consumption is typically influenced by factors such as
+  /// processing load, activity patterns, and utilization. The static energy consumption
+  /// often includes power used by components in standby, sleep, or other low-power modes.
+  const double totalEnergyConsumption = m_GlobalTotalNonIdleEnergyConsumption +
+    m_GlobalTotalPowerIdle * m_GlobalSimulationTime;
+
+  /// Calculates the system average power and the system's energy efficiency.
+  const double avgPower = totalEnergyConsumption / m_GlobalSimulationTime;
+  const double energyEfficiency = maxComputationalPower / avgPower;
+
   ispd_log(LOG_INFO, "");
   ispd_log(LOG_INFO, "Global Simulation Time...........: %lf seconds.", m_GlobalSimulationTime);
   ispd_log(LOG_INFO, "");
@@ -295,9 +327,18 @@ void GlobalMetricsCollector::reportGlobalMetrics() {
   ispd_log(LOG_INFO, " Avg. Turnaround Time............: %lf seconds.", avgTotalTurnaroundTime);
   ispd_log(LOG_INFO, "");
   ispd_log(LOG_INFO, "System Metrics");
-  ispd_log(LOG_INFO, " Peak Computational Power........: %lf MFLOPS.", m_GlobalTotalComputationalPower);
-  ispd_log(LOG_INFO, " Max. Computational Power........: %lf MFLOPS.", maxComputationalPower);
-  ispd_log(LOG_INFO, " Efficiency......................: %lf%%.", efficiency * 100.0);
+  ispd_log(LOG_INFO, "");
+  ispd_log(LOG_INFO, " Processing-related metrics");
+  ispd_log(LOG_INFO, "  Peak Computational Power........: %lf MFLOPS.", m_GlobalTotalComputationalPower);
+  ispd_log(LOG_INFO, "  Max. Computational Power........: %lf MFLOPS.", maxComputationalPower);
+  ispd_log(LOG_INFO, "  Efficiency......................: %lf%%.", efficiency * 100.0);
+  ispd_log(LOG_INFO, "");
+  ispd_log(LOG_INFO, " Energy-related metrics");
+  ispd_log(LOG_INFO, "  Energy Consumption..............: %lf J.", totalEnergyConsumption);
+  ispd_log(LOG_INFO, "  Energy Efficiency...............: %lf MFLOPS/W.", energyEfficiency);
+  ispd_log(LOG_INFO, "  Avg. Power......................: %lf W.", avgPower);
+  ispd_log(LOG_INFO, "  Idle Power......................: %lf W.", m_GlobalTotalPowerIdle);
+  ispd_log(LOG_INFO, "");
   ispd_log(LOG_INFO, " Total CPU Cores.................: %u cores.", m_GlobalTotalCpuCores);
   ispd_log(LOG_INFO, "");
   ispd_log(LOG_INFO, "User Metrics");
@@ -317,6 +358,7 @@ void GlobalMetricsCollector::reportGlobalMetrics() {
     ispd_log(LOG_INFO, "  Avg. Communication Waiting Time: %lf seconds.", userAvgCommWaitingTime);
     ispd_log(LOG_INFO, "  Issued Tasks...................: %u tasks.", userMetrics.m_IssuedTasks);
     ispd_log(LOG_INFO, "  Completed Tasks................: %u tasks.", userMetrics.m_CompletedTasks);
+    ispd_log(LOG_INFO, "  Energy Consumption.............: %lf J.", userMetrics.m_EnergyConsumption);
   }
 
   ispd_log(LOG_INFO, "");

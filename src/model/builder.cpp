@@ -6,6 +6,7 @@
 #include <ispd/services/link.hpp>
 #include <ispd/services/machine.hpp>
 #include <ispd/services/switch.hpp>
+#include <ispd/configuration/machine.hpp>
 
 static inline std::string firstSlaves(const std::vector<tw_lpid> &slaves) {
   const auto maxToShow = std::vector<tw_lpid>::size_type(10);
@@ -23,7 +24,9 @@ namespace ispd::model {
 
 void SimulationModel::registerMachine(const tw_lpid gid, const double power,
                                       const double load,
-                                      const unsigned coreCount) {
+                                      const unsigned coreCount,
+                                      const double wattageIdle,
+                                      const double wattageMax) {
   /// Check if the power is not positive. If so, an error indicating the
   /// case is sent and the program is immediately aborted.
   if (power <= 0.0)
@@ -53,7 +56,7 @@ void SimulationModel::registerMachine(const tw_lpid gid, const double power,
         static_cast<ispd::services::machine_state *>(state);
 
     /// Initialize machine's configuration.
-    s->conf = ispd::services::MachineConfiguration(power, load, coreCount);
+    s->conf = ispd::configuration::MachineConfiguration(power, load, coreCount, wattageIdle, wattageMax);
     s->cores_free_time.resize(coreCount, 0.0);
   });
 
@@ -98,9 +101,7 @@ void SimulationModel::registerLink(const tw_lpid gid, const tw_lpid from,
     s->to = to;
 
     /// Initialize the link's configuration.
-    s->conf.bandwidth = bandwidth;
-    s->conf.load = load;
-    s->conf.latency = latency;
+    s->conf = ispd::configuration::LinkConfiguration(bandwidth, load, latency);
   });
 
   /// Print a debug indicating that a link initializer has been registered.
@@ -246,9 +247,10 @@ namespace ispd::this_model {
 ispd::model::SimulationModel *g_Model = new ispd::model::SimulationModel();
 
 void registerMachine(const tw_lpid gid, const double power, const double load,
-                     const unsigned coreCount) {
+                     const unsigned coreCount, const double wattageIdle,
+                     const double wattageMax) {
   /// Forward the machine registration to the global model.
-  g_Model->registerMachine(gid, power, load, coreCount);
+  g_Model->registerMachine(gid, power, load, coreCount, wattageIdle, wattageMax);
 }
 
 void registerLink(const tw_lpid gid, const tw_lpid from, const tw_lpid to,
