@@ -82,6 +82,7 @@ struct machine {
       s->m_Metrics.m_ProcTime += proc_time;
       s->m_Metrics.m_ProcTasks++;
       s->m_Metrics.m_ProcWaitingTime += waiting_delay;
+      s->m_Metrics.m_EnergyConsumption += proc_time * s->conf.getWattagePerCore();
 
       /// Update the machine's queueing model information.
       s->cores_free_time[core_index] = tw_now(lp) + departure_delay;
@@ -156,6 +157,7 @@ struct machine {
       s->m_Metrics.m_ProcTime -= proc_time;
       s->m_Metrics.m_ProcTasks--;
       s->m_Metrics.m_ProcWaitingTime -= waiting_delay;
+      s->m_Metrics.m_EnergyConsumption -= proc_time * s->conf.getWattagePerCore();
 
       /// Reverse the machine's queueing model information.
       s->cores_free_time[msg->saved_core_index] = least_free_time;
@@ -214,6 +216,7 @@ struct machine {
         " - Waiting Time........: %lf seconds (%lu).\n"
         " - Avg. Processing Time: %lf seconds (%lu).\n"
         " - Idleness............: %lf%% (%lu).\n"
+        " - Energy Consumption..: %lf J (%lu).\n"
         "\n",
         lp->gid, 
         lastActivityTime, lp->gid,
@@ -222,7 +225,8 @@ struct machine {
         s->m_Metrics.m_ForwardedTasks, lp->gid,
         s->m_Metrics.m_ProcWaitingTime, lp->gid,
         s->m_Metrics.m_ProcTime / s->m_Metrics.m_ProcTasks, lp->gid,
-        idleness * 100.0, lp->gid
+        idleness * 100.0, lp->gid,
+        s->m_Metrics.m_EnergyConsumption, lp->gid
     );
   }
 };
