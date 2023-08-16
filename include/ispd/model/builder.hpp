@@ -69,7 +69,8 @@ private:
 
 namespace ispd::this_model {
 void registerMachine(const tw_lpid gid, const double power, const double load,
-                     const unsigned coreCount);
+                     const unsigned coreCount, const double wattageIdle = 0.0,
+                     const double wattageMax = 0.0);
 
 void registerLink(const tw_lpid gid, const tw_lpid from, const tw_lpid to,
                   const double bandwidth, const double load,

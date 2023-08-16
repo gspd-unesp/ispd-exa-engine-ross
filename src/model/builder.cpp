@@ -247,9 +247,10 @@ namespace ispd::this_model {
 ispd::model::SimulationModel *g_Model = new ispd::model::SimulationModel();
 
 void registerMachine(const tw_lpid gid, const double power, const double load,
-                     const unsigned coreCount) {
+                     const unsigned coreCount, const double wattageIdle,
+                     const double wattageMax) {
   /// Forward the machine registration to the global model.
-  g_Model->registerMachine(gid, power, load, coreCount);
+  g_Model->registerMachine(gid, power, load, coreCount, wattageIdle, wattageMax);
 }
 
 void registerLink(const tw_lpid gid, const tw_lpid from, const tw_lpid to,
