@@ -99,9 +99,7 @@ void SimulationModel::registerLink(const tw_lpid gid, const tw_lpid from,
     s->to = to;
 
     /// Initialize the link's configuration.
-    s->conf.bandwidth = bandwidth;
-    s->conf.load = load;
-    s->conf.latency = latency;
+    s->conf = ispd::configuration::LinkConfiguration(bandwidth, load, latency);
   });
 
   /// Print a debug indicating that a link initializer has been registered.
