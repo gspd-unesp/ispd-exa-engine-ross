@@ -33,11 +33,7 @@ struct MachineMetrics final {
          ///< to other components within the simulation.
 
   /// \name Energy-related Metrics
-  double m_PowerIdle =
-      0.0; ///< The power consumption (in W) when the machine is idle.
-
-  double m_PowerMax =
-      0.0; ///< The power consumptio (in W) that the machine can reach.
+  double m_EnergyConsumption; ///< Total energy consumpttion (in Joules).
 };
 
 } // namespace ispd::metrics

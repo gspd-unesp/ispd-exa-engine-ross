@@ -26,7 +26,7 @@ struct UserMetrics final {
 
   /// \name Energy-related metrics
   double m_EnergyConsumption = 0.0; ///< The total energy consumption by the user (in
-                                    ///< kJ).
+                                    ///< Joules).
 
   /// \name Workload-related metrics
   unsigned m_IssuedTasks = 0;    ///< The total number of tasks issued by the user.
