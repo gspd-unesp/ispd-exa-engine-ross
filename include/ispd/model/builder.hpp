@@ -1,14 +1,13 @@
 #ifndef ISPD_MODEL_BUILDER_HPP
 #define ISPD_MODEL_BUILDER_HPP
-
 #include <ross.h>
 #include <vector>
 #include <functional>
 #include <unordered_map>
 #include <ispd/log/log.hpp>
 #include <ispd/model/user.hpp>
+#include <ispd/allocator/allocator.hpp>
 #include <ispd/workload/workload.hpp>
-#include <ispd/services/VMM.hpp>
 #include <ispd/scheduler/scheduler.hpp>
 
 namespace ispd::model {
@@ -21,8 +20,9 @@ public:
 
   void registerMachine(const tw_lpid gid, const double power, const double load,
                        const unsigned coreCount, const double memory,
-                       const double disk_space,const double wattageIdle = 0.0,
-                       const double wattageMax = 0.0);
+                       const double disk_space,const double wattageIdle,
+                       const double wattageMax);
+
   void registerLink(const tw_lpid gid, const tw_lpid from, const tw_lpid to,
                     const double bandwidth, const double load,
                     const double latency);
@@ -34,7 +34,8 @@ public:
                       ispd::scheduler::scheduler *const scheduler,
                       ispd::workload::Workload *const workload);
 
-  void registerVMM(const tw_lpid gid, std::vector<ispd::services::slave_vms_info> &&slaves,
+  void registerVMM(const tw_lpid gid, std::vector<tw_lpid> &&vms, std::vector<double> &&vms_mem,
+                   std::vector<double> &&vms_disk, std::vector<unsigned> &&vms_cores,
                    std::vector<tw_lpid> &&machines, ispd::allocator::allocator *const allocator,
                    ispd::scheduler::scheduler *const scheduler,
                    ispd::workload::Workload *const workload);
@@ -74,10 +75,11 @@ private:
 }; // namespace ispd::model
 
 namespace ispd::this_model {
+
 void registerMachine(const tw_lpid gid, const double power, const double load,
                      const unsigned coreCount, const double memory,
-                     const double disk_space,const double wattageIdle = 0.0,
-                     const double wattageMax = 0.0);
+                     const double disk_space,const double wattageIdle,
+                     const double wattageMax);
 
 void registerLink(const tw_lpid gid, const tw_lpid from, const tw_lpid to,
                   const double bandwidth, const double load,
@@ -90,7 +92,8 @@ void registerMaster(const tw_lpid gid, std::vector<tw_lpid> &&slaves,
                     ispd::scheduler::scheduler *const scheduler,
                     ispd::workload::Workload *const workload);
 
-void registerVMM(const tw_lpid gid, std::vector<ispd::services::slave_vms_info> &&slaves,
+void registerVMM(const tw_lpid gid, std::vector<tw_lpid> &&vms, std::vector<double> &&vms_mem,
+                 std::vector<double> &&vms_disk, std::vector<unsigned> &&vms_cores,
                  std::vector<tw_lpid> &&machines, ispd::allocator::allocator *const allocator,
                  ispd::scheduler::scheduler *const scheduler,
                  ispd::workload::Workload *const workload);

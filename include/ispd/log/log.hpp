@@ -1,4 +1,4 @@
-#ifndef ISPD_LOG_HPP
+  #ifndef ISPD_LOG_HPP
 #define ISPD_LOG_HPP
 
 #include <cstdio>

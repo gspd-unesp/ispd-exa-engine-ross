@@ -2,6 +2,7 @@
 
 #ifndef ISPD_SERVICE_VMM_HPP
 #define ISPD_SERVICE_VMM_HPP
+
 #include <ross.h>
 #include <vector>
 #include <algorithm>
@@ -53,14 +54,14 @@ struct VMM {
 
     service_initializer(s);
 
+
     s->scheduler->init_scheduler();
     s->allocator->init();
 
     s->metrics.tasks_proc = 0;
     s->metrics.vm_alloc = 0;
-
     /// Send a generate message to itself.
-    double offset;
+    double offset = 0.0;
     s->workload->generateInterarrival(lp->rng, offset);
 
     tw_event *const e = tw_event_new(lp->gid, offset , lp);
@@ -120,10 +121,10 @@ private:
         lp->gid, tw_now(lp), s->workload->getRemainingVms());
 
     const tw_lpid machine_chosen = s->allocator->forward_allocation(s->machines, bf, msg, lp);
+    ispd_debug("%u", machine_chosen);
 
     const ispd::routing::Route *route =
         ispd::routing_table::getRoute(lp->gid, machine_chosen);
-
     tw_event *const e = tw_event_new(route->get(0), 0.0, lp);
     ispd_message *const m = static_cast<ispd_message *>(tw_event_data(e));
 

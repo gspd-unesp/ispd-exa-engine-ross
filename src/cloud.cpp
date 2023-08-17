@@ -6,7 +6,7 @@
 #include <ispd/model/builder.hpp>
 #include <ispd/services/link.hpp>
 #include <ispd/services/dummy.hpp>
-#include<ispd/allocator/first_fit.hpp>
+#include <ispd/allocator/first_fit.hpp>
 #include <ispd/services/master.hpp>
 #include <ispd/services/switch.hpp>
 #include <ispd/services/machine.hpp>
@@ -59,7 +59,7 @@ int main(int argc, char **argv) {
   ispd::log::set_log_file(NULL);
 
   /// Read the routing table from a specified file.
-  ispd::routing_table::load("routes.route");
+  ispd::routing_table::load("/home/willao/ispd-exa-engine-ross/routes.route");
 
   tw_opt_add(opt);
   tw_init(&argc, &argv);
@@ -71,26 +71,30 @@ int main(int argc, char **argv) {
   /// Register the user.
   ispd::this_model::registerUser("User1", 100.0);
   /// register vmm
-  std::vector<tw_lpid> slaves;
-  std::vector<ispd::services::slave_vms_info> vms_values;
+  std::vector<tw_lpid> machines;
+  std::vector<tw_lpid> vms_ids;
+  std::vector<double> vms_disk;
+  std::vector<double> vms_memory;
+  std::vector<unsigned> vms_cores;
 
   for (tw_lpid machine_id = 2; machine_id <= highest_machine_id;
        machine_id += 2)
-    slaves.emplace_back(machine_id);
+    machines.emplace_back(machine_id);
 
   for (tw_lpid vm_id = highest_machine_id + 1; vm_id <= highest_vm_id;
        vm_id++) {
-    ispd::services::slave_vms_info conf;
-    conf.num_cores = 4;
-    conf.avaliable_disk = 10;
-    conf.avaliable_memory = 4;
-    conf.id = vm_id;
-    vms_values.emplace_back(conf);
+
+    vms_ids.emplace_back(vm_id);
+    vms_disk.emplace_back(10);
+    vms_cores.emplace_back(4);
+    vms_memory.emplace_back(4);
   }
 
+
   ispd::this_model::registerVMM(
-      0, std::move(vms_values), std::move(slaves),
-      new ispd::allocator::first_fit, new ispd::scheduler::round_robin,
+      0, std::move(vms_ids), std::move(vms_memory), std::move(vms_disk),
+      std::move(vms_cores), std::move(machines), new ispd::allocator::first_fit,
+      new ispd::scheduler::round_robin,
       ispd::workload::constant(
           "User1", 0, g_star_vm_amount, 100, 80,
           std::make_unique<ispd::workload::PoissonInterarrivalDistribution>(
@@ -103,7 +107,7 @@ int main(int argc, char **argv) {
   /// Registers serivce initializers for the machines.
   for (tw_lpid machine_id = 2; machine_id <= highest_machine_id;
        machine_id += 2)
-    ispd::this_model::registerMachine(machine_id, 20.0, 0.0, 8, 10, 10);
+    ispd::this_model::registerMachine(machine_id, 20.0, 0.0, 8, 10, 100,0,0);
 
   /// Checks if no user has been registered. If so, the program is immediately
   /// aborted, since at least one user must be registered.
