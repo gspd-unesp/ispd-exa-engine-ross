@@ -8,6 +8,7 @@
 #include <ispd/log/log.hpp>
 #include <ispd/model/user.hpp>
 #include <ispd/workload/workload.hpp>
+#include <ispd/services/VMM.hpp>
 #include <ispd/scheduler/scheduler.hpp>
 
 namespace ispd::model {
@@ -19,9 +20,9 @@ public:
   using user_map_type = std::unordered_map<User::uid_t, User>;
 
   void registerMachine(const tw_lpid gid, const double power, const double load,
-                       const unsigned coreCount, const double wattageIdle = 0.0,
+                       const unsigned coreCount, const double memory,
+                       const double disk_space,const double wattageIdle = 0.0,
                        const double wattageMax = 0.0);
-
   void registerLink(const tw_lpid gid, const tw_lpid from, const tw_lpid to,
                     const double bandwidth, const double load,
                     const double latency);
@@ -32,6 +33,11 @@ public:
   void registerMaster(const tw_lpid gid, std::vector<tw_lpid> &&slaves,
                       ispd::scheduler::scheduler *const scheduler,
                       ispd::workload::Workload *const workload);
+
+  void registerVMM(const tw_lpid gid, std::vector<ispd::services::slave_vms_info> &&slaves,
+                   std::vector<tw_lpid> &&machines, ispd::allocator::allocator *const allocator,
+                   ispd::scheduler::scheduler *const scheduler,
+                   ispd::workload::Workload *const workload);
 
   void registerUser(const std::string &name,
                     const double energyConsumptionLimit);
@@ -69,7 +75,8 @@ private:
 
 namespace ispd::this_model {
 void registerMachine(const tw_lpid gid, const double power, const double load,
-                     const unsigned coreCount, const double wattageIdle = 0.0,
+                     const unsigned coreCount, const double memory,
+                     const double disk_space,const double wattageIdle = 0.0,
                      const double wattageMax = 0.0);
 
 void registerLink(const tw_lpid gid, const tw_lpid from, const tw_lpid to,
@@ -82,6 +89,11 @@ void registerSwitch(const tw_lpid gid, const double bandwidth,
 void registerMaster(const tw_lpid gid, std::vector<tw_lpid> &&slaves,
                     ispd::scheduler::scheduler *const scheduler,
                     ispd::workload::Workload *const workload);
+
+void registerVMM(const tw_lpid gid, std::vector<ispd::services::slave_vms_info> &&slaves,
+                 std::vector<tw_lpid> &&machines, ispd::allocator::allocator *const allocator,
+                 ispd::scheduler::scheduler *const scheduler,
+                 ispd::workload::Workload *const workload);
 
 void registerUser(const std::string &name, const double energyConsumptionLimit);
 

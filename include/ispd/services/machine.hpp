@@ -21,10 +21,18 @@ extern double g_NodeSimulationTime;
 namespace ispd {
 namespace services {
 
+struct machine_prices
+{
+  double cpu_individual_cost;
+  double memory_indivual_cost;
+  double storage_individual_cost;
+};
+
 struct machine_state {
   ispd::configuration::MachineConfiguration conf; ///< Machine's configuration.
   ispd::metrics::MachineMetrics m_Metrics; ///< Machine's metrics.
   std::vector<double> cores_free_time; ///< Machine's queueing model information
+  machine_prices prices;
 };
 
 struct machine {
@@ -61,6 +69,13 @@ struct machine {
   static void forward(machine_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
     ispd_debug("[Forward] Machine %lu received a message at %lf of type (%d) and route offset (%u).", lp->gid, tw_now(lp), msg->type, msg->route_offset);
 
+    if(msg->is_vm)
+    {
+      forward_vm(s,bf,msg,lp);
+      return;
+    }
+
+
 #ifdef DEBUG_ON
   const auto start = std::chrono::high_resolution_clock::now();
 #endif // DEBUG_ON
@@ -87,7 +102,10 @@ struct machine {
       /// Update the machine's queueing model information.
       s->cores_free_time[core_index] = tw_now(lp) + departure_delay;
 
-      tw_event *const e = tw_event_new(msg->previous_service_id, departure_delay, lp);
+
+        tw_event *const e = tw_event_new(msg->previous_service_id, departure_delay, lp);
+
+
       ispd_message *const m = static_cast<ispd_message *>(tw_event_data(e));
 
       *m = *msg;
@@ -140,6 +158,11 @@ struct machine {
   static void reverse(machine_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
     ispd_debug("[Reverse] Machine %lu received a message at %lf of type (%d).", lp->gid, tw_now(lp), msg->type);
 
+    if(msg->is_vm)
+    {
+      reverse_vm(s,bf,msg,lp);
+      return;
+    }
 #ifdef DEBUG_ON
   const auto start = std::chrono::high_resolution_clock::now();
 #endif // DEBUG_ON
@@ -213,27 +236,159 @@ struct machine {
     ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_NON_IDLE_ENERGY_CONSUMPTION, s->m_Metrics.m_EnergyConsumption);
     ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_POWER_IDLE, s->conf.getWattageIdle());
 
-    std::printf(
-        "Machine Metrics (%lu)\n"
-        " - Last Activity Time..: %lf seconds (%lu).\n"
-        " - Processed MFLOPS....: %lf MFLOPS (%lu).\n"
-        " - Processed Tasks.....: %u tasks (%lu).\n"
-        " - Forwarded Packets...: %u packets (%lu).\n"
-        " - Waiting Time........: %lf seconds (%lu).\n"
-        " - Avg. Processing Time: %lf seconds (%lu).\n"
-        " - Idleness............: %lf%% (%lu).\n"
-        " - Non Idle Energy Cons: %lf J (%lu).\n"
-        "\n",
-        lp->gid, 
-        lastActivityTime, lp->gid,
-        s->m_Metrics.m_ProcMflops, lp->gid,
-        s->m_Metrics.m_ProcTasks, lp->gid,
-        s->m_Metrics.m_ForwardedTasks, lp->gid,
-        s->m_Metrics.m_ProcWaitingTime, lp->gid,
-        s->m_Metrics.m_ProcTime / s->m_Metrics.m_ProcTasks, lp->gid,
-        idleness * 100.0, lp->gid,
-        s->m_Metrics.m_EnergyConsumption, lp->gid
-    );
+//    std::printf(
+//        "Machine Metrics (%lu)\n"
+//        " - Last Activity Time..: %lf seconds (%lu).\n"
+//        " - Processed MFLOPS....: %lf MFLOPS (%lu).\n"
+//        " - Processed Tasks.....: %u tasks (%lu).\n"
+//        " - Forwarded Packets...: %u packets (%lu).\n"
+//        " - Waiting Time........: %lf seconds (%lu).\n"
+//        " - Avg. Processing Time: %lf seconds (%lu).\n"
+//        " - Idleness............: %lf%% (%lu).\n"
+//        " - Non Idle Energy Cons: %lf J (%lu).\n"
+//        "\n",
+//        lp->gid,
+//        lastActivityTime, lp->gid,
+//        s->m_Metrics.m_ProcMflops, lp->gid,
+//        s->m_Metrics.m_ProcTasks, lp->gid,
+//        s->m_Metrics.m_ForwardedTasks, lp->gid,
+//        s->m_Metrics.m_ProcWaitingTime, lp->gid,
+//        s->m_Metrics.m_ProcTime / s->m_Metrics.m_ProcTasks, lp->gid,
+//        idleness * 100.0, lp->gid,
+//        s->m_Metrics.m_EnergyConsumption, lp->gid
+//    );
+
+    std::printf("Allocated vms: %u ", s->m_Metrics.m_allocated_vms );
+  }
+
+private:
+    static void forward_vm(machine_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
+    if (msg->task.dest == lp->gid) {
+
+      bool fit = false;
+      double vm_memory = msg->vm_memory_space;
+      double vm_storage = msg->vm_disk_space;
+      unsigned vm_cores = msg->vm_num_cores;
+
+      if(vm_memory > s->conf.getAvaliableMemory() || vm_storage > s->conf.getAvaliableDisk()
+          || vm_cores > s->conf.getNumCores())
+      {
+        fit = true;
+
+        s->m_Metrics.m_allocated_vms++;
+        s->m_Metrics.total_cpu_cost +=  s->prices.cpu_individual_cost * vm_cores;
+        s->m_Metrics.total_cpu_cost += s->prices.memory_indivual_cost * vm_memory;
+        s->m_Metrics.total_cpu_cost += s->prices.storage_individual_cost * vm_storage;
+
+
+            s->conf.setAvaliableMemory(s->conf.getAvaliableMemory() - vm_memory);
+      s->conf.setAvaliableDisk(s->conf.getAvaliableDisk() - vm_storage);
+      s->conf.setNumCores(s->conf.getNumCores() - vm_cores);
+
+      }
+      const double proc_size = msg->task.proc_size;
+      const double proc_time = s->conf.timeToProcess(proc_size);
+
+      unsigned core_index;
+      const double least_free_time = least_core_time(s->cores_free_time, core_index);
+      const double waiting_delay = ROSS_MAX(0.0, least_free_time - tw_now(lp));
+      const double departure_delay = waiting_delay + proc_time;
+
+      /// Update the machine's metrics.
+      s->m_Metrics.m_ProcMflops += proc_size;
+      s->m_Metrics.m_ProcTime += proc_time;
+      s->m_Metrics.m_ProcWaitingTime += waiting_delay;
+      s->m_Metrics.m_EnergyConsumption += proc_time * s->conf.getWattagePerCore();
+
+      /// Update the machine's queueing model information.
+      s->cores_free_time[core_index] = tw_now(lp) + departure_delay;
+
+
+      tw_event *const e = tw_event_new(msg->previous_service_id, departure_delay, lp);
+
+      ispd_message *const m = static_cast<ispd_message *>(tw_event_data(e));
+      m->type = message_type::ARRIVAL;
+      m->task = msg->task; /// Copy the tasks's information.
+      m->task_processed = msg->task_processed;
+      m->downward_direction = msg->downward_direction;
+      m->route_offset = msg->downward_direction ? (msg->route_offset + 1) : (msg->route_offset - 1);
+      m->previous_service_id = lp->gid;
+      m->fit = fit;
+      m->allocated_in = lp->gid;
+      tw_event_send(e);
+
+
+
+    }
+    else{
+      /// Fetch the route between the task's origin and task's destination.
+      const ispd::routing::Route *route = ispd::routing_table::getRoute(msg->task.origin, msg->task.dest);
+
+      /// Update machine's metrics.
+      s->m_Metrics.m_ForwardedTasks++;
+
+      /// @Todo: This zero-delay timestamped message could affect the conservative synchronization.
+      ///        This should be changed after.
+      tw_event *const e = tw_event_new(route->get(msg->route_offset), 0.0, lp);
+      ispd_message *const m = static_cast<ispd_message *>(tw_event_data(e));
+
+      m->type = message_type::ARRIVAL;
+      m->task = msg->task; /// Copy the tasks's information.
+      m->task_processed = msg->task_processed;
+      m->downward_direction = msg->downward_direction;
+      m->route_offset = msg->downward_direction ? (msg->route_offset + 1) : (msg->route_offset - 1);
+      m->previous_service_id = lp->gid;
+
+      tw_event_send(e);
+
+    }
+  }
+
+  static void reverse_vm(machine_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
+
+    if (msg->task.dest == lp->gid) {
+
+      bool fit = false;
+      double vm_memory = msg->vm_memory_space;
+      double vm_storage = msg->vm_disk_space;
+      unsigned vm_cores = msg->vm_num_cores;
+
+      if (vm_memory > s->conf.getAvaliableMemory() ||
+          vm_storage > s->conf.getAvaliableDisk() ||
+          vm_cores > s->conf.getNumCores()) {
+      fit = true;
+
+      s->m_Metrics.m_allocated_vms--;
+      s->m_Metrics.total_cpu_cost -= s->prices.cpu_individual_cost * vm_cores;
+      s->m_Metrics.total_cpu_cost -= s->prices.memory_indivual_cost * vm_memory;
+      s->m_Metrics.total_cpu_cost -=
+          s->prices.storage_individual_cost * vm_storage;
+
+      s->conf.setAvaliableMemory(s->conf.getAvaliableMemory() + vm_memory);
+      s->conf.setAvaliableDisk(s->conf.getAvaliableDisk() + vm_storage);
+      s->conf.setNumCores(s->conf.getNumCores() + vm_cores);
+      }
+      const double proc_size = msg->task.proc_size;
+      const double proc_time = s->conf.timeToProcess(proc_size);
+
+      unsigned core_index;
+      const double least_free_time =
+          least_core_time(s->cores_free_time, core_index);
+      const double waiting_delay = ROSS_MAX(0.0, least_free_time - tw_now(lp));
+      const double departure_delay = waiting_delay + proc_time;
+
+      /// Update the machine's metrics.
+      s->m_Metrics.m_ProcMflops -= proc_size;
+      s->m_Metrics.m_ProcTime -= proc_time;
+      s->m_Metrics.m_ProcWaitingTime -= waiting_delay;
+      s->m_Metrics.m_EnergyConsumption -=
+          proc_time * s->conf.getWattagePerCore();
+
+      /// Update the machine's queueing model information.
+      s->cores_free_time[msg->saved_core_index] = least_free_time;
+
+    } else
+      s->m_Metrics.m_ForwardedTasks--;
   }
 };
 

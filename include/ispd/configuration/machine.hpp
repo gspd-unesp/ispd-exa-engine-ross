@@ -15,7 +15,8 @@ private:
   double m_PowerPerCore; ///< Computational power per core (in megaflops).
   double m_Load;         ///< Load factor of the machine (0.0 to 1.0).
   unsigned m_CoreCount;  ///< Number of cores in the machine.
-
+  double m_AvaliableMemory;
+  double m_AvaliableDiskSpace;
   double m_WattageIdle; ///< Power consumption (in watts) being idle.
   double
       m_WattageMax; ///< Power consumpttion (in watts) at maximum utilization.
@@ -30,10 +31,12 @@ public:
   /// \param load Load factor of the machine (0.0 to 1.0).
   /// \param coreCount Number of cores in the machine.
   explicit MachineConfiguration(const double power, const double load,
-                                const unsigned coreCount,
+                                const unsigned coreCount, const double avaliable_mem,
+                                const double avaliable_disk,
                                 const double wattageIdle = 0.0,
                                 const double wattageMax = 0.0)
       : m_PowerPerCore(power / coreCount), m_Load(load), m_CoreCount(coreCount),
+        m_AvaliableMemory(avaliable_mem), m_AvaliableDiskSpace(avaliable_disk),
         m_WattageIdle(wattageIdle), m_WattageMax(wattageMax),
         m_WattagePerCore((wattageMax - wattageIdle) / coreCount) {}
 
@@ -65,6 +68,16 @@ public:
   ///
   /// \return Load factor of the machine (0.0 to 1.0).
   inline double getLoad() const { return m_Load; }
+
+  inline double getAvaliableMemory() const {return m_AvaliableMemory;}
+
+  inline double getAvaliableDisk() const {return m_AvaliableDiskSpace;}
+
+  inline double getNumCores() const {return m_CoreCount;}
+
+  inline void setAvaliableMemory(double new_memory) {m_AvaliableMemory = new_memory;}
+  inline void setAvaliableDisk (double new_disk) {m_AvaliableDiskSpace = new_disk;}
+  inline void setNumCores (unsigned new_cores) {m_CoreCount = new_cores;}
 
   /// \brief Retrieves the idle power consumption of the machine.
   ///

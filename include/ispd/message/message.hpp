@@ -25,10 +25,19 @@ struct ispd_message {
   int route_offset;
   tw_lpid previous_service_id;
 
+  /// \brief Virtual machine info
+  unsigned vm_num_cores;
+  double vm_memory_space;
+  double vm_disk_space;
+  tw_lpid vm_sent;
+  tw_lpid allocated_in;
+
   /// \brief Message flags.
-  unsigned int downward_direction: 1;
-  unsigned int task_processed: 1;
-  unsigned int: 6; /// Reversed flags.
+  unsigned int downward_direction : 1;
+  unsigned int task_processed : 1;
+  unsigned int is_vm : 1;
+  unsigned int fit : 1;
+  unsigned int : 4; /// Reversed flags.
 };
 
 #endif // ISPD_MESSAGE_H

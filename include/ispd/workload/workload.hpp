@@ -36,6 +36,8 @@ protected:
   /// conditions.
   unsigned m_RemainingTasks;
 
+  unsigned m_RemainingVms;
+
   /// \brief Unique pointer to InterarrivalDistribution.
   ///
   /// This member variable holds a `std::unique_ptr` to an `InterarrivalDistribution`
@@ -63,7 +65,12 @@ public:
   ///                        object that represents the distribution of time
   ///                        between consecutive task arrivals.
   explicit Workload(const std::string& owner, const unsigned remainingTasks,
-    std::unique_ptr<InterarrivalDistribution> interarrivalDist);
+    const std::unique_ptr<InterarrivalDistribution> interarrivalDist);
+
+
+  /// Workload for cloud using override
+  explicit Workload(const std::string& owner, const unsigned remainingTasks, const unsigned remainingVms,
+                    const std::unique_ptr<InterarrivalDistribution> interarrivalDist);
 
   /// \brief Generate the workload, setting the processing and communication
   ///        sizes depending on the generation policy.
@@ -130,6 +137,8 @@ public:
   ///       determine workload generation termination conditions.
   inline unsigned getRemainingTasks() { return m_RemainingTasks; }
 
+  inline unsigned getRemainingVms() {return m_RemainingVms;}
+
   /// \brief Get the user identifier who create the workload.
   ///
   /// This member function returns the user identifier who created the workload
@@ -178,6 +187,13 @@ public:
                             const double constantCommSize,
                             std::unique_ptr<InterarrivalDistribution> interarrivalDist);
 
+ explicit ConstantWorkload(const std::string& owner,
+                           const unsigned remainingTasks,
+                           const unsigned remainingVms,
+                           const double constantProcSize,
+                           const double constantCommSize,
+                           std::unique_ptr<InterarrivalDistribution> interarrivalDist);
+
   /// \brief Generate the constant workload, setting the processing and
   /// communication sizes.
   ///
@@ -201,6 +217,8 @@ public:
     commSize = m_ConstantCommSize;
 
     Workload::m_RemainingTasks--;
+
+    Workload::m_RemainingVms--;
   }
 
   /// \brief Reverse the constant workload generation, needed due to Time Warp's
@@ -217,6 +235,7 @@ public:
     CHECK_RNG(rng);
 
     Workload::m_RemainingTasks++;
+    Workload::m_RemainingVms++;
   }
 };
 
@@ -379,6 +398,13 @@ public:
 ///       when it is no longer needed to avoid memory leaks.
 ConstantWorkload *constant(const std::string& user,
                            const unsigned remainingTasks,
+                           const double constantProcSize,
+                           const double constantCommSize,
+                           std::unique_ptr<InterarrivalDistribution> interarrivalDist);
+
+ConstantWorkload *constant(const std::string& user,
+                           const unsigned remainingTasks,
+                           const unsigned remainingVms,
                            const double constantProcSize,
                            const double constantCommSize,
                            std::unique_ptr<InterarrivalDistribution> interarrivalDist);

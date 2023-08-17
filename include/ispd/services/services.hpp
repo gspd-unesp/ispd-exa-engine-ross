@@ -28,18 +28,21 @@ enum class ServiceType {
   MASTER,   ///< Represents a master service center type.
   LINK,     ///< Represents a link service center type.
   MACHINE,  ///< Represents a machine service center type.
-  SWITCH    ///< Represents a switch service center type.
+  SWITCH,    ///< Represents a switch service center type.
+  VMM       /// < Represents a vmm service center type
 };
 
 /// \brief Array containing all available service types.
 ///
 /// The g_ServiceTypes array contains all available service types as elements. It is defined
 /// as a constexpr std::array<ServiceType, 4> to ensure that it is available at compile time.
-constexpr std::array<ServiceType, 4> g_ServiceTypes = {
+constexpr std::array<ServiceType, 5> g_ServiceTypes = {
   ServiceType::MASTER,
   ServiceType::LINK,
   ServiceType::MACHINE,
   ServiceType::SWITCH,
+  ServiceType::VMM,
+
 };
 
 /// \brief Get the name of a service type as a string.
@@ -58,6 +61,7 @@ constexpr const char* getServiceTypeName(const ServiceType type) {
         case ServiceType::LINK: return "Link";
         case ServiceType::MACHINE: return "Machine";
         case ServiceType::SWITCH: return "Switch";
+        case ServiceType::VMM: return "VMM";
         default:
             return nullptr;
     }
@@ -67,6 +71,7 @@ constexpr const char* getServiceTypeName(const ServiceType type) {
         case ServiceType::LINK: return "link";
         case ServiceType::MACHINE: return "machine";
         case ServiceType::SWITCH: return "switch";
+        case ServiceType::VMM: return "vmm";
         default:
             return nullptr;
     }
