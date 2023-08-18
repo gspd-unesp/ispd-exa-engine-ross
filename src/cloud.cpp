@@ -107,7 +107,7 @@ int main(int argc, char **argv) {
   /// Registers serivce initializers for the machines.
   for (tw_lpid machine_id = 2; machine_id <= highest_machine_id;
        machine_id += 2)
-    ispd::this_model::registerMachine(machine_id, 20.0, 0.0, 8, 10, 100,0,0);
+    ispd::this_model::registerMachine(machine_id, 20.0, 0.0, 8, 16, 100,0,0);
 
   /// Checks if no user has been registered. If so, the program is immediately
   /// aborted, since at least one user must be registered.

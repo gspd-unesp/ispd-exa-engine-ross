@@ -258,11 +258,12 @@ struct machine {
 //        s->m_Metrics.m_EnergyConsumption, lp->gid
 //    );
 
-    std::printf("Allocated vms: %u ", s->m_Metrics.m_allocated_vms );
+    std::printf("\n Allocated vms: %u ", s->m_Metrics.m_allocated_vms );
   }
 
 private:
     static void forward_vm(machine_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
+    ispd_debug("Machine [%lu] received an vm %lu to allocate",lp->gid, msg->vm_sent );
     if (msg->task.dest == lp->gid) {
 
       bool fit = false;
@@ -270,8 +271,8 @@ private:
       double vm_storage = msg->vm_disk_space;
       unsigned vm_cores = msg->vm_num_cores;
 
-      if(vm_memory > s->conf.getAvaliableMemory() || vm_storage > s->conf.getAvaliableDisk()
-          || vm_cores > s->conf.getNumCores())
+      if(vm_memory <= s->conf.getAvaliableMemory() && vm_storage <= s->conf.getAvaliableDisk()
+          && vm_cores <= s->conf.getNumCores())
       {
         fit = true;
 
@@ -304,8 +305,9 @@ private:
       s->cores_free_time[core_index] = tw_now(lp) + departure_delay;
 
 
-      tw_event *const e = tw_event_new(msg->previous_service_id, departure_delay, lp);
-
+      /// sends an ack directly to the VMM without passing the link
+      tw_event *const e = tw_event_new(msg->task.origin, departure_delay, lp);
+      ispd_debug("Sending an ack message from %lu to %lu", lp->gid, msg->task.origin);
       ispd_message *const m = static_cast<ispd_message *>(tw_event_data(e));
       m->type = message_type::ARRIVAL;
       m->task = msg->task; /// Copy the tasks's information.
@@ -314,7 +316,12 @@ private:
       m->route_offset = msg->downward_direction ? (msg->route_offset + 1) : (msg->route_offset - 1);
       m->previous_service_id = lp->gid;
       m->fit = fit;
+      m->is_vm = msg->is_vm;
       m->allocated_in = lp->gid;
+      m->vm_sent = msg->vm_sent;
+      m->vm_disk_space= msg->vm_disk_space;
+      m->vm_num_cores= msg->vm_num_cores;
+      m->vm_memory_space =msg->vm_memory_space;
       tw_event_send(e);
 
 
@@ -338,6 +345,10 @@ private:
       m->downward_direction = msg->downward_direction;
       m->route_offset = msg->downward_direction ? (msg->route_offset + 1) : (msg->route_offset - 1);
       m->previous_service_id = lp->gid;
+      m->vm_sent = msg->vm_sent;
+      m->vm_disk_space= msg->vm_disk_space;
+      m->vm_num_cores= msg->vm_num_cores;
+      m->vm_memory_space =msg->vm_memory_space;
 
       tw_event_send(e);
 

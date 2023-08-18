@@ -31,6 +31,7 @@ struct allocated_vms {
 struct VMM_metrics {
   unsigned tasks_proc;
   unsigned vm_alloc;
+  unsigned vms_rejected;
 };
 
 struct VMM_state {
@@ -73,12 +74,14 @@ struct VMM {
   }
 
   static void forward(VMM_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
+    ispd_debug("Message came from %lu of type %lu", msg->previous_service_id, msg->type);
     switch (msg->type) {
     case message_type::GENERATE:
       generate(s, bf, msg, lp);
       break;
     case message_type::ARRIVAL:
       arrival(s, bf, msg, lp);
+      break;
     default:
       std::cerr << "Unknown message type " << static_cast<int>(msg->type)
                 << " at VMM LP forward handler." << std::endl;
@@ -121,7 +124,7 @@ private:
         lp->gid, tw_now(lp), s->workload->getRemainingVms());
 
     const tw_lpid machine_chosen = s->allocator->forward_allocation(s->machines, bf, msg, lp);
-    ispd_debug("%u", machine_chosen);
+    ispd_debug("%lu ", machine_chosen);
 
     const ispd::routing::Route *route =
         ispd::routing_table::getRoute(lp->gid, machine_chosen);
@@ -154,6 +157,7 @@ private:
   }
 
   static void arrival(VMM_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
+    ispd_debug("Arrived a message in vmm of vm %lu and fit %lu ", msg->is_vm, msg->fit);
 
     if (msg->is_vm) {
       /// erases the vm in the list of vms and put it on the list of allocated
@@ -165,11 +169,17 @@ private:
         s->vms.erase(s->vms.begin());
 
         s->metrics.vm_alloc++;
+
       }
       /// put the vm in the tail
       else {
         std::iter_swap(s->vms.begin(), s->vms.end() - 1);
       }
+    /// send a message to continue the allocation
+    tw_event *const e = tw_event_new(lp->gid, 0.0, lp);
+    ispd_message *const m = static_cast<ispd_message *>(tw_event_data(e));
+    m->type = message_type::GENERATE;
+    tw_event_send(e);
 
     }
     /// arrival of an ordinary task

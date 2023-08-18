@@ -159,6 +159,12 @@ struct link {
     m->downward_direction = msg->downward_direction;
     m->route_offset = msg->route_offset;
     m->previous_service_id = lp->gid;
+    m->is_vm = msg->is_vm;
+    m->vm_sent = msg->vm_sent;
+    m->allocated_in = msg->allocated_in;
+    m->vm_memory_space = msg->vm_memory_space;
+    m->vm_num_cores = msg->vm_num_cores;
+    m->vm_disk_space = msg->vm_disk_space;
 
     /// Save information (for reverse computation).
     msg->saved_link_next_available_time = saved_next_available_time;
@@ -241,31 +247,31 @@ struct link {
     ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_LINK_SERVICES);
     ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_COMMUNICATION_TIME, linkTotalCommunicationTime);
 
-    std::printf(
-        "Link Queue Info & Metrics (%lu)\n"
-        " - Downward Communicated Mbits..: %lf Mbits (%lu).\n"
-        " - Downward Communicated Packets: %u packets (%lu).\n"
-        " - Downward Waiting Time........: %lf seconds (%lu).\n"
-        " - Downward Idleness............: %lf% (%lu).\n"
-        " - Downward Next Avail. Time....: %lf seconds (%lu).\n"
-        " - Upward Communicated Mbits....: %lf Mbits (%lu).\n"
-        " - Upward Communicated Packets..: %u packets (%lu).\n"
-        " - Upward Waiting Time..........: %lf seconds (%lu).\n"
-        " - Upward Idleness..............: %lf% (%lu).\n"
-        " - Upward Next Avail. Time......: %lf seconds (%lu).\n"
-        "\n",
-        lp->gid, 
-        s->metrics.downward_comm_mbits, lp->gid,
-        s->metrics.downward_comm_packets, lp->gid,
-        s->metrics.downward_waiting_time, lp->gid,
-        downwardIdleness * 100.0, lp->gid,
-        s->downward_next_available_time, lp->gid,
-        s->metrics.upward_comm_mbits, lp->gid,
-        s->metrics.upward_comm_packets, lp->gid,
-        s->metrics.upward_waiting_time, lp->gid,
-        upwardIdleness * 100.0, lp->gid,
-        s->upward_next_available_time, lp->gid
-    );
+//    std::printf(
+//        "Link Queue Info & Metrics (%lu)\n"
+//        " - Downward Communicated Mbits..: %lf Mbits (%lu).\n"
+//        " - Downward Communicated Packets: %u packets (%lu).\n"
+//        " - Downward Waiting Time........: %lf seconds (%lu).\n"
+//        " - Downward Idleness............: %lf% (%lu).\n"
+//        " - Downward Next Avail. Time....: %lf seconds (%lu).\n"
+//        " - Upward Communicated Mbits....: %lf Mbits (%lu).\n"
+//        " - Upward Communicated Packets..: %u packets (%lu).\n"
+//        " - Upward Waiting Time..........: %lf seconds (%lu).\n"
+//        " - Upward Idleness..............: %lf% (%lu).\n"
+//        " - Upward Next Avail. Time......: %lf seconds (%lu).\n"
+//        "\n",
+//        lp->gid,
+//        s->metrics.downward_comm_mbits, lp->gid,
+//        s->metrics.downward_comm_packets, lp->gid,
+//        s->metrics.downward_waiting_time, lp->gid,
+//        downwardIdleness * 100.0, lp->gid,
+//        s->downward_next_available_time, lp->gid,
+//        s->metrics.upward_comm_mbits, lp->gid,
+//        s->metrics.upward_comm_packets, lp->gid,
+//        s->metrics.upward_waiting_time, lp->gid,
+//        upwardIdleness * 100.0, lp->gid,
+//        s->upward_next_available_time, lp->gid
+//    );
   }
 };
 
