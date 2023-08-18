@@ -21,43 +21,59 @@ public:
   /// \param name The name of the user.
   /// \param energyConsumptionLimit The energy consumption limit of the user
   /// (default: 0.0).
-  explicit User(const uid_t id, const std::string &name, const double energyConsumptionLimit = 0.0)
-      : m_Id(id), m_Name(name), m_EnergyConsumptionLimit(energyConsumptionLimit) {}
+  [[nodiscard]] explicit User(
+      const uid_t id, const std::string &name,
+      const double energyConsumptionLimit = 0.0) noexcept
+      : m_Id(id), m_Name(name),
+        m_EnergyConsumptionLimit(energyConsumptionLimit) {}
 
   /// \brief Get the unique identifier of the user.
   ///
   /// \return The unique identifier assigned to the user.
-  inline const uid_t getId() const { return m_Id; }
+  [[nodiscard]] inline const uid_t getId() const noexcept { return m_Id; }
 
   /// \brief Get the name of the user.
   ///
   /// \return The name associated with the user.
-  inline const std::string &getName() const { return m_Name; }
+  [[nodiscard]] inline const std::string &getName() const noexcept {
+    return m_Name;
+  }
 
-  /// \brief Retrieve the node's view of user metrics associated with this instance.
+  /// \brief Retrieve the node's view of user metrics associated with this
+  /// instance.
   ///
   /// This member function allows access to the `UserMetrics` object associated
   /// with the current instance. Users can use this function to retrieve and
   /// manipulate the metrics related to their activities within the system.
   ///
-  /// \return A reference to the `UserMetrics` object storing the user's metrics.
+  /// \return A reference to the `UserMetrics` object storing the user's
+  /// metrics.
   ///
-  inline ispd::metrics::UserMetrics &getMetrics() { return m_Metrics; }
+  [[nodiscard]] inline ispd::metrics::UserMetrics &getMetrics() noexcept {
+    return m_Metrics;
+  }
 
-  /// \brief Retrieve the node's view of user metrics associated with this instance.
+  /// \brief Retrieve the node's view of user metrics associated with this
+  /// instance.
   ///
   /// This member function allows access to the `UserMetrics` object associated
   /// with the current instance. Users can use this function to retrieve and
   /// manipulate the metrics related to their activities within the system.
   ///
-  /// \return A constant reference to the `UserMetrics` object storing the user's metrics.
+  /// \return A constant reference to the `UserMetrics` object storing the
+  /// user's metrics.
   ///
-  inline const ispd::metrics::UserMetrics &getMetrics() const { return m_Metrics; }
+  [[nodiscard]] inline const ispd::metrics::UserMetrics &
+  getMetrics() const noexcept {
+    return m_Metrics;
+  }
 
   /// \brief Get the energy consumption limit of the user.
   ///
   /// \return The energy consumption limit set for the user.
-  inline double getEnergyConsumptionLimit() const { return m_EnergyConsumptionLimit; }
+  [[nodiscard]] inline double getEnergyConsumptionLimit() const noexcept {
+    return m_EnergyConsumptionLimit;
+  }
 
 private:
   uid_t m_Id;                            ///< The user's unique identifier.
