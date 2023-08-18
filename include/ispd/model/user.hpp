@@ -1,6 +1,7 @@
 #ifndef ISPD_MODEL_USER_HPP
 #define ISPD_MODEL_USER_HPP
 
+#include <cstdint>
 #include <ispd/metrics/user_metrics.hpp>
 
 namespace ispd::model {
@@ -10,7 +11,7 @@ namespace ispd::model {
 /// \brief Represents a user in the system with associated attributes.
 class User {
 public:
-  using uid_t = uint32_t; ///< Type alias for user identifier.
+  using uid_t = std::uint32_t; ///< Type alias for user identifier.
 
   /// \brief Constructor for creating a user with specified attributes.
   ///
