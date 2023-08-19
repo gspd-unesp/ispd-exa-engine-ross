@@ -64,7 +64,7 @@ struct Switch {
 #endif // DEBUG_ON
 
     /// Fetch the communication size and calculate the communication time.
-    const double commSize = msg->task.comm_size;
+    const double commSize = msg->task.m_CommSize;
     const double commTime = timeToComm(s->m_Conf, commSize);
 
     /// Update the switch's metrics.
@@ -77,7 +77,7 @@ struct Switch {
     }
 
     const ispd::routing::Route *route =
-        ispd::routing_table::getRoute(msg->task.origin, msg->task.dest);
+        ispd::routing_table::getRoute(msg->task.m_Origin, msg->task.m_Dest);
 
     tw_event *const e =
         tw_event_new(route->get(msg->route_offset), commTime, lp);
@@ -110,7 +110,7 @@ struct Switch {
   const auto start = std::chrono::high_resolution_clock::now();
 #endif // DEBUG_ON
 
-    const double commSize = msg->task.comm_size;
+    const double commSize = msg->task.m_CommSize;
     const double commTime = timeToComm(s->m_Conf, commSize);
 
     /// Reverse the switch's metrics.
