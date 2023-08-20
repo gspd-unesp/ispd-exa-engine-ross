@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <ispd/message/message.hpp>
 #include <ispd/model/builder.hpp>
+#include <ispd/metrics/metrics.hpp>
 #include<ispd/services/services.hpp>
 #include <ispd/allocator/allocator.hpp>
 #include <ispd/scheduler/scheduler.hpp>
@@ -61,6 +62,7 @@ struct VMM {
 
     s->metrics.tasks_proc = 0;
     s->metrics.vm_alloc = 0;
+    s->metrics.vms_rejected = 0;
     /// Send a generate message to itself.
     double offset = 0.0;
     s->workload->generateInterarrival(lp->rng, offset);
@@ -106,6 +108,8 @@ struct VMM {
   }
 
   static void finish(VMM_state *s, tw_lp *lp) {
+    ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_ALLOCATED_VMS, s->metrics.vm_alloc);
+  //  ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_REJECTED_VMS, s->metrics.vms_rejected);
     std::printf("allocated vms: %u \n tasks processed: %u", s->metrics.vm_alloc,
                 s->metrics.tasks_proc);
   }
@@ -145,6 +149,7 @@ private:
     m->previous_service_id = lp->gid;
     m->downward_direction = 1;
     m->task_processed = 0;
+
 
     m->is_vm = 1;
     m->fit = 0;

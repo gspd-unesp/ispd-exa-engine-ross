@@ -64,6 +64,12 @@ enum class NodeMetricsFlag {
   /// \brief The accumulation of the total power consumption of all services in this node while being idle.
   NODE_TOTAL_POWER_IDLE,
 
+  /// \brief Totality of virtual machines allocated in the simulation
+  NODE_TOTAL_ALLOCATED_VMS,
+
+  /// \brief Totality of virtual machines rejected in the simulation
+  NODE_TOTAL_REJECTED_VMS,
+
   /// \brief The simulation time in this node.
   NODE_SIMULATION_TIME,
 
@@ -106,7 +112,8 @@ private:
   unsigned m_NodeTotalMachineServices;          ///< Total count of machine services simulated in this node.
   unsigned m_NodeTotalSwitchServices;           ///< Total count of switch services simulated in this node.
   unsigned m_NodeTotalCompletedTasks;           ///< Total count of completed tasks simulated in this node.
-
+  unsigned m_NodeTotalAllocatedVms;             ///< Total count of virtual machines allocated by a VMM
+  unsigned m_NodeTotalRejectedVms;              ///< Total count of virtual machines rejected.
   double m_NodeTotalComputationalPower;         ///< Total computational power simulatted in this node.
   unsigned m_NodeTotalCpuCores;                 ///< Total count of CPU cores simulated in this node.
 
@@ -171,7 +178,8 @@ private:
     unsigned m_GlobalTotalMachineServices;          ///< Total count of machine services across all nodes.
     unsigned m_GlobalTotalSwitchServices;           ///< Total count of switch services across all nodes.
     unsigned m_GlobalTotalCompletedTasks;           ///< Total count of completed tasks across all nodes.
-
+    unsigned m_GlobalTotalAllocatedVms;             ///< Total count of virtual machines allocated by a VMM
+    unsigned m_GlobalTotalRejectedVms;              ///< Total count of virtual machines rejected.
     double m_GlobalTotalComputationalPower;         ///< Total computational power across all nodes.
     unsigned m_GlobalTotalCpuCores;                 ///< Total count of CPU cores across all nodes.
 

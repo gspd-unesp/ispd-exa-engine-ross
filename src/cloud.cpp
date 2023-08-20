@@ -16,8 +16,8 @@
 #include <ispd/workload/workload.hpp>
 #include <ispd/workload/interarrival.hpp>
 #include <ispd/services/VMM.hpp>
-static unsigned g_star_machine_amount = 100;
-static unsigned g_star_vm_amount = 150;
+static unsigned g_star_machine_amount = 10;
+static unsigned g_star_vm_amount = 13;
 static unsigned g_star_task_amount = 0;
 
 tw_peid mapping(tw_lpid gid) { return (tw_peid)gid / g_tw_nlp; }

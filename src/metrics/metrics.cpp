@@ -80,6 +80,7 @@ void NodeMetricsCollector::notifyMetric(const NodeMetricsFlag flag, const double
       /// Updates simulation time.
       m_NodeSimulationTime = std::max(m_NodeSimulationTime, value);
       break;
+
 #ifdef DEBUG_ON
     case NodeMetricsFlag::NODE_MASTER_FORWARD_TIME:
       /// Updates the total forward time and forward events count by the master.
@@ -138,6 +139,11 @@ void NodeMetricsCollector::notifyMetric(const enum NodeMetricsFlag flag, const u
       /// Updates the total CPU cores.
       m_NodeTotalCpuCores += value;
       break;
+    case NodeMetricsFlag::NODE_TOTAL_ALLOCATED_VMS:
+      m_NodeTotalAllocatedVms += value;
+      break;
+    case NodeMetricsFlag::NODE_TOTAL_REJECTED_VMS:
+      m_NodeTotalRejectedVms += value;
     default:
       ispd_error("Unknown node metrics flag (%d) or it may be the case the flag is correct but the argument is not of the required type.", flag);
   }
@@ -209,7 +215,9 @@ void NodeMetricsCollector::reportNodeMetrics() {
   /// Report to the master node the total completed tasks.
   if (MPI_SUCCESS != MPI_Reduce(&m_NodeTotalCompletedTasks, &gmc->m_GlobalTotalCompletedTasks, 1, MPI_UNSIGNED, MPI_SUM, 0, MPI_COMM_ROSS))
     ispd_error("Global total completed tasks could not be reduced, exiting...");
-
+  if(MPI_SUCCESS != MPI_Reduce(&m_NodeTotalAllocatedVms, &gmc->m_GlobalTotalAllocatedVms, 1, MPI_UNSIGNED, MPI_SUM, 0, MPI_COMM_ROSS))
+    ispd_error("Global total allocated vms could not be reduced, exiting...");
+  if(MPI_SUCCESS != MPI_Reduce(&m_NodeTotalRejectedVms, &gmc->m_GlobalTotalRejectedVms, 1, MPI_UNSIGNED, MPI_SUM, 0, MPI_COMM_ROSS))
   /// Report to the master node the total computational power.
   if (MPI_SUCCESS != MPI_Reduce(&m_NodeTotalComputationalPower, &gmc->m_GlobalTotalComputationalPower, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_ROSS))
     ispd_error("Global total computational power could not be reduced, exiting...");
@@ -318,6 +326,8 @@ void GlobalMetricsCollector::reportGlobalMetrics() {
   ispd_log(LOG_INFO, " Total Machine Services..........: %u services.", m_GlobalTotalMachineServices);
   ispd_log(LOG_INFO, " Total Switch Services...........: %u services.", m_GlobalTotalSwitchServices);
   ispd_log(LOG_INFO, " Total Completed Tasks...........: %u tasks.", m_GlobalTotalCompletedTasks);
+  ispd_log(LOG_INFO, " Total allocated vms.............: %u vms.", m_GlobalTotalAllocatedVms);
+  ispd_log(LOG_INFO, " Total rejected vms.............: %u vms.", m_GlobalTotalRejectedVms);
   ispd_log(LOG_INFO, "");
   ispd_log(LOG_INFO, "Average Metrics");
   ispd_log(LOG_INFO, " Avg. Processing Time............: %lf seconds.", avgProcessingTime);
