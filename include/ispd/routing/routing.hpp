@@ -1,6 +1,7 @@
 #ifndef ISPD_ROUTING_HPP
 #define ISPD_ROUTING_HPP
 
+#include <ross.h>
 #include <memory>
 #include <cstdint>
 #include <fstream>
