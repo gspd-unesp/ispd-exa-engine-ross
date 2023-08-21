@@ -17,6 +17,7 @@ namespace ispd::customer {
 struct Task final {
   double m_ProcSize; ///< The processing size of the task (in megaflops).
   double m_CommSize; ///< The communication size of the task (in megabits).
+  double m_Offload;  ///< The computational offloading factor (0.0 to 1.0).
 
   tw_lpid m_Origin; ///< The origin node of the task.
   tw_lpid m_Dest;   ///< The destination node of the task.

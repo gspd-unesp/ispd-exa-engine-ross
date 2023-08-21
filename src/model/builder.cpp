@@ -22,13 +22,11 @@ static inline std::string firstSlaves(const std::vector<tw_lpid> &slaves) {
 
 namespace ispd::model {
 
-void SimulationModel::registerMachine(const tw_lpid gid, const double power,
-                                      const double load,
-                                      const unsigned coreCount,
-                                      const unsigned gpuCoreCount,
-                                      const double interconnectionBandwidth,
-                                      const double wattageIdle,
-                                      const double wattageMax) {
+void SimulationModel::registerMachine(
+    const tw_lpid gid, const double power, const double load,
+    const unsigned coreCount, const double gpuPower,
+    const unsigned gpuCoreCount, const double interconnectionBandwidth,
+    const double wattageIdle, const double wattageMax) {
   /// Check if the power is not positive. If so, an error indicating the
   /// case is sent and the program is immediately aborted.
   if (power <= 0.0)
@@ -47,9 +45,17 @@ void SimulationModel::registerMachine(const tw_lpid gid, const double power,
   /// the case is sent and the program is immediately aborted.
   if (coreCount <= 0)
     ispd_error(
-        "At registering  the machine %lu the core count must be positive "
+        "At registering the machine %lu the core count must be positive "
         "(Specified Core Count: %u).",
         gid, coreCount);
+
+  /// Checks if the interconnection bandwidth is not positive. IF so, an error
+  /// indicating the case is sent and the program is immediately aborted.
+  if (interconnectionBandwidth <= 0)
+    ispd_error(
+        "At registering the machine %lu the interconnection bandwidth must be positive "
+        "(Specified Interconnection Bandwidth: %lf).",
+        gid, interconnectionBandwidth);
 
   /// Register the service initializer for a machine with the specified
   /// logical process global identifier (GID).
@@ -59,7 +65,8 @@ void SimulationModel::registerMachine(const tw_lpid gid, const double power,
 
     /// Initialize machine's configuration.
     s->conf = ispd::configuration::MachineConfiguration(
-        power, load, coreCount, wattageIdle, wattageMax);
+        power, load, coreCount, gpuPower, gpuCoreCount,
+        interconnectionBandwidth, wattageIdle, wattageMax);
     s->cores_free_time.resize(coreCount, 0.0);
   });
 
@@ -258,11 +265,12 @@ namespace ispd::this_model {
 ispd::model::SimulationModel *g_Model = new ispd::model::SimulationModel();
 
 void registerMachine(const tw_lpid gid, const double power, const double load,
-                     const unsigned coreCount, const unsigned gpuCoreCount,
+                     const unsigned coreCount, const double gpuPower,
+                     const unsigned gpuCoreCount,
                      const double interconnectionBandwidth,
                      const double wattageIdle, const double wattageMax) {
   /// Forward the machine registration to the global model.
-  g_Model->registerMachine(gid, power, load, coreCount, gpuCoreCount,
+  g_Model->registerMachine(gid, power, load, coreCount, gpuPower, gpuCoreCount,
                            interconnectionBandwidth, wattageIdle, wattageMax);
 }
 

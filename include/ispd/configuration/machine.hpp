@@ -16,6 +16,7 @@ private:
   double m_Load;         ///< Load factor of the machine (0.0 to 1.0).
   unsigned m_CoreCount;  ///< Number of cores in the machine.
 
+  double m_GpuPowerPerCore;
   unsigned m_GpuCoreCount;        ///< Number of GPU cores in the machine.
   double m_InterconnectBandwidth; ///< Total interconnection bandwidth (in
                                   ///< gigatransfer per second).
@@ -35,12 +36,13 @@ public:
   /// \param coreCount Number of cores in the machine.
   [[nodiscard]] constexpr explicit MachineConfiguration(
       const double power, const double load, const unsigned coreCount,
-      const unsigned gpuCoreCount, const double interconnectionBandwidth,
-      const double wattageIdle = 0.0, const double wattageMax = 0.0) noexcept
+      const double gpuPower, const unsigned gpuCoreCount,
+      const double interconnectionBandwidth, const double wattageIdle,
+      const double wattageMax) noexcept
       : m_PowerPerCore(power / coreCount), m_Load(load), m_CoreCount(coreCount),
         m_InterconnectBandwidth(interconnectionBandwidth),
-        m_GpuCoreCount(gpuCoreCount), m_WattageIdle(wattageIdle),
-        m_WattageMax(wattageMax),
+        m_GpuPowerPerCore(gpuPower), m_GpuCoreCount(gpuCoreCount),
+        m_WattageIdle(wattageIdle), m_WattageMax(wattageMax),
         m_WattagePerCore((wattageMax - wattageIdle) / coreCount) {}
 
   /// \brief Calculates the time required to process a task.
@@ -53,8 +55,35 @@ public:
   ///
   /// \return Time required to process the task (in seconds).
   [[nodiscard]] inline double
-  timeToProcess(const double processingSize) const noexcept {
-    return processingSize / ((1.0 - m_Load) * m_PowerPerCore);
+  timeToProcess(const double processingSize, const double communicationSize,
+                const double computingOffload) const noexcept {
+    /// Caclulates the offloaded computatioanl size to the GPU and the remaining
+    /// computtational size that will be processed by the CPU.
+    const double offloadProcSize = computingOffload * processingSize;
+    const double nonOffloadedProcSize =
+        (1.0 - computingOffload) * processingSize;
+
+#define GT_TO_GBITS (10)
+#define GBITS_TO_MBITS (1000)
+
+    /// Calculates the offloaded communication size to the GPU and the time
+    /// taken to offload the copmputation (in seconds).
+    const double offloadCommSize = computingOffload * communicationSize;
+    const double offloadCommTime =
+        offloadCommSize /
+        (m_InterconnectBandwidth * GT_TO_GBITS * GBITS_TO_MBITS);
+
+#undef GT_TO_GBITS
+#undef GBITS_TO_MBITS
+
+    /// Calculates the time taken (in seconds) to process the non-offloaded
+    /// computational size and the time taken (in seconds) to process the
+    /// offloaded computational size.
+    const double nonOffloadProcTime =
+        nonOffloadedProcSize / ((1.0 - m_Load) * m_PowerPerCore);
+    const double offloadProcTime = offloadProcSize / m_GpuPowerPerCore;
+
+    return nonOffloadProcTime + offloadCommTime + offloadProcTime;
   }
 
   /// \brief Returns the total computational power (in megaflops) of the

@@ -70,7 +70,7 @@ struct machine {
     if (msg->task.m_Dest == lp->gid) {
       /// Fetch the processing size and calculates the processing time.
       const double proc_size = msg->task.m_ProcSize;
-      const double proc_time = s->conf.timeToProcess(proc_size);
+      const double proc_time = s->conf.timeToProcess(proc_size, msg->task.m_CommSize, msg->task.m_Offload);
 
       unsigned core_index;
       const double least_free_time = least_core_time(s->cores_free_time, core_index);
@@ -147,7 +147,7 @@ struct machine {
     /// Check if the task's destination is this machine.
     if (msg->task.m_Dest == lp->gid) {
       const double proc_size = msg->task.m_ProcSize;
-      const double proc_time = s->conf.timeToProcess(proc_size);
+      const double proc_time = s->conf.timeToProcess(proc_size, msg->task.m_CommSize, msg->task.m_Offload);
 
       const double least_free_time = msg->saved_core_next_available_time;
       const double waiting_delay = ROSS_MAX(0.0, least_free_time - tw_now(lp));
@@ -179,7 +179,7 @@ struct machine {
     if (msg->task.m_Dest == lp->gid) {
       /// Fetch the processing size and calculates the processing time.
       const double proc_size = msg->task.m_ProcSize;
-      const double proc_time = s->conf.timeToProcess(proc_size);
+      const double proc_time = s->conf.timeToProcess(proc_size, msg->task.m_CommSize, msg->task.m_Offload);
 
       const double least_free_time = msg->saved_core_next_available_time;
       const double waiting_delay = ROSS_MAX(0.0, least_free_time - tw_now(lp));

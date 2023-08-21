@@ -19,7 +19,8 @@ public:
   using user_map_type = std::unordered_map<User::uid_t, User>;
 
   void registerMachine(const tw_lpid gid, const double power, const double load,
-                       const unsigned coreCount, const unsigned gpuCoreCount,
+                       const unsigned coreCount, const double gpuPower,
+                       const unsigned gpuCoreCount,
                        const double interconnectionBandwidth,
                        const double wattageIdle, const double wattageMax);
 
@@ -76,7 +77,8 @@ private:
 
 namespace ispd::this_model {
 void registerMachine(const tw_lpid gid, const double power, const double load,
-                     const unsigned coreCount, const unsigned gpuCoreCount,
+                     const unsigned coreCount, const double gpuPower,
+                     const unsigned gpuCoreCount,
                      const double interconnectionBandwidth,
                      const double wattageIdle, const double wattageMax);
 
