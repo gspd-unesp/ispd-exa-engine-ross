@@ -16,6 +16,10 @@ private:
   double m_Load;         ///< Load factor of the machine (0.0 to 1.0).
   unsigned m_CoreCount;  ///< Number of cores in the machine.
 
+  unsigned m_GpuCoreCount;        ///< Number of GPU cores in the machine.
+  double m_InterconnectBandwidth; ///< Total interconnection bandwidth (in
+                                  ///< gigatransfer per second).
+
   double m_WattageIdle; ///< Power consumption (in watts) being idle.
   double
       m_WattageMax; ///< Power consumpttion (in watts) at maximum utilization.
@@ -31,9 +35,12 @@ public:
   /// \param coreCount Number of cores in the machine.
   [[nodiscard]] constexpr explicit MachineConfiguration(
       const double power, const double load, const unsigned coreCount,
+      const unsigned gpuCoreCount, const double interconnectionBandwidth,
       const double wattageIdle = 0.0, const double wattageMax = 0.0) noexcept
       : m_PowerPerCore(power / coreCount), m_Load(load), m_CoreCount(coreCount),
-        m_WattageIdle(wattageIdle), m_WattageMax(wattageMax),
+        m_InterconnectBandwidth(interconnectionBandwidth),
+        m_GpuCoreCount(gpuCoreCount), m_WattageIdle(wattageIdle),
+        m_WattageMax(wattageMax),
         m_WattagePerCore((wattageMax - wattageIdle) / coreCount) {}
 
   /// \brief Calculates the time required to process a task.
@@ -114,4 +121,3 @@ public:
 };
 
 } // namespace ispd::configuration
-
