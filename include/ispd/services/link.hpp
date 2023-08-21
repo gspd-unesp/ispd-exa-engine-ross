@@ -91,7 +91,7 @@ struct link {
 #endif // DEBUG_ON
 
     /// Fetch the communication size and calculates the communication time.
-    const double comm_size = msg->task.comm_size;
+    const double comm_size = msg->task.m_CommSize;
     const double comm_time = s->conf.timeToCommunicate(comm_size);
 
     /// Here is selected which available time should be used, i.e., if the
@@ -183,7 +183,7 @@ struct link {
 #endif // DEBUG_ON
 
     /// Fetch the communication size and calculates the communication time.
-    const double comm_size = msg->task.comm_size;
+    const double comm_size = msg->task.m_CommSize;
     const double comm_time = s->conf.timeToCommunicate(comm_size);
     const double next_available_time = msg->saved_link_next_available_time;
     const double waiting_delay = msg->saved_waiting_time;

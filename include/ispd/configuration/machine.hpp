@@ -29,10 +29,9 @@ public:
   /// \param power Computational power of the machine (in megaflops).
   /// \param load Load factor of the machine (0.0 to 1.0).
   /// \param coreCount Number of cores in the machine.
-  explicit MachineConfiguration(const double power, const double load,
-                                const unsigned coreCount,
-                                const double wattageIdle = 0.0,
-                                const double wattageMax = 0.0)
+  [[nodiscard]] constexpr explicit MachineConfiguration(
+      const double power, const double load, const unsigned coreCount,
+      const double wattageIdle = 0.0, const double wattageMax = 0.0) noexcept
       : m_PowerPerCore(power / coreCount), m_Load(load), m_CoreCount(coreCount),
         m_WattageIdle(wattageIdle), m_WattageMax(wattageMax),
         m_WattagePerCore((wattageMax - wattageIdle) / coreCount) {}
@@ -46,7 +45,8 @@ public:
   ///                       megaflop).
   ///
   /// \return Time required to process the task (in seconds).
-  inline double timeToProcess(const double processingSize) {
+  [[nodiscard]] inline double
+  timeToProcess(const double processingSize) const noexcept {
     return processingSize / ((1.0 - m_Load) * m_PowerPerCore);
   }
 
@@ -54,17 +54,21 @@ public:
   ///        machine.
   ///
   /// \return Total computational power of the machine (in megaflops).
-  inline double getPower() const { return m_PowerPerCore * m_CoreCount; }
+  [[nodiscard]] inline double getPower() const noexcept {
+    return m_PowerPerCore * m_CoreCount;
+  }
 
   /// \brief Returns the computational power per core of the machine.
   ///
   /// \return Computational power per core of the machine (in megaflops).
-  inline double getPowerPerCore() const { return m_PowerPerCore; }
+  [[nodiscard]] inline double getPowerPerCore() const noexcept {
+    return m_PowerPerCore;
+  }
 
   /// \brief Returns the load factor of the machine.
   ///
   /// \return Load factor of the machine (0.0 to 1.0).
-  inline double getLoad() const { return m_Load; }
+  [[nodiscard]] inline double getLoad() const noexcept { return m_Load; }
 
   /// \brief Retrieves the idle power consumption of the machine.
   ///
@@ -76,7 +80,9 @@ public:
   /// conditions.
   ///
   /// \return Idle power consumption of the machine in watts (W).
-  inline double getWattageIdle() const { return m_WattageIdle; }
+  [[nodiscard]] inline double getWattageIdle() const noexcept {
+    return m_WattageIdle;
+  }
 
   /// \brief Retrieves the maximum power consumption of the machine.
   ///
@@ -88,7 +94,9 @@ public:
   /// managing energy usage in resource-intensive scenarios.
   ///
   /// \return Maximum power consumption of the machine in watts (W).
-  inline double getWattageMax() const { return m_WattageMax; }
+  [[nodiscard]] inline double getWattageMax() const noexcept {
+    return m_WattageMax;
+  }
 
   /// \brief Retrieves the power consumption per core of the machine.
   ///
@@ -100,7 +108,9 @@ public:
   /// across cores to achieve better energy utilization.
   ///
   /// \return Power consumption per core of the machine in watts (W).
-  inline double getWattagePerCore() const { return m_WattagePerCore; }
+  [[nodiscard]] inline double getWattagePerCore() const noexcept {
+    return m_WattagePerCore;
+  }
 };
 
 } // namespace ispd::configuration

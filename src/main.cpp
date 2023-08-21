@@ -1,4 +1,4 @@
-#include <iostream> 
+#include <iostream>
 #include <memory>
 #include <ross.h>
 #include <ross-extern.h>
@@ -61,7 +61,7 @@ const tw_optdef opt[] = {
 };
 
 int main(int argc, char **argv) {
-  ispd::log::set_log_file(NULL);
+  ispd::log::setOutputFile(nullptr);
 
   /// Read the routing table from a specified file.
   ispd::routing_table::load("routes.route");
@@ -82,9 +82,11 @@ int main(int argc, char **argv) {
     slaves.emplace_back(machine_id);
 
   ispd::this_model::registerMaster(
-      0, std::move(slaves), new ispd::scheduler::round_robin,
-      ispd::workload::constant("User1", g_star_task_amount, 1000.0, 80.0,
-        std::make_unique<ispd::workload::PoissonInterarrivalDistribution>(0.1)));
+      0, std::move(slaves), new ispd::scheduler::RoundRobin,
+      ispd::workload::constant(
+          "User1", g_star_task_amount, 1000.0, 80.0,
+          std::make_unique<ispd::workload::PoissonInterarrivalDistribution>(
+              0.1)));
 
   /// Registers service initializers for the links.
   for (tw_lpid link_id = 1; link_id <= highest_link_id; link_id += 2)
@@ -95,8 +97,8 @@ int main(int argc, char **argv) {
        machine_id += 2)
     ispd::this_model::registerMachine(machine_id, 20.0, 0.0, 8);
 
-  /// Checks if no user has been registered. If so, the program is immediately aborted,
-  /// since at least one user must be registered.
+  /// Checks if no user has been registered. If so, the program is immediately
+  /// aborted, since at least one user must be registered.
   if (ispd::this_model::getUsers().size() == 0)
     ispd_error("At least one user must be registered.");
 
@@ -167,8 +169,8 @@ int main(int argc, char **argv) {
       }
     }
 
-    ispd_log(LOG_INFO, "A total of %u dummies have been created at node %d.",
-             dummy_count, g_tw_mynode);
+    ispd_info("A total of %u dummies have been created at node %d.",
+              dummy_count, g_tw_mynode);
   }
   /// Sequential.
   else {

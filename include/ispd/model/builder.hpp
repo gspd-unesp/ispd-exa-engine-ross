@@ -30,19 +30,25 @@ public:
                       const double load, const double latency);
 
   void registerMaster(const tw_lpid gid, std::vector<tw_lpid> &&slaves,
-                      ispd::scheduler::scheduler *const scheduler,
+                      ispd::scheduler::Scheduler *const scheduler,
                       ispd::workload::Workload *const workload);
 
   void registerUser(const std::string &name,
                     const double energyConsumptionLimit);
 
-  const std::function<void(void *)> &getServiceInitializer(const tw_lpid gid);
+  [[nodiscard]] const std::function<void(void *)> &
+  getServiceInitializer(const tw_lpid gid) noexcept;
 
-  inline const user_map_type &getUsers() const { return m_Users; }
+  [[nodiscard]] inline const user_map_type &getUsers() const noexcept {
+    return m_Users;
+  }
 
-  inline User &getUserById(const User::uid_t id) { return m_Users.at(id); }
+  [[nodiscard]] inline User &getUserById(const User::uid_t id) {
+    return m_Users.at(id);
+  }
 
-  inline user_map_type::const_iterator getUserByName(const std::string &name) {
+  [[nodiscard]] inline user_map_type::const_iterator
+  getUserByName(const std::string &name) {
     return std::find_if(
         m_Users.cbegin(), m_Users.cend(),
         [&name](const auto &pair) { return pair.second.getName() == name; });
@@ -80,18 +86,19 @@ void registerSwitch(const tw_lpid gid, const double bandwidth,
                     const double load, const double latency);
 
 void registerMaster(const tw_lpid gid, std::vector<tw_lpid> &&slaves,
-                    ispd::scheduler::scheduler *const scheduler,
+                    ispd::scheduler::Scheduler *const scheduler,
                     ispd::workload::Workload *const workload);
 
 void registerUser(const std::string &name, const double energyConsumptionLimit);
 
-const std::function<void(void *)> &getServiceInitializer(const tw_lpid gid);
+[[nodiscard]] const std::function<void(void *)> &
+getServiceInitializer(const tw_lpid gid);
 
-const ispd::model::SimulationModel::user_map_type &getUsers();
+[[nodiscard]] const ispd::model::SimulationModel::user_map_type &getUsers();
 
-ispd::model::User &getUserById(ispd::model::User::uid_t id);
+[[nodiscard]] ispd::model::User &getUserById(ispd::model::User::uid_t id);
 
-const ispd::model::SimulationModel::user_map_type::const_iterator
+[[nodiscard]] const ispd::model::SimulationModel::user_map_type::const_iterator
 getUserByName(const std::string &name);
 }; // namespace ispd::this_model
 

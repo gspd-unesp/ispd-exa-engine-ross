@@ -4,9 +4,11 @@
 #include <ross.h>
 #include <chrono>
 #include <ispd/debug/debug.hpp>
+#include <ispd/model/builder.hpp>
 #include <ispd/message/message.hpp>
 #include <ispd/routing/routing.hpp>
 #include <ispd/metrics/metrics.hpp>
+#include <ispd/configuration/switch.hpp>
 
 namespace ispd::services {
 
@@ -18,23 +20,12 @@ struct SwitchMetrics {
   unsigned m_DownwardCommPackets;
 };
 
-struct SwitchConfiguration {
-  double m_Bandwidth;
-  double m_Load;
-  double m_Latency;
-};
-
 struct SwitchState {
-  SwitchConfiguration m_Conf;
+  ispd::configuration::SwitchConfiguration m_Conf;
   SwitchMetrics m_Metrics;
 };
 
 struct Switch {
-  static inline double timeToComm(const SwitchConfiguration &conf,
-                                  const double commSize) {
-    return conf.m_Latency + commSize / ((1.0 - conf.m_Load) * conf.m_Bandwidth);
-  }
-
   static void init(SwitchState *s, tw_lp *lp) {
     /// Fetch the service initializer from this logical process.
     const auto &serviceInitializer =
@@ -50,8 +41,8 @@ struct Switch {
     s->m_Metrics.m_DownwardCommPackets = 0;
 
     ispd_debug("Switch %lu has been initialized (B: %lf, L: %lf, LT: %lf).",
-               lp->gid, s->m_Conf.m_Bandwidth, s->m_Conf.m_Latency,
-               s->m_Conf.m_Latency);
+               lp->gid, s->m_Conf.getBandwidth(), s->m_Conf.getLoad(),
+               s->m_Conf.getLatency());
   }
 
   static void forward(SwitchState *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
@@ -64,8 +55,8 @@ struct Switch {
 #endif // DEBUG_ON
 
     /// Fetch the communication size and calculate the communication time.
-    const double commSize = msg->task.comm_size;
-    const double commTime = timeToComm(s->m_Conf, commSize);
+    const double commSize = msg->task.m_CommSize;
+    const double commTime = s->m_Conf.timeToCommunicate(commSize);
 
     /// Update the switch's metrics.
     if (msg->downward_direction) {
@@ -77,7 +68,7 @@ struct Switch {
     }
 
     const ispd::routing::Route *route =
-        ispd::routing_table::getRoute(msg->task.origin, msg->task.dest);
+        ispd::routing_table::getRoute(msg->task.m_Origin, msg->task.m_Dest);
 
     tw_event *const e =
         tw_event_new(route->get(msg->route_offset), commTime, lp);
@@ -110,8 +101,8 @@ struct Switch {
   const auto start = std::chrono::high_resolution_clock::now();
 #endif // DEBUG_ON
 
-    const double commSize = msg->task.comm_size;
-    const double commTime = timeToComm(s->m_Conf, commSize);
+    const double commSize = msg->task.m_CommSize;
+    const double commTime = s->m_Conf.timeToCommunicate(commSize);
 
     /// Reverse the switch's metrics.
     if (msg->downward_direction) {

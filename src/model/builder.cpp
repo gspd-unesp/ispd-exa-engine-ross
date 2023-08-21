@@ -56,7 +56,8 @@ void SimulationModel::registerMachine(const tw_lpid gid, const double power,
         static_cast<ispd::services::machine_state *>(state);
 
     /// Initialize machine's configuration.
-    s->conf = ispd::configuration::MachineConfiguration(power, load, coreCount, wattageIdle, wattageMax);
+    s->conf = ispd::configuration::MachineConfiguration(
+        power, load, coreCount, wattageIdle, wattageMax);
     s->cores_free_time.resize(coreCount, 0.0);
   });
 
@@ -140,9 +141,7 @@ void SimulationModel::registerSwitch(const tw_lpid gid, const double bandwidth,
         static_cast<ispd::services::SwitchState *>(state);
 
     /// Initialize the switch's configuration.
-    s->m_Conf.m_Bandwidth = bandwidth;
-    s->m_Conf.m_Load = load;
-    s->m_Conf.m_Latency = latency;
+    s->m_Conf = ispd::configuration::SwitchConfiguration(bandwidth, load, latency);
   });
 
   /// Print a debug indicating that a switch initializer has been registered.
@@ -153,7 +152,7 @@ void SimulationModel::registerSwitch(const tw_lpid gid, const double bandwidth,
 
 void SimulationModel::registerMaster(
     const tw_lpid gid, std::vector<tw_lpid> &&slaves,
-    ispd::scheduler::scheduler *const scheduler,
+    ispd::scheduler::Scheduler *const scheduler,
     ispd::workload::Workload *const workload) {
 
   /// Check if the scheduler has not been specified. If so, an error indicating
@@ -192,44 +191,53 @@ void SimulationModel::registerMaster(
              slaveCount, someSlaves.c_str());
 }
 
-void SimulationModel::registerUser(const std::string& name, const double energyConsumptionLimit) {
+void SimulationModel::registerUser(const std::string &name,
+                                   const double energyConsumptionLimit) {
   /// Checks if a user with that name has already been regisitered. If so, the
   /// program is immediately aborted, since unique named users are mandatory.
   if (getUserByName(name) != m_Users.end())
     ispd_error("A user named %s has already been registered.", name.c_str());
-  
+
   /// Checks if the specified energy consumption limit is not finite. If so, the
   /// program is immediately aborted, since a finite limit must be specified.
   if (!std::isfinite(energyConsumptionLimit))
-    ispd_error("The specified energy consumption limit for user %s must be finite.", name.c_str());
+    ispd_error(
+        "The specified energy consumption limit for user %s must be finite.",
+        name.c_str());
 
   /// Checks if the specified energy consumption limit is negative. If so, the
-  /// program is immediately aborted, since a non-negative limit must be specified.
+  /// program is immediately aborted, since a non-negative limit must be
+  /// specified.
   if (energyConsumptionLimit < 0.0)
-    ispd_error("The specified energy consumption limit for user %s must be positive.", name.c_str());
+    ispd_error(
+        "The specified energy consumption limit for user %s must be positive.",
+        name.c_str());
 
   /// A copy of the specified name to be checked.
   std::string checkedName = name;
-  
+
   /// Remove all blank spaces from the specified name.
   std::remove(checkedName.begin(), checkedName.end(), ' ');
 
-  /// Checks if the specified name is empty or only contains blank spaces. If so, the
-  /// program is immediately aborted.
+  /// Checks if the specified name is empty or only contains blank spaces. If
+  /// so, the program is immediately aborted.
   if (checkedName.size() == 0)
-    ispd_error("An invalid username has been specified. It must contain at least one letter.");
-  
+    ispd_error("An invalid username has been specified. It must contain at "
+               "least one letter.");
+
   /// Assign automatically a user identifier.
   const uid_t id = static_cast<uid_t>(m_Users.size());
 
   /// Construct the user and insert into the users mapping.
   m_Users.emplace(id, User(id, name, energyConsumptionLimit));
-  
-  ispd_debug("A user named %s with consumption limit of %.2lf has been registered.", name.c_str(), energyConsumptionLimit);
+
+  ispd_debug(
+      "A user named %s with consumption limit of %.2lf has been registered.",
+      name.c_str(), energyConsumptionLimit);
 }
 
-const std::function<void(void *)> &
-SimulationModel::getServiceInitializer(const tw_lpid gid) {
+[[nodiscard]] const std::function<void(void *)> &
+SimulationModel::getServiceInitializer(const tw_lpid gid) noexcept {
   /// Checks if a service initializer for the specified global identifier has
   /// not been registered. If so, the program is immediately aborted, since
   /// service initializer is mandatory for every service.
@@ -250,7 +258,8 @@ void registerMachine(const tw_lpid gid, const double power, const double load,
                      const unsigned coreCount, const double wattageIdle,
                      const double wattageMax) {
   /// Forward the machine registration to the global model.
-  g_Model->registerMachine(gid, power, load, coreCount, wattageIdle, wattageMax);
+  g_Model->registerMachine(gid, power, load, coreCount, wattageIdle,
+                           wattageMax);
 }
 
 void registerLink(const tw_lpid gid, const tw_lpid from, const tw_lpid to,
@@ -267,33 +276,39 @@ void registerSwitch(const tw_lpid gid, const double bandwidth,
 }
 
 void registerMaster(const tw_lpid gid, std::vector<tw_lpid> &&slaves,
-                    ispd::scheduler::scheduler *const scheduler,
+                    ispd::scheduler::Scheduler *const scheduler,
                     ispd::workload::Workload *const workload) {
   /// Forward the master registration to the global model.
   g_Model->registerMaster(gid, std::move(slaves), scheduler, workload);
 }
 
-void registerUser(const std::string& name, const double energyConsumptionLimit) {
+void registerUser(const std::string &name,
+                  const double energyConsumptionLimit) {
   /// Forward the user registration to the global model.
   g_Model->registerUser(name, energyConsumptionLimit);
 }
 
-const std::function<void(void *)> &getServiceInitializer(const tw_lpid gid) {
+[[nodiscard]] const std::function<void(void *)> &
+getServiceInitializer(const tw_lpid gid) {
   /// Forward the service initializer query to the global model.
   return g_Model->getServiceInitializer(gid);
 }
 
-const std::unordered_map<ispd::model::User::uid_t, ispd::model::User>& getUsers() {
+[[nodiscard]] const std::unordered_map<ispd::model::User::uid_t,
+                                       ispd::model::User> &
+getUsers() {
   /// Forward the users query to the global model.
   return g_Model->getUsers();
 }
 
-ispd::model::User& getUserById(ispd::model::User::uid_t id) {
+[[nodiscard]] ispd::model::User &getUserById(ispd::model::User::uid_t id) {
   /// Forward the user query to the global model.
   return g_Model->getUserById(id);
 }
 
-const std::unordered_map<ispd::model::User::uid_t, ispd::model::User>::const_iterator getUserByName(const std::string& name) {
+[[nodiscard]] const std::unordered_map<ispd::model::User::uid_t,
+                                       ispd::model::User>::const_iterator
+getUserByName(const std::string &name) {
   /// Forward the user query by name to the global model.
   return g_Model->getUserByName(name);
 }

@@ -67,9 +67,9 @@ struct machine {
 
     /// Checks if the task's destination is this machine. If so, the task is processed
     /// and the task's results is sent back to the master by the same route it came along.
-    if (msg->task.dest == lp->gid) {
+    if (msg->task.m_Dest == lp->gid) {
       /// Fetch the processing size and calculates the processing time.
-      const double proc_size = msg->task.proc_size;
+      const double proc_size = msg->task.m_ProcSize;
       const double proc_time = s->conf.timeToProcess(proc_size);
 
       unsigned core_index;
@@ -93,7 +93,7 @@ struct machine {
       *m = *msg;
       m->type = message_type::ARRIVAL;
       m->task = msg->task;             /// Copy the task's information.
-      m->task.comm_size = 0.000976562; /// 1 Kib (representing the results).
+      m->task.m_CommSize = 0.000976562; /// 1 Kib (representing the results).
       m->task_processed = 1;           /// Indicate that the message is carrying a processed task.
       m->downward_direction = 0;       /// The task's results will be sent back to the master.
       m->route_offset = msg->route_offset - 2;
@@ -109,7 +109,7 @@ struct machine {
     /// the task should only be forwarded to its next destination. 
     else {
       /// Fetch the route between the task's origin and task's destination.
-      const ispd::routing::Route *route = ispd::routing_table::getRoute(msg->task.origin, msg->task.dest);
+      const ispd::routing::Route *route = ispd::routing_table::getRoute(msg->task.m_Origin, msg->task.m_Dest);
 
       /// Update machine's metrics.
       s->m_Metrics.m_ForwardedTasks++;
@@ -145,8 +145,8 @@ struct machine {
 #endif // DEBUG_ON
 
     /// Check if the task's destination is this machine.
-    if (msg->task.dest == lp->gid) {
-      const double proc_size = msg->task.proc_size;
+    if (msg->task.m_Dest == lp->gid) {
+      const double proc_size = msg->task.m_ProcSize;
       const double proc_time = s->conf.timeToProcess(proc_size);
 
       const double least_free_time = msg->saved_core_next_available_time;
@@ -176,9 +176,9 @@ struct machine {
   }
 
   static void commit(machine_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
-    if (msg->task.dest == lp->gid) {
+    if (msg->task.m_Dest == lp->gid) {
       /// Fetch the processing size and calculates the processing time.
-      const double proc_size = msg->task.proc_size;
+      const double proc_size = msg->task.m_ProcSize;
       const double proc_time = s->conf.timeToProcess(proc_size);
 
       const double least_free_time = msg->saved_core_next_available_time;
@@ -188,7 +188,7 @@ struct machine {
       const double energyConsumption = proc_time * (s->conf.getWattageIdle() + s->conf.getWattagePerCore());
 
       /// Update the user's metrics.
-      ispd::metrics::UserMetrics& userMetrics = ispd::this_model::getUserById(msg->task.owner).getMetrics();
+      ispd::metrics::UserMetrics& userMetrics = ispd::this_model::getUserById(msg->task.m_Owner).getMetrics();
 
       userMetrics.m_ProcTime += proc_time;
       userMetrics.m_ProcWaitingTime += waiting_delay;

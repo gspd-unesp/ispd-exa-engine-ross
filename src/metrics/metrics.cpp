@@ -305,43 +305,43 @@ void GlobalMetricsCollector::reportGlobalMetrics() {
   const double avgPower = totalEnergyConsumption / m_GlobalSimulationTime;
   const double energyEfficiency = maxComputationalPower / avgPower;
 
-  ispd_log(LOG_INFO, "");
-  ispd_log(LOG_INFO, "Global Simulation Time...........: %lf seconds.", m_GlobalSimulationTime);
-  ispd_log(LOG_INFO, "");
-  ispd_log(LOG_INFO, "Total Metrics");
-  ispd_log(LOG_INFO, " Total Processed MFLOPS..........: %lf MFLOPS.", m_GlobalTotalProcessedMFlops);
-  ispd_log(LOG_INFO, " Total Communicated MBits........: %lf MBits.", m_GlobalTotalCommunicatedMBits);
-  ispd_log(LOG_INFO, " Total Processing Waiting Time...: %lf seconds.", m_GlobalTotalProcessingWaitingTime);
-  ispd_log(LOG_INFO, " Total Communication Waiting Time: %lf seconds.", m_GlobalTotalCommunicationWaitingTime);
-  ispd_log(LOG_INFO, " Total Master Services...........: %u services.", m_GlobalTotalMasterServices);
-  ispd_log(LOG_INFO, " Total Link Services.............: %u services.", m_GlobalTotalLinkServices);
-  ispd_log(LOG_INFO, " Total Machine Services..........: %u services.", m_GlobalTotalMachineServices);
-  ispd_log(LOG_INFO, " Total Switch Services...........: %u services.", m_GlobalTotalSwitchServices);
-  ispd_log(LOG_INFO, " Total Completed Tasks...........: %u tasks.", m_GlobalTotalCompletedTasks);
-  ispd_log(LOG_INFO, "");
-  ispd_log(LOG_INFO, "Average Metrics");
-  ispd_log(LOG_INFO, " Avg. Processing Time............: %lf seconds.", avgProcessingTime);
-  ispd_log(LOG_INFO, " Avg. Processing Waiting Time....: %lf seconds.", avgProcessingWaitingTime);
-  ispd_log(LOG_INFO, " Avg. Communication Time.........: %lf seconds.", avgCommunicationTime);
-  ispd_log(LOG_INFO, " Avg. Communication Waiting Time.: %lf seconds.", avgCommunicationWaitingTime);
-  ispd_log(LOG_INFO, " Avg. Turnaround Time............: %lf seconds.", avgTotalTurnaroundTime);
-  ispd_log(LOG_INFO, "");
-  ispd_log(LOG_INFO, "System Metrics");
-  ispd_log(LOG_INFO, "");
-  ispd_log(LOG_INFO, " Processing-related metrics");
-  ispd_log(LOG_INFO, "  Peak Computational Power........: %lf MFLOPS.", m_GlobalTotalComputationalPower);
-  ispd_log(LOG_INFO, "  Max. Computational Power........: %lf MFLOPS.", maxComputationalPower);
-  ispd_log(LOG_INFO, "  Efficiency......................: %lf%%.", efficiency * 100.0);
-  ispd_log(LOG_INFO, "");
-  ispd_log(LOG_INFO, " Energy-related metrics");
-  ispd_log(LOG_INFO, "  Energy Consumption..............: %lf J.", totalEnergyConsumption);
-  ispd_log(LOG_INFO, "  Energy Efficiency...............: %lf MFLOPS/W.", energyEfficiency);
-  ispd_log(LOG_INFO, "  Avg. Power......................: %lf W.", avgPower);
-  ispd_log(LOG_INFO, "  Idle Power......................: %lf W.", m_GlobalTotalPowerIdle);
-  ispd_log(LOG_INFO, "");
-  ispd_log(LOG_INFO, " Total CPU Cores.................: %u cores.", m_GlobalTotalCpuCores);
-  ispd_log(LOG_INFO, "");
-  ispd_log(LOG_INFO, "User Metrics");
+  ispd_info("");
+  ispd_info("Global Simulation Time...........: %lf seconds.", m_GlobalSimulationTime);
+  ispd_info("");
+  ispd_info("Total Metrics");
+  ispd_info(" Total Processed MFLOPS..........: %lf MFLOPS.", m_GlobalTotalProcessedMFlops);
+  ispd_info(" Total Communicated MBits........: %lf MBits.", m_GlobalTotalCommunicatedMBits);
+  ispd_info(" Total Processing Waiting Time...: %lf seconds.", m_GlobalTotalProcessingWaitingTime);
+  ispd_info(" Total Communication Waiting Time: %lf seconds.", m_GlobalTotalCommunicationWaitingTime);
+  ispd_info(" Total Master Services...........: %u services.", m_GlobalTotalMasterServices);
+  ispd_info(" Total Link Services.............: %u services.", m_GlobalTotalLinkServices);
+  ispd_info(" Total Machine Services..........: %u services.", m_GlobalTotalMachineServices);
+  ispd_info(" Total Switch Services...........: %u services.", m_GlobalTotalSwitchServices);
+  ispd_info(" Total Completed Tasks...........: %u tasks.", m_GlobalTotalCompletedTasks);
+  ispd_info("");
+  ispd_info("Average Metrics");
+  ispd_info(" Avg. Processing Time............: %lf seconds.", avgProcessingTime);
+  ispd_info(" Avg. Processing Waiting Time....: %lf seconds.", avgProcessingWaitingTime);
+  ispd_info(" Avg. Communication Time.........: %lf seconds.", avgCommunicationTime);
+  ispd_info(" Avg. Communication Waiting Time.: %lf seconds.", avgCommunicationWaitingTime);
+  ispd_info(" Avg. Turnaround Time............: %lf seconds.", avgTotalTurnaroundTime);
+  ispd_info("");
+  ispd_info("System Metrics");
+  ispd_info("");
+  ispd_info(" Processing-related metrics");
+  ispd_info("  Peak Computational Power........: %lf MFLOPS.", m_GlobalTotalComputationalPower);
+  ispd_info("  Max. Computational Power........: %lf MFLOPS.", maxComputationalPower);
+  ispd_info("  Efficiency......................: %lf%%.", efficiency * 100.0);
+  ispd_info("");
+  ispd_info(" Energy-related metrics");
+  ispd_info("  Energy Consumption..............: %lf J.", totalEnergyConsumption);
+  ispd_info("  Energy Efficiency...............: %lf MFLOPS/W.", energyEfficiency);
+  ispd_info("  Avg. Power......................: %lf W.", avgPower);
+  ispd_info("  Idle Power......................: %lf W.", m_GlobalTotalPowerIdle);
+  ispd_info("");
+  ispd_info(" Total CPU Cores.................: %u cores.", m_GlobalTotalCpuCores);
+  ispd_info("");
+  ispd_info("User Metrics");
   
   for (const auto& [id, userMetrics] : m_GlobalUserMetrics) {
     const double userAvgProcTime = userMetrics.m_ProcTime / userMetrics.m_IssuedTasks;
@@ -350,20 +350,20 @@ void GlobalMetricsCollector::reportGlobalMetrics() {
     const double userAvgCommWaitingTime = userMetrics.m_CommWaitingTime / userMetrics.m_IssuedTasks;
 
 
-    ispd_log(LOG_INFO, "");
-    ispd_log(LOG_INFO, " %s", ispd::this_model::getUserById(id).getName().c_str());
-    ispd_log(LOG_INFO, "  Avg. Processing Time...........: %lf seconds.", userAvgProcTime);
-    ispd_log(LOG_INFO, "  Avg. Processing Waiting Time...: %lf seconds.", userAvgProcWaitingTime);
-    ispd_log(LOG_INFO, "  Avg. Communication Time........: %lf seconds.", userAvgCommTime);
-    ispd_log(LOG_INFO, "  Avg. Communication Waiting Time: %lf seconds.", userAvgCommWaitingTime);
-    ispd_log(LOG_INFO, "  Issued Tasks...................: %u tasks.", userMetrics.m_IssuedTasks);
-    ispd_log(LOG_INFO, "  Completed Tasks................: %u tasks.", userMetrics.m_CompletedTasks);
-    ispd_log(LOG_INFO, "  Energy Consumption.............: %lf J.", userMetrics.m_EnergyConsumption);
+    ispd_info("");
+    ispd_info(" %s", ispd::this_model::getUserById(id).getName().c_str());
+    ispd_info("  Avg. Processing Time...........: %lf seconds.", userAvgProcTime);
+    ispd_info("  Avg. Processing Waiting Time...: %lf seconds.", userAvgProcWaitingTime);
+    ispd_info("  Avg. Communication Time........: %lf seconds.", userAvgCommTime);
+    ispd_info("  Avg. Communication Waiting Time: %lf seconds.", userAvgCommWaitingTime);
+    ispd_info("  Issued Tasks...................: %u tasks.", userMetrics.m_IssuedTasks);
+    ispd_info("  Completed Tasks................: %u tasks.", userMetrics.m_CompletedTasks);
+    ispd_info("  Energy Consumption.............: %lf J.", userMetrics.m_EnergyConsumption);
   }
 
-  ispd_log(LOG_INFO, "");
+  ispd_info("");
 #ifdef DEBUG_ON
-  ispd_log(LOG_INFO, "Service Center Metrics");
+  ispd_info("Service Center Metrics");
   
   /// Calculate the average time taken for forward and reverse processing and, print the information
   /// about the average time of forward and reverse processing as well as the forward and reverse event count.
@@ -385,12 +385,12 @@ void GlobalMetricsCollector::reportGlobalMetrics() {
     
     const char *capitalizedServiceTypeName = ispd::services::getServiceTypeName<true>(serviceType);
     
-    ispd_log(LOG_INFO, " Avg. %s Forward Time........: %lf ns.", capitalizedServiceTypeName, avgForwardTime);
-    ispd_log(LOG_INFO, " Avg. %s Reverse Time........: %lf ns.", capitalizedServiceTypeName, avgReverseTime);
-    ispd_log(LOG_INFO, " %s Forward Events Count.....: %lu events.", capitalizedServiceTypeName, forwardEventsCount);
-    ispd_log(LOG_INFO, " %s Reverse Events Count.....: %lu events.", capitalizedServiceTypeName, reverseEventsCount);
-    ispd_log(LOG_INFO, " Avg. Forward/Reverse........: %lfx.", capitalizedServiceTypeName, forwardAndReverseRelation);
-    ispd_log(LOG_INFO, "");   
+    ispd_info(" Avg. %s Forward Time........: %lf ns.", capitalizedServiceTypeName, avgForwardTime);
+    ispd_info(" Avg. %s Reverse Time........: %lf ns.", capitalizedServiceTypeName, avgReverseTime);
+    ispd_info(" %s Forward Events Count.....: %lu events.", capitalizedServiceTypeName, forwardEventsCount);
+    ispd_info(" %s Reverse Events Count.....: %lu events.", capitalizedServiceTypeName, reverseEventsCount);
+    ispd_info(" Avg. Forward/Reverse........: %lfx.", capitalizedServiceTypeName, forwardAndReverseRelation);
+    ispd_info("");   
   }
 #endif // DEBUG_ON
 }

@@ -13,7 +13,7 @@ struct ispd_message {
   message_type type;
 
   /// \brief The message payload.
-  ispd::customer::task task;
+  ispd::customer::Task task;
 
   /// \brief Reverse Computational Fields.
   double saved_link_next_available_time;
