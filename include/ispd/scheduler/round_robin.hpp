@@ -27,10 +27,12 @@ class RoundRobin final : public Scheduler {
 private:
   /// \brief The next slave index that will be selected
   ///        in the circular queue.
-  std::uint32_t m_NextSlaveIndex;
+  std::vector<tw_lpid>::size_type m_NextSlaveIndex;
 
 public:
-  void initScheduler() override { m_NextSlaveIndex = UINT32_C(0); }
+  void initScheduler() override {
+    m_NextSlaveIndex = std::vector<tw_lpid>::size_type{0};
+  }
 
   [[nodiscard]] tw_lpid forwardSchedule(std::vector<tw_lpid> &slaves, tw_bf *bf,
                                         ispd_message *msg, tw_lp *lp) override {
