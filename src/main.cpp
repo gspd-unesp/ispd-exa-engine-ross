@@ -84,7 +84,7 @@ int main(int argc, char **argv) {
   ispd::this_model::registerMaster(
       0, std::move(slaves), new ispd::scheduler::RoundRobin,
       ispd::workload::constant(
-          "User1", g_star_task_amount, 1000.0, 80.0, 0.0,
+          "User1", g_star_task_amount, 1000.0, 80.0, 0.95,
           std::make_unique<ispd::workload::PoissonInterarrivalDistribution>(
               0.1)));
 

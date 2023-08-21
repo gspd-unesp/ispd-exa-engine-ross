@@ -41,7 +41,7 @@ public:
       const double wattageMax) noexcept
       : m_PowerPerCore(power / coreCount), m_Load(load), m_CoreCount(coreCount),
         m_InterconnectBandwidth(interconnectionBandwidth),
-        m_GpuPowerPerCore(gpuPower), m_GpuCoreCount(gpuCoreCount),
+        m_GpuPowerPerCore(gpuPower / gpuCoreCount), m_GpuCoreCount(gpuCoreCount),
         m_WattageIdle(wattageIdle), m_WattageMax(wattageMax),
         m_WattagePerCore((wattageMax - wattageIdle) / coreCount) {}
 
@@ -111,6 +111,14 @@ public:
   /// \return The core count of the machine.
   [[nodiscard]] inline unsigned getCoreCount() const noexcept {
     return m_CoreCount;
+  }
+
+  /// \brief Returns the total computational power supplied by the GPU (in
+  ///        megaflops).
+  ///
+  /// \return The total computational power supplied by the GPU (in megaflops).
+  [[nodiscard]] inline unsigned getGpuPower() const noexcept {
+    return m_GpuPowerPerCore * m_GpuCoreCount;
   }
 
   /// \brief Returns the amount of GPU cores in this machine.
