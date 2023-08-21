@@ -178,6 +178,25 @@ public:
     return m_RemainingTasks;
   }
 
+  /// \brief Get the computing offload ratio of the workload.
+  ///
+  /// Retrieves the computing offload ratio for GPU processing associated with
+  /// this workload.
+  ///
+  /// The computing offload ratio represents the proportion of the computational
+  /// size of the tasks from the workload that are offloaded to a GPU for
+  /// processing. It is expressed as a floating-point number between 0 and 1,
+  /// where 0 indicates no offloading and 1 indicates full offloading.
+  ///
+  /// \return The computing offload ratio of the workload's computational size.
+  ///
+  /// \note The computing offload ratio provides insights into the distribution
+  ///       of computational tasks between the CPU and GPU, enabling analysis of
+  ///       workload optimization strategies.
+  [[nodiscard]] inline double getComputingOffload() const noexcept {
+    return m_ComputingOffload;
+  }
+
   /// \brief Get the user identifier who create the workload.
   ///
   /// This member function returns the user identifier who created the workload
