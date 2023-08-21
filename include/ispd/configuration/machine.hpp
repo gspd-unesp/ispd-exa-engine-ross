@@ -63,8 +63,8 @@ public:
     const double nonOffloadedProcSize =
         (1.0 - computingOffload) * processingSize;
 
-#define GT_TO_GBITS (10)
-#define GBITS_TO_MBITS (1000)
+#define GT_TO_GBITS (10.0)
+#define GBITS_TO_MBITS (1000.0)
 
     /// Calculates the offloaded communication size to the GPU and the time
     /// taken to offload the copmputation (in seconds).
