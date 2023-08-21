@@ -1,12 +1,10 @@
-#ifndef ISPD_SCHEDULER_ROUND_ROBIN_HPP
-#define ISPD_SCHEDULER_ROUND_ROBIN_HPP
+#pragma once
 
 #include <ispd/scheduler/scheduler.hpp>
 
-namespace ispd {
-namespace scheduler {
+namespace ispd::scheduler {
 
-class round_robin : public Scheduler {
+class RoundRobin final : public Scheduler {
 private:
   /// \brief The next slave index that will be selected
   ///        in the circular queue.
@@ -72,7 +70,5 @@ public:
 
 };
 
-}; // namespace scheduler
-}; // namespace ispd
+} // namespace ispd::scheduler
 
-#endif // ISPD_SCHEDULER_ROUND_ROBIN_HPP
