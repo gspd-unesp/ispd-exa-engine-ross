@@ -84,7 +84,7 @@ int main(int argc, char **argv) {
   ispd::this_model::registerMaster(
       0, std::move(slaves), new ispd::scheduler::RoundRobin,
       ispd::workload::constant(
-          "User1", g_star_task_amount, 1000.0, 80.0,
+          "User1", g_star_task_amount, 1000.0, 80.0, 0.0,
           std::make_unique<ispd::workload::PoissonInterarrivalDistribution>(
               0.1)));
 
@@ -95,7 +95,8 @@ int main(int argc, char **argv) {
   /// Registers serivce initializers for the machines.
   for (tw_lpid machine_id = 2; machine_id <= highest_machine_id;
        machine_id += 2)
-    ispd::this_model::registerMachine(machine_id, 20.0, 0.0, 8, 4096, 0.0, 0.0, 0.0);
+    ispd::this_model::registerMachine(machine_id, 20.0, 0.0, 8, 4096, 0.0, 0.0,
+                                      0.0);
 
   /// Checks if no user has been registered. If so, the program is immediately
   /// aborted, since at least one user must be registered.
