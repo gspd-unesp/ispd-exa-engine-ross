@@ -119,7 +119,7 @@ void RoutingTable::load(const std::string &filepath) {
   /// Check if the routing file could not be opened. If so, an error
   /// indicating the case is sent and the program is immediately aborted.
   if (!file.is_open())
-    ispd_error("Routing file %s could not be opened.", filepath);
+    ispd_error("Routing file %s could not be opened.", filepath.c_str());
 
   /// Read the each line from the routing file. Each line in the file
   /// represents a route indicating the source service, the destination
