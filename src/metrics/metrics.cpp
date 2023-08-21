@@ -138,6 +138,10 @@ void NodeMetricsCollector::notifyMetric(const enum NodeMetricsFlag flag, const u
       /// Updates the total CPU cores.
       m_NodeTotalCpuCores += value;
       break;
+    case NodeMetricsFlag::NODE_TOTAL_GPU_CORES:
+      /// Updates the total GPU cores.
+      m_NodeTotalGpuCores += value;
+      break;
     default:
       ispd_error("Unknown node metrics flag (%d) or it may be the case the flag is correct but the argument is not of the required type.", flag);
   }
@@ -217,6 +221,11 @@ void NodeMetricsCollector::reportNodeMetrics() {
   /// Report to the master node the total CPU cores.
   if (MPI_SUCCESS != MPI_Reduce(&m_NodeTotalCpuCores, &gmc->m_GlobalTotalCpuCores, 1, MPI_UNSIGNED, MPI_SUM, 0, MPI_COMM_ROSS))
     ispd_error("Global total cpu cores could not be reduced, exiting...");
+
+  /// Report to the master node the total GPU cores.
+  if (MPI_SUCCESS != MPI_Reduce(&m_NodeTotalGpuCores, &gmc->m_GlobalTotalGpuCores, 1, MPI_UNSIGNED, MPI_SUM, 0, MPI_COMM_ROSS))
+    ispd_error("Global total gpu cores could not be reduced, exiting...");
+
 
   /// Report to the master node the processing time.
   if (MPI_SUCCESS != MPI_Reduce(&m_NodeTotalProcessingTime, &gmc->m_GlobalTotalProcessingTime, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_ROSS))
@@ -340,6 +349,7 @@ void GlobalMetricsCollector::reportGlobalMetrics() {
   ispd_info("  Idle Power......................: %lf W.", m_GlobalTotalPowerIdle);
   ispd_info("");
   ispd_info(" Total CPU Cores.................: %u cores.", m_GlobalTotalCpuCores);
+  ispd_info(" Total GPU Cores.................: %u cores.", m_GlobalTotalGpuCores);
   ispd_info("");
   ispd_info("User Metrics");
   

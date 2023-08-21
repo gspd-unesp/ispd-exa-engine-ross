@@ -106,6 +106,20 @@ public:
   /// \return Load factor of the machine (0.0 to 1.0).
   [[nodiscard]] inline double getLoad() const noexcept { return m_Load; }
 
+  /// \brief Returns the amount of CPU cores in this machine.
+  ///
+  /// \return The core count of the machine.
+  [[nodiscard]] inline unsigned getCoreCount() const noexcept {
+    return m_CoreCount;
+  }
+
+  /// \brief Returns the amount of GPU cores in this machine.
+  ///
+  /// \return The GPU core count of the machine.
+  [[nodiscard]] inline unsigned getGpuCoreCount() const noexcept {
+    return m_GpuCoreCount;
+  }
+
   /// \brief Retrieves the idle power consumption of the machine.
   ///
   /// This function returns the power consumption of the machine when it is
