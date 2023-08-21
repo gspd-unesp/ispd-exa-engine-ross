@@ -4,6 +4,7 @@
 #include <ross.h>
 #include <chrono>
 #include <ispd/debug/debug.hpp>
+#include <ispd/model/builder.hpp>
 #include <ispd/message/message.hpp>
 #include <ispd/routing/routing.hpp>
 #include <ispd/metrics/metrics.hpp>
