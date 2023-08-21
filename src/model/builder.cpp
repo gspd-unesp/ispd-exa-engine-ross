@@ -141,9 +141,7 @@ void SimulationModel::registerSwitch(const tw_lpid gid, const double bandwidth,
         static_cast<ispd::services::SwitchState *>(state);
 
     /// Initialize the switch's configuration.
-    s->m_Conf.m_Bandwidth = bandwidth;
-    s->m_Conf.m_Load = load;
-    s->m_Conf.m_Latency = latency;
+    s->m_Conf = ispd::configuration::SwitchConfiguration(bandwidth, load, latency);
   });
 
   /// Print a debug indicating that a switch initializer has been registered.
