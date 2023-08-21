@@ -29,7 +29,7 @@ struct master_state {
   std::vector<tw_lpid> slaves;
 
   /// \brief Master's scheduler.
-  ispd::scheduler::scheduler *scheduler;
+  ispd::scheduler::Scheduler *scheduler;
 
   /// \brief Master's workload generator.
   ispd::workload::Workload *workload;
@@ -48,7 +48,7 @@ struct master {
     service_initializer(s);
    
     /// Initialize the scheduler.
-    s->scheduler->init_scheduler();
+    s->scheduler->initScheduler();
 
     const uint32_t registered_routes_count = ispd::routing_table::countRoutes(lp->gid);
 
@@ -154,7 +154,7 @@ private:
 #endif // DEBUG_ON
 
     /// Use the master's scheduling policy to the schedule the next slave.
-    const tw_lpid scheduled_slave_id = s->scheduler->forward_schedule(s->slaves, bf, msg, lp);
+    const tw_lpid scheduled_slave_id = s->scheduler->forwardSchedule(s->slaves, bf, msg, lp);
 
     /// Fetch the route that connects this master with the scheduled slave.
     const ispd::routing::Route *route = ispd::routing_table::getRoute(lp->gid, scheduled_slave_id);
@@ -214,7 +214,7 @@ private:
 #endif // DEBUG_ON
 
     /// Reverse the schedule.
-    s->scheduler->reverse_schedule(s->slaves, bf, msg, lp);
+    s->scheduler->reverseSchedule(s->slaves, bf, msg, lp);
 
     /// Reverse the workload generator.
     s->workload->reverseGenerateWorkload(lp->rng);

@@ -2,32 +2,30 @@
 #define ISPD_SCHEDULER_HPP
 
 #include <ross.h>
+#include <vector>
 #include <ispd/message/message.hpp>
 
-namespace ispd {
-namespace scheduler {
+namespace ispd::scheduler {
 
-struct scheduler {
+class Scheduler {
+public:
+    virtual void initScheduler() = 0;
 
-  virtual void init_scheduler() = 0;
+    [[nodiscard]] virtual tw_lpid forwardSchedule(
+        std::vector<tw_lpid> &slaves,
+        tw_bf *const bf,
+        ispd_message *const msg,
+        tw_lp *const lp
+    ) = 0;
 
-  virtual tw_lpid forward_schedule(
-      std::vector<tw_lpid> &slaves,
-      tw_bf *bf,
-      ispd_message *msg,
-      tw_lp *lp
-  ) = 0;
-
-  virtual void reverse_schedule(
-      std::vector<tw_lpid> &slaves,
-      tw_bf *bf,
-      ispd_message *msg,
-      tw_lp *lp
-  ) = 0;
-
+    virtual void reverseSchedule(
+        std::vector<tw_lpid> &slaves,
+        tw_bf *const bf,
+        ispd_message *const msg,
+        tw_lp *const lp
+    ) = 0;
 };
 
-}; // namespace scheduler
-}; // namespace ispd
+} // namespace ispd::scheduler
 
 #endif // ISPD_SCHEDULER_HPP

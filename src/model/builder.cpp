@@ -152,7 +152,7 @@ void SimulationModel::registerSwitch(const tw_lpid gid, const double bandwidth,
 
 void SimulationModel::registerMaster(
     const tw_lpid gid, std::vector<tw_lpid> &&slaves,
-    ispd::scheduler::scheduler *const scheduler,
+    ispd::scheduler::Scheduler *const scheduler,
     ispd::workload::Workload *const workload) {
 
   /// Check if the scheduler has not been specified. If so, an error indicating
@@ -276,7 +276,7 @@ void registerSwitch(const tw_lpid gid, const double bandwidth,
 }
 
 void registerMaster(const tw_lpid gid, std::vector<tw_lpid> &&slaves,
-                    ispd::scheduler::scheduler *const scheduler,
+                    ispd::scheduler::Scheduler *const scheduler,
                     ispd::workload::Workload *const workload) {
   /// Forward the master registration to the global model.
   g_Model->registerMaster(gid, std::move(slaves), scheduler, workload);
