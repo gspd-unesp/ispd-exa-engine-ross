@@ -7,6 +7,7 @@
 #include <ispd/services/link.hpp>
 #include <ispd/services/dummy.hpp>
 #include <ispd/allocator/first_fit.hpp>
+#include <ispd/allocator/first_fit_decreasing.hpp>
 #include <ispd/services/master.hpp>
 #include <ispd/services/switch.hpp>
 #include <ispd/services/machine.hpp>
@@ -93,7 +94,7 @@ int main(int argc, char **argv) {
 
   ispd::this_model::registerVMM(
       0, std::move(vms_ids), std::move(vms_memory), std::move(vms_disk),
-      std::move(vms_cores), std::move(machines), new ispd::allocator::first_fit,
+      std::move(vms_cores), std::move(machines), new ispd::allocator::firt_fit_decreasing,
       new ispd::scheduler::round_robin,
       ispd::workload::constant(
           "User1", 0, g_star_vm_amount, 100, 80,

@@ -11,6 +11,7 @@
 #include <ispd/metrics/metrics.hpp>
 #include<ispd/services/services.hpp>
 #include <ispd/allocator/allocator.hpp>
+#include <ispd/allocator/first_fit_decreasing.hpp>
 #include <ispd/scheduler/scheduler.hpp>
 #include <ispd/routing/routing.hpp>
 namespace ispd {
@@ -56,10 +57,13 @@ struct VMM {
 
     service_initializer(s);
 
-
     s->scheduler->init_scheduler();
     s->allocator->init();
 
+    if(ispd::allocator::firt_fit_decreasing *derived_ptr = dynamic_cast<ispd::allocator::firt_fit_decreasing *>(s->allocator)){
+      std::sort(s->vms.begin(), s->vms.end(), sorting_criteria);
+
+    }
     s->metrics.tasks_proc = 0;
     s->metrics.vm_alloc = 0;
     s->metrics.vms_rejected = 0;
@@ -176,9 +180,10 @@ private:
         s->metrics.vm_alloc++;
 
       }
-      /// put the vm in the tail
+      /// rejects the vm
       else {
-        std::iter_swap(s->vms.begin(), s->vms.end() - 1);
+        s->vms.erase(s->vms.begin());
+        s->metrics.vms_rejected++;
       }
     /// send a message to continue the allocation
     tw_event *const e = tw_event_new(lp->gid, 0.0, lp);
@@ -237,6 +242,18 @@ private:
     }
 
   }
+
+  /// sorting criteria for the First Fit Decreasing algorithm that requires
+  /// the vms sorted in a decreasing order.
+  static bool sorting_criteria(const slave_vms_info &a, const slave_vms_info &b)
+  {
+    const int multiplier = 100000;
+    double A = multiplier * (a.num_cores + (int)a.avaliable_memory + (int) a.avaliable_disk);
+    double B   = multiplier * (b.num_cores + (int)b.avaliable_memory + (int) b.avaliable_disk);
+
+    return A > B;
+  }
+
 
   };
 
