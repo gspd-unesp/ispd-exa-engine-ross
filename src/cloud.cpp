@@ -6,6 +6,7 @@
 #include <ispd/model/builder.hpp>
 #include <ispd/services/link.hpp>
 #include <ispd/services/dummy.hpp>
+#include <ispd/services/virtual_machine.hpp>
 #include <ispd/allocator/first_fit.hpp>
 #include <ispd/allocator/first_fit_decreasing.hpp>
 #include <ispd/services/master.hpp>
@@ -39,6 +40,11 @@ tw_lptype lps_type[] = {
      (revent_f)ispd::services::machine::reverse, (commit_f)NULL,
      (final_f)ispd::services::machine::finish, (map_f)mapping,
      sizeof(ispd::services::machine_state)},
+    {(init_f)ispd::services::virtual_machine::init, (pre_run_f)NULL,
+     (event_f)ispd::services::virtual_machine::forward,
+     (revent_f)ispd::services::virtual_machine::reverse, (commit_f)NULL,
+     (final_f)ispd::services::virtual_machine::finish, (map_f)mapping,
+     sizeof(ispd::services::VM_state)},
     {(init_f)ispd::services::dummy::init, (pre_run_f)NULL,
      (event_f)ispd::services::dummy::forward,
      (revent_f)ispd::services::dummy::reverse, (commit_f)NULL,
@@ -94,7 +100,7 @@ int main(int argc, char **argv) {
 
   ispd::this_model::registerVMM(
       0, std::move(vms_ids), std::move(vms_memory), std::move(vms_disk),
-      std::move(vms_cores), std::move(machines), new ispd::allocator::firt_fit_decreasing,
+      std::move(vms_cores), std::move(machines), new ispd::allocator::first_fit,
       new ispd::scheduler::round_robin,
       ispd::workload::constant(
           "User1", 0, g_star_vm_amount, 100, 80,
@@ -110,12 +116,16 @@ int main(int argc, char **argv) {
        machine_id += 2)
     ispd::this_model::registerMachine(machine_id, 20.0, 0.0, 8, 16, 100,0,0);
 
+  /// registers service initializer for the virtual machine.
+  for (tw_lpid vm_id = highest_machine_id + 1; vm_id <= highest_vm_id; vm_id++)
+    ispd::this_model::registerVM(vm_id, 10, 0.0,4, 4, 10 );
+
   /// Checks if no user has been registered. If so, the program is immediately
   /// aborted, since at least one user must be registered.
   if (ispd::this_model::getUsers().size() == 0)
     ispd_error("At least one user must be registered.");
   /// The total number of logical processes.
-  const unsigned nlp = g_star_machine_amount * 2 + 1;
+  const unsigned nlp = highest_vm_id + 1;
 
   if (tw_nnodes() > 1) {
     /// Here, since we are distributing the logical processes through many
@@ -148,7 +158,13 @@ int main(int argc, char **argv) {
       /// Set the links and machines.
       for (unsigned i = 1; i < nlp_per_pe; i++) {
         if (current_gid > highest_machine_id) {
-          tw_lp_settype(i, &lps_type[3]);
+
+          if (current_gid <= highest_vm_id)
+            tw_lp_settype(i, &lps_type[3]);
+          else{
+            tw_lp_settype(i, &lps_type[4]);
+            dummy_count++;
+          }
 
           dummy_count++;
           current_gid++;
@@ -165,7 +181,13 @@ int main(int argc, char **argv) {
       /// Set the links and machines.
       for (unsigned i = 0; i < nlp_per_pe; i++) {
         if (current_gid > highest_machine_id) {
-          tw_lp_settype(i, &lps_type[3]);
+
+          if (current_gid <= highest_vm_id)
+            tw_lp_settype(i, &lps_type[3]);
+          else{
+            tw_lp_settype(i, &lps_type[4]);
+            dummy_count++;
+          }
 
           dummy_count++;
           current_gid++;
@@ -192,13 +214,17 @@ int main(int argc, char **argv) {
     tw_lp_settype(0, &lps_type[0]);
 
     /// Set the logical processes types.
-    for (unsigned i = 1; i < nlp; i += 2) {
+    for (unsigned i = 1; i < highest_machine_id; i += 2) {
       /// Register at odd logical process identifier the link.
       tw_lp_settype(i, &lps_type[1]);
 
       // Register at even logical process identifier the machine.
       tw_lp_settype(i + 1, &lps_type[2]);
     }
+    for (unsigned i = highest_machine_id + 1; i <= highest_vm_id; i++)
+      tw_lp_settype(i, &lps_type[3]);
+
+
   }
 
   tw_run();

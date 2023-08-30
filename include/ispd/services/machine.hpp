@@ -32,6 +32,7 @@ struct machine_state {
   ispd::metrics::MachineMetrics m_Metrics;        ///< Machine's metrics.
   std::vector<double> cores_free_time; ///< Machine's queueing model information
   machine_prices prices;
+  std::vector<tw_lpid> vms; /// vms allocated in this machine
 };
 
 struct machine {
@@ -67,9 +68,9 @@ struct machine {
     s->prices.storage_individual_cost = 10;
     s->prices.memory_indivual_cost = 10;
 
-    s->m_Metrics.total_cpu_cost  = 0;
-    s->m_Metrics.total_storage_cost = 0;
-    s->m_Metrics.total_memory_cost = 0;
+    s->m_Metrics.m_Total_cpu_cost  = 0;
+    s->m_Metrics.m_Total_storage_cost = 0;
+    s->m_Metrics.m_Total_memory_cost = 0;
 
     /// Print a debug message.
     ispd_debug("Machine %lu has been initialized.", lp->gid);
@@ -94,6 +95,13 @@ struct machine {
     /// processed and the task's results is sent back to the master by the same
     /// route it came along.
     if (msg->task.dest == lp->gid) {
+
+      /// the message is for the vm allocated in this machine
+      if(msg->vm_sent > 0 &&  msg->is_vm == 0)
+      {
+        sent_to_vm(s,bf,msg,lp);
+        return;
+      }
       /// Fetch the processing size and calculates the processing time.
       const double proc_size = msg->task.proc_size;
       const double proc_time = s->conf.timeToProcess(proc_size);
@@ -303,9 +311,9 @@ struct machine {
         s->m_Metrics.m_ProcTime / s->m_Metrics.m_ProcTasks, lp->gid,
         idleness * 100.0, lp->gid, s->m_Metrics.m_EnergyConsumption, lp->gid
         , s->m_Metrics.m_allocated_vms, lp->gid
-        , s->m_Metrics.total_cpu_cost, lp->gid,
-        s->m_Metrics.total_memory_cost, lp->gid,
-        s->m_Metrics.total_storage_cost, lp->gid);
+        , s->m_Metrics.m_Total_cpu_cost, lp->gid,
+        s->m_Metrics.m_Total_memory_cost, lp->gid,
+        s->m_Metrics.m_Total_storage_cost, lp->gid);
 
   }
 
@@ -327,15 +335,17 @@ private:
         fit = true;
 
         s->m_Metrics.m_allocated_vms++;
-        s->m_Metrics.total_cpu_cost += s->prices.cpu_individual_cost * vm_cores;
-        s->m_Metrics.total_cpu_cost +=
+        s->m_Metrics.m_Total_cpu_cost += s->prices.cpu_individual_cost * vm_cores;
+        s->m_Metrics.m_Total_memory_cost +=
             s->prices.memory_indivual_cost * vm_memory;
-        s->m_Metrics.total_cpu_cost +=
+        s->m_Metrics.m_Total_storage_cost+=
             s->prices.storage_individual_cost * vm_storage;
 
         s->conf.setAvaliableMemory(s->conf.getAvaliableMemory() - vm_memory);
         s->conf.setAvaliableDisk(s->conf.getAvaliableDisk() - vm_storage);
         s->conf.setNumCores(s->conf.getNumCores() - vm_cores);
+
+        s->vms.push_back(msg->vm_sent);
       }
       const double proc_size = msg->task.proc_size;
       const double proc_time = s->conf.timeToProcess(proc_size);
@@ -423,15 +433,18 @@ private:
         fit = true;
 
         s->m_Metrics.m_allocated_vms--;
-        s->m_Metrics.total_cpu_cost -= s->prices.cpu_individual_cost * vm_cores;
-        s->m_Metrics.total_memory_cost -=
+        s->m_Metrics.m_Total_cpu_cost -= s->prices.cpu_individual_cost * vm_cores;
+        s->m_Metrics.m_Total_memory_cost -=
             s->prices.memory_indivual_cost * vm_memory;
-        s->m_Metrics.total_storage_cost -=
+        s->m_Metrics.m_Total_storage_cost-=
             s->prices.storage_individual_cost * vm_storage;
 
-        s->conf.setAvaliableMemory(s->conf.getAvaliableMemory() + vm_memory);
-        s->conf.setAvaliableDisk(s->conf.getAvaliableDisk() + vm_storage);
-        s->conf.setNumCores(s->conf.getNumCores() + vm_cores);
+        s->conf.setAvaliableMemory(s->conf.getAvaliableMemory() - vm_memory);
+        s->conf.setAvaliableDisk(s->conf.getAvaliableDisk() - vm_storage);
+        s->conf.setNumCores(s->conf.getNumCores() - vm_cores);
+
+        s->vms.pop_back();
+
       }
       const double proc_size = msg->task.proc_size;
       const double proc_time = s->conf.timeToProcess(proc_size);
@@ -454,6 +467,23 @@ private:
 
     } else
       s->m_Metrics.m_ForwardedTasks--;
+  }
+  static void sent_to_vm(machine_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp)
+  {
+    auto iter = std::find(s->vms.begin(), s->vms.end(), msg->vm_sent);
+    if (iter != s->vms.end()){
+      tw_event *const e = tw_event_new(*iter, 0.0, lp);
+      ispd_message *const m = static_cast<ispd_message *>(tw_event_data(e));
+      *m = *msg;
+      m->task = msg->task;
+      m->task_processed = 0;
+      tw_event_send(e)  ;
+
+    }
+    else
+      ispd_error("Virtual machine %lu not found on machine %lu", msg->vm_sent, lp->gid);
+
+
   }
 };
 

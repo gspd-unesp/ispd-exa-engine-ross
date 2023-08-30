@@ -8,6 +8,7 @@
 #include <ispd/services/switch.hpp>
 #include <ispd/configuration/machine.hpp>
 #include <ispd/services/VMM.hpp>
+#include <ispd/services/virtual_machine.hpp>
 
 static inline std::string firstSlaves(const std::vector<tw_lpid> &slaves) {
   const auto maxToShow = std::vector<tw_lpid>::size_type(10);
@@ -244,6 +245,46 @@ void SimulationModel::registerVMM(const tw_lpid gid, std::vector<tw_lpid> &&vms,
   ispd_debug("A VMM with GID %lu has been registered ", gid   );
 }
 
+void SimulationModel::registerVM(const tw_lpid gid, const double power, const double load,
+                const unsigned coreCount, const double memory, const double space){
+  if (power <= 0.0)
+    ispd_error("At registering the vm %lu the power must be positive "
+               "(Specified Power: %lf).",
+               gid, power);
+  if (load < 0 || load > 1)
+  {
+    ispd_error("At registering the vm %lu the load factor must be between 0.0 and 1.0 "
+               "(Specified load: %lf).",
+               gid, load);
+  }
+
+  if (coreCount < 0 )
+    ispd_error("At registering the vm %lu the core count must be positive "
+               "(Specified core count: %lu).",
+               gid,coreCount);
+  if (memory < 0)
+    ispd_error("At registering the vm %lu the avaliable memory must be positive "
+               "(Specified memory: %lf).",
+               gid, memory);
+  if (space < 0)
+    ispd_error("At registering the vm %lu the disk space must be positive "
+               "(Specified space: %lf).",
+               gid, space);
+  registerServiceInitializer(gid, [=](void *state){
+    ispd::services::VM_state *s = static_cast<ispd::services::VM_state *>(state);
+
+    /// initialize the vm's configuration
+    s->conf = ispd::configuration::VmConfiguration(power, load, coreCount, memory, space);
+    s->cores_free_time.resize(coreCount, 0.0);
+  });
+
+  /// Print a debug indicating that a machine initializer has been registered
+  ispd_debug(
+      "A vm with GID %lu has been registered(P: %lf, L: %lf, C: %u",
+      gid,power,load,coreCount
+      );
+}
+
 void SimulationModel::registerUser(const std::string &name,
                                    const double energyConsumptionLimit) {
   /// Checks if a user with that name has already been regisitered. If so, the
@@ -346,7 +387,10 @@ void registerVMM(const tw_lpid gid, std::vector<tw_lpid> &&vms, std::vector<doub
   g_Model->registerVMM(gid, std::move(vms), std::move(vms_mem), std::move(vms_disk),
                        std::move(vms_cores), std::move(machines), allocator, scheduler, workload);
 }
-
+void registerVM(const tw_lpid gid, const double power, const double load,
+                const unsigned coreCount, const double memory, const double space){
+  g_Model->registerVM(gid, power, load, coreCount, memory, space);
+}
 void registerUser(const std::string &name,
                   const double energyConsumptionLimit) {
   /// Forward the user registration to the global model.

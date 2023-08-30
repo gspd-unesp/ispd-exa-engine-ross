@@ -29,20 +29,21 @@ enum class ServiceType {
   LINK,     ///< Represents a link service center type.
   MACHINE,  ///< Represents a machine service center type.
   SWITCH,    ///< Represents a switch service center type.
-  VMM       /// < Represents a vmm service center type
+  VMM,      /// < Represents a vmm service center type
+  VIRTUAL_MACHINE /// < Represents a virtual machine service center type
 };
 
 /// \brief Array containing all available service types.
 ///
 /// The g_ServiceTypes array contains all available service types as elements. It is defined
-/// as a constexpr std::array<ServiceType, 4> to ensure that it is available at compile time.
-constexpr std::array<ServiceType, 5> g_ServiceTypes = {
+/// as a constexpr std::array<ServiceType, 6> to ensure that it is available at compile time.
+constexpr std::array<ServiceType, 6> g_ServiceTypes = {
   ServiceType::MASTER,
   ServiceType::LINK,
   ServiceType::MACHINE,
   ServiceType::SWITCH,
   ServiceType::VMM,
-
+  ServiceType::VIRTUAL_MACHINE,
 };
 
 /// \brief Get the name of a service type as a string.
@@ -62,6 +63,7 @@ constexpr const char* getServiceTypeName(const ServiceType type) {
         case ServiceType::MACHINE: return "Machine";
         case ServiceType::SWITCH: return "Switch";
         case ServiceType::VMM: return "VMM";
+        case ServiceType::VIRTUAL_MACHINE: return "Virtual Machine";
         default:
             return nullptr;
     }
@@ -72,6 +74,8 @@ constexpr const char* getServiceTypeName(const ServiceType type) {
         case ServiceType::MACHINE: return "machine";
         case ServiceType::SWITCH: return "switch";
         case ServiceType::VMM: return "vmm";
+        case ServiceType::VIRTUAL_MACHINE: return "virtual machine";
+
         default:
             return nullptr;
     }

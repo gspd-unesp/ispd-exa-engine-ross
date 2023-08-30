@@ -34,9 +34,9 @@ struct MachineMetrics final {
 
   unsigned m_allocated_vms = 0;
 
-  double total_cpu_cost = 0;
-  double total_memory_cost = 0;
-  double total_storage_cost = 0;
+  double m_Total_cpu_cost = 0;
+  double m_Total_memory_cost = 0;
+  double m_Total_storage_cost = 0;
   /// \name Energy-related Metrics
   double m_EnergyConsumption; ///< Total energy consumpttion (in Joules).
 };

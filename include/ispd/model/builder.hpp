@@ -40,6 +40,9 @@ public:
                    ispd::scheduler::scheduler *const scheduler,
                    ispd::workload::Workload *const workload);
 
+  void registerVM(const tw_lpid gid, const double power, const double load,
+                  const unsigned coreCount, const double memory, const double space);
+
   void registerUser(const std::string &name,
                     const double energyConsumptionLimit);
 
@@ -97,6 +100,9 @@ void registerVMM(const tw_lpid gid, std::vector<tw_lpid> &&vms, std::vector<doub
                  std::vector<tw_lpid> &&machines, ispd::allocator::allocator *const allocator,
                  ispd::scheduler::scheduler *const scheduler,
                  ispd::workload::Workload *const workload);
+
+void registerVM(const tw_lpid gid, const double power, const double load,
+                const unsigned coreCount, const double memory, const double space);
 
 void registerUser(const std::string &name, const double energyConsumptionLimit);
 
