@@ -1,9 +1,11 @@
 #ifndef ISPD_SERVICE_MASTER_HPP
 #define ISPD_SERVICE_MASTER_HPP
+#define TASK_FLAG 1
 
 #include <ross.h>
 #include <vector>
 #include <memory>
+
 #include <chrono>
 #include <ispd/debug/debug.hpp>
 #include <ispd/model/builder.hpp>
@@ -168,7 +170,7 @@ private:
 
     /// Use the master's workload generator for generate the task's
     /// processing and communication sizes.
-    s->workload->generateWorkload(lp->rng, m->task.proc_size, m->task.comm_size);
+    s->workload->generateWorkload(lp->rng, m->task.proc_size, m->task.comm_size, TASK_FLAG);
 
     /// Task information specification.
     m->task.origin = lp->gid;
@@ -217,7 +219,7 @@ private:
     s->scheduler->reverse_schedule(s->slaves, bf, msg, lp);
 
     /// Reverse the workload generator.
-    s->workload->reverseGenerateWorkload(lp->rng);
+    s->workload->reverseGenerateWorkload(lp->rng, TASK_FLAG);
 
     /// Checks if after reversing the workload generator, there are remaining tasks to be generated.
     /// If so, the random number generator is reversed since it is used to generate the interarrival

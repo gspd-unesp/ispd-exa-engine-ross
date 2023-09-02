@@ -5,7 +5,8 @@
 #include <memory>
 #include <ispd/model/user.hpp>
 #include <ispd/workload/interarrival.hpp>
-
+#define VM_FLAG 0
+#define TASK_FLAG 1
 #define CHECK_RNG(rng) DEBUG({ if (!rng) ispd_error("The logical process' reversible-pseudorandom number generator has not been provided."); })
 
 namespace ispd::workload {
@@ -37,6 +38,7 @@ protected:
   unsigned m_RemainingTasks;
 
   unsigned m_RemainingVms;
+
 
   /// \brief Unique pointer to InterarrivalDistribution.
   ///
@@ -87,7 +89,7 @@ public:
   /// \param commSize A reference to the communication size to be updated based
   ///                 on the generated workload.
   virtual void generateWorkload(tw_rng_stream *rng, double &procSize,
-                                double &commSize) = 0;
+                                double &commSize, unsigned flag) = 0;
 
   /// \brief Reverse the workload generation, necessary due to the Time Warp's
   ///        rollback mechanism.
@@ -100,7 +102,7 @@ public:
   /// the workload's state if necessary.
   ///
   /// \param rng The logical process reversible-pseudorandom number generator.
-  virtual void reverseGenerateWorkload(tw_rng_stream *rng) = 0;
+  virtual void reverseGenerateWorkload(tw_rng_stream *rng, unsigned flag) = 0;
 
   /// \brief Generates the time until the next event's arrival using the interarrival distribution.
   ///
@@ -210,16 +212,19 @@ public:
   /// \param commSize A reference to the communication size to be updated based
   ///                 on the constant workload generation.
   void generateWorkload(tw_rng_stream *rng, double &procSize,
-                        double &commSize) override {
+                        double &commSize, unsigned flag) override {
     CHECK_RNG(rng);
 
     procSize = m_ConstantProcSize;
     commSize = m_ConstantCommSize;
 
-    Workload::m_RemainingTasks--;
+    if(flag == VM_FLAG)
+      Workload::m_RemainingVms--;
+    else
+      Workload::m_RemainingTasks--;
 
-    Workload::m_RemainingVms--;
-  }
+
+      }
 
   /// \brief Reverse the constant workload generation, needed due to Time Warp's
   /// rollback mechanism.
@@ -231,11 +236,13 @@ public:
   /// generating workload for a task.
   ///
   /// \param rng The logical process reversible-pseudorandom number generator.
-  void reverseGenerateWorkload(tw_rng_stream *rng) override {
+  void reverseGenerateWorkload(tw_rng_stream *rng, unsigned flag) override {
     CHECK_RNG(rng);
+    if(flag == VM_FLAG)
+      Workload::m_RemainingVms++;
+    else
+      Workload::m_RemainingTasks++;
 
-    Workload::m_RemainingTasks++;
-    Workload::m_RemainingVms++;
   }
 };
 
@@ -290,7 +297,7 @@ public:
   /// the uniform workload generation. \param commSize A reference to the
   /// communication size to be updated based on the uniform workload generation.
   void generateWorkload(tw_rng_stream *rng, double &procSize,
-                        double &commSize) override {
+                        double &commSize, unsigned flag) override {
     CHECK_RNG(rng);
 
     procSize =
@@ -298,8 +305,10 @@ public:
     commSize =
         m_MinCommSize + tw_rand_unif(rng) * (m_MaxCommSize - m_MinCommSize);
 
-    Workload::m_RemainingTasks--;
-
+    if(flag == VM_FLAG)
+      Workload::m_RemainingVms--;
+    else
+      Workload::m_RemainingTasks--;
     ispd_debug("[Uniform Workload] Workload (%lf, %lf) generated. RT: %u.",
                procSize, commSize, Workload::m_RemainingTasks);
   }
@@ -316,7 +325,7 @@ public:
   /// sizes are reversed using `tw_rand_reverse_unif`.
   ///
   /// \param rng The logical process reversible-pseudorandom number generator.
-  void reverseGenerateWorkload(tw_rng_stream *rng) override {
+  void reverseGenerateWorkload(tw_rng_stream *rng, unsigned flag) override {
     CHECK_RNG(rng);
 
     /// The following two function calls reverse the use of two times
@@ -330,8 +339,10 @@ public:
     tw_rand_reverse_unif(rng);
     tw_rand_reverse_unif(rng);
 
-    Workload::m_RemainingTasks++;
-
+    if(flag == VM_FLAG)
+      Workload::m_RemainingVms++;
+    else
+      Workload::m_RemainingTasks++;
     ispd_debug("[Uniform Workload] Reversed. RT: %u.",
                Workload::m_RemainingTasks);
   }
@@ -359,7 +370,7 @@ public:
     /// \param rng A pointer to the random number generator stream.
     /// \param procSize A reference to the variable storing the generated processing size.
     /// \param commSize A reference to the variable storing the generated communication size.
-    void generateWorkload(tw_rng_stream *rng, double &procSize, double &commSize) override {
+    void generateWorkload(tw_rng_stream *rng, double &procSize, double &commSize, unsigned flag) override {
         ispd_error("[Null Workload] A null workload cannot be generated.");
     }
 
@@ -369,7 +380,7 @@ public:
     /// attempting to reverse generate tasks will result in an error being raised.
     ///
     /// \param rng A pointer to the random number generator stream.
-    void reverseGenerateWorkload(tw_rng_stream *rng) override {
+    void reverseGenerateWorkload(tw_rng_stream *rng, unsigned flag) override {
         ispd_error("[Null Workload] A null workload generation cannot be reversed.");
     }
 };

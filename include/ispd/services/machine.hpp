@@ -468,22 +468,31 @@ private:
     } else
       s->m_Metrics.m_ForwardedTasks--;
   }
+
+
+  /**
+   * Forward the message to the virtual machine hosted by this machine.
+   * @param s
+   * @param bf
+   * @param msg
+   * @param lp
+   */
   static void sent_to_vm(machine_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp)
   {
     auto iter = std::find(s->vms.begin(), s->vms.end(), msg->vm_sent);
     if (iter != s->vms.end()){
-      tw_event *const e = tw_event_new(*iter, 0.0, lp);
+      /// iter exists thus it's safe to send the vm
+      tw_event *const e = tw_event_new(msg->vm_sent, 0.0, lp);
       ispd_message *const m = static_cast<ispd_message *>(tw_event_data(e));
       *m = *msg;
       m->task = msg->task;
       m->task_processed = 0;
-      tw_event_send(e)  ;
+
+      tw_event_send(e);
 
     }
     else
       ispd_error("Virtual machine %lu not found on machine %lu", msg->vm_sent, lp->gid);
-
-
   }
 };
 

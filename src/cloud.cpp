@@ -20,7 +20,7 @@
 #include <ispd/services/VMM.hpp>
 static unsigned g_star_machine_amount = 10;
 static unsigned g_star_vm_amount = 13;
-static unsigned g_star_task_amount = 0;
+static unsigned g_star_task_amount = 100;
 
 tw_peid mapping(tw_lpid gid) { return (tw_peid)gid / g_tw_nlp; }
 
@@ -37,12 +37,14 @@ tw_lptype lps_type[] = {
      sizeof(ispd::services::link_state)},
     {(init_f)ispd::services::machine::init, (pre_run_f)NULL,
      (event_f)ispd::services::machine::forward,
-     (revent_f)ispd::services::machine::reverse, (commit_f)NULL,
+     (revent_f)ispd::services::machine::reverse,
+     (commit_f)ispd::services::machine::commit,
      (final_f)ispd::services::machine::finish, (map_f)mapping,
      sizeof(ispd::services::machine_state)},
     {(init_f)ispd::services::virtual_machine::init, (pre_run_f)NULL,
      (event_f)ispd::services::virtual_machine::forward,
-     (revent_f)ispd::services::virtual_machine::reverse, (commit_f)NULL,
+     (revent_f)ispd::services::virtual_machine::reverse,
+     (commit_f)ispd::services::virtual_machine::commit,
      (final_f)ispd::services::virtual_machine::finish, (map_f)mapping,
      sizeof(ispd::services::VM_state)},
     {(init_f)ispd::services::dummy::init, (pre_run_f)NULL,
@@ -103,7 +105,7 @@ int main(int argc, char **argv) {
       std::move(vms_cores), std::move(machines), new ispd::allocator::first_fit,
       new ispd::scheduler::round_robin,
       ispd::workload::constant(
-          "User1", 0, g_star_vm_amount, 100, 80,
+          "User1", g_star_task_amount, g_star_vm_amount, 100, 80,
           std::make_unique<ispd::workload::PoissonInterarrivalDistribution>(
               0.1)));
 

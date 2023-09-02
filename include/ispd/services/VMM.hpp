@@ -2,7 +2,8 @@
 
 #ifndef ISPD_SERVICE_VMM_HPP
 #define ISPD_SERVICE_VMM_HPP
-
+#define VM_FLAG 0
+#define TASK_FLAG 1
 #include <utility>
 #include <ross.h>
 #include <vector>
@@ -115,17 +116,18 @@ struct VMM {
   }
 
   static void finish(VMM_state *s, tw_lp *lp) {
-    
+
     ispd::node_metrics::notifyMetric(
         ispd::metrics::NodeMetricsFlag::NODE_TOTAL_ALLOCATED_VMS,
         s->metrics.vm_alloc);
     //  ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_REJECTED_VMS, s->metrics.vms_rejected);
-    std::printf("allocated vms: %u \n tasks processed: %u", s->metrics.vm_alloc,
+    std::printf("allocated vms: %u \n tasks processed: %u \n", s->metrics.vm_alloc,
                 s->metrics.tasks_proc);
   }
 
 private:
   static void generate(VMM_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
+    ispd_debug("There are %u tasks", s->workload->getRemainingTasks());
     if (s->workload->getRemainingVms() > 0)
       allocate(s, bf, msg, lp);
     else
@@ -134,7 +136,7 @@ private:
 
   static void allocate(VMM_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
     ispd_debug(
-        "VMM %lu will generate an allocatio process at %lf, remaining %u.",
+        "VMM %lu will generate an allocation process at %lf, remaining %u.",
         lp->gid, tw_now(lp), s->workload->getRemainingVms());
 
     const tw_lpid machine_chosen =
@@ -149,7 +151,7 @@ private:
     m->type = message_type::ARRIVAL;
 
     s->workload->generateWorkload(lp->rng, m->task.proc_size,
-                                  m->task.comm_size);
+                                  m->task.comm_size, VM_FLAG);
 
     m->task.origin = lp->gid;
     m->task.dest = machine_chosen;
@@ -172,51 +174,51 @@ private:
   }
 
   static void schedule(VMM_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
-//    tw_lpid vm_id =
-//        s->scheduler->forward_schedule(s->allocated_vms, bf, msg, lp);
-//
-//    auto verify = s->owner->find(vm_id);
-//    tw_lpid dest;
-//    if (verify != s->owner->end())
-//      dest = verify->second;
-//    else
-//      ispd_error("There is no machine responsible for vm %u", vm_id);
-//    const ispd::routing::Route *route =
-//        ispd::routing_table::getRoute(lp->gid, dest);
-//    tw_event *const e = tw_event_new(route->get(0), 0.0, lp);
-//    ispd_message *const m = static_cast<ispd_message *>(tw_event_data(e));
-//
-//    m->type = message_type::ARRIVAL;
-//
-//    s->workload->generateWorkload(lp->rng, m->task.proc_size,
-//                                  m->task.comm_size);
-//
-//    m->task.origin = lp->gid;
-//    m->task.dest = dest;
-//    m->vm_sent = vm_id;
-//    m->task.submit_time = tw_now(lp);
-//    m->task.owner = s->workload->getOwner();
-//
-//    m->route_offset = 1;
-//    m->previous_service_id = lp->gid;
-//    m->downward_direction = 1;
-//    m->task_processed = 0;
-//
-//    tw_event_send(e);
-//    /// Checks if the there are more remaining tasks to be generated. If so, a generate message is sent to the master by itself to generate a new task.
-//    if (s->workload->getRemainingTasks() > 0) {
-//      double offset;
-//
-//      s->workload->generateInterarrival(lp->rng, offset);
-//
-//      /// Send a generate message to itself.
-//      tw_event *const e = tw_event_new(lp->gid, offset, lp);
-//      ispd_message *const m = static_cast<ispd_message *>(tw_event_data(e));
-//
-//      m->type = message_type::GENERATE;
-//
-//      tw_event_send(e);
-   // }
+    tw_lpid vm_id =
+        s->scheduler->forward_schedule(s->allocated_vms, bf, msg, lp);
+
+    auto verify = s->owner->find(vm_id);
+    tw_lpid dest;
+    if (verify != s->owner->end())
+      dest = verify->second;
+    else
+      ispd_error("There is no machine responsible for vm %u", vm_id);
+    const ispd::routing::Route *route =
+        ispd::routing_table::getRoute(lp->gid, dest);
+    tw_event *const e = tw_event_new(route->get(0), 0.0, lp);
+    ispd_message *const m = static_cast<ispd_message *>(tw_event_data(e));
+
+    m->type = message_type::ARRIVAL;
+
+    s->workload->generateWorkload(lp->rng, m->task.proc_size,
+                                  m->task.comm_size, TASK_FLAG);
+
+    m->task.origin = lp->gid;
+    m->task.dest = dest;
+    m->vm_sent = vm_id;
+    m->task.submit_time = tw_now(lp);
+    m->task.owner = s->workload->getOwner();
+
+    m->route_offset = 1;
+    m->previous_service_id = lp->gid;
+    m->downward_direction = 1;
+    m->task_processed = 0;
+
+    tw_event_send(e);
+    /// Checks if the there are more remaining tasks to be generated. If so, a generate message is sent to the master by itself to generate a new task.
+    if (s->workload->getRemainingTasks() > 0) {
+      double offset;
+
+      s->workload->generateInterarrival(lp->rng, offset);
+
+      /// Send a generate message to itself.
+      tw_event *const e = tw_event_new(lp->gid, offset, lp);
+      ispd_message *const m = static_cast<ispd_message *>(tw_event_data(e));
+
+      m->type = message_type::GENERATE;
+
+      tw_event_send(e);
+    }
   }
   static void arrival(VMM_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
     ispd_debug("Arrived a message in vmm of vm %lu and fit %lu ", msg->is_vm,
@@ -263,22 +265,38 @@ private:
     /// the last processed message was a vm
     if (msg->is_vm)
       allocate_rc(s, bf, msg, lp);
-    /*      else
-            schedule_rc(s,bf,msg,lp);*/
+         else
+            schedule_rc(s,bf,msg,lp);
   }
 
-  static void allocate_rc(VMM_state *s, tw_bf *bf, ispd_message *msg,
+  static void  allocate_rc(VMM_state *s, tw_bf *bf, ispd_message *msg,
                           tw_lp *lp) {
 
     s->allocator->reverse_allocation(s->machines, bf, msg, lp);
 
-    s->workload->reverseGenerateWorkload(lp->rng);
+    s->workload->reverseGenerateWorkload(lp->rng, VM_FLAG);
 
     /// Checks if after reversing the workload generator, there are remaining
     /// vms to be generated. If so, the random number generator is reversed
     /// since it is used to generate the interarrival time of the vm.
     if (s->workload->getRemainingTasks() > 0)
       s->workload->reverseGenerateInterarrival(lp->rng);
+  }
+
+  static void schedule_rc(VMM_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp)
+  {
+    /// Reverse the schedule.
+    s->scheduler->reverse_schedule(s->allocated_vms, bf, msg, lp);
+
+    /// Reverse the workload generator.
+    s->workload->reverseGenerateWorkload(lp->rng, TASK_FLAG);
+
+    /// Checks if after reversing the workload generator, there are remaining tasks to be generated.
+    /// If so, the random number generator is reversed since it is used to generate the interarrival
+    /// time of the tasks.
+    if (s->workload->getRemainingTasks() > 0)
+      s->workload->reverseGenerateInterarrival(lp->rng);
+
   }
 
   static void arrival_rc(VMM_state *s, tw_bf *bf, ispd_message *msg,

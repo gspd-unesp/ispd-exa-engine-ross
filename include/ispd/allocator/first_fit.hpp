@@ -6,7 +6,7 @@
 namespace ispd {
 namespace allocator {
 
-struct first_fit : allocator {
+struct first_fit :  allocator {
 
   unsigned next_machine_id;
 
