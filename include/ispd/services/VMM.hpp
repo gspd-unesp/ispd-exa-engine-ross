@@ -46,6 +46,7 @@ struct VMM_state {
   ispd::allocator::allocator *allocator;
   ispd::workload::Workload *workload;
   ispd::scheduler::scheduler *scheduler;
+  unsigned total_vms;
 
   VMM_metrics metrics;
 };
@@ -70,6 +71,7 @@ struct VMM {
     s->metrics.tasks_proc = 0;
     s->metrics.vm_alloc = 0;
     s->metrics.vms_rejected = 0;
+    s->total_vms = s->workload->getRemainingVms();
     /// Send a generate message to itself.
     double offset = 0.0;
     s->workload->generateInterarrival(lp->rng, offset);
@@ -130,13 +132,12 @@ struct VMM {
 
 private:
   static void generate(VMM_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
-    ispd_debug("There are %u tasks", s->workload->getRemainingTasks());
+    ispd_debug("There are %u tasks and %u vms", s->workload->getRemainingTasks(), s->workload->getRemainingVms());
     if (s->workload->getRemainingVms() > 0)
       allocate(s, bf, msg, lp);
-//    else
-//      schedule(s, bf, msg, lp);
+    else
+      schedule(s, bf, msg, lp);
   }
-
   static void allocate(VMM_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
     ispd_debug(
         "VMM %lu will generate an allocation process at %lf, remaining %u.",
@@ -173,11 +174,12 @@ private:
     m->vm_memory_space = s->vms[0].avaliable_memory;
     m->vm_sent = s->vms[0].id;
 
+    s->vms.erase(s->vms.begin());
+
     tw_event_send(e);
 
 
     /// send message to itself to continue allocation
-
     if (s->workload->getRemainingVms() > 0) {
       tw_event *const e2 = tw_event_new(lp->gid, 0.0, lp);
       ispd_message *const m2 = static_cast<ispd_message *>(tw_event_data(e2));
@@ -190,6 +192,8 @@ private:
   }
 
   static void schedule(VMM_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
+    for (const auto &item : s->allocated_vms)
+      ispd_debug("Avaliable vms: %lu ", item);
     tw_lpid vm_id =
         s->scheduler->forward_schedule(s->allocated_vms, bf, msg, lp);
 
@@ -245,7 +249,6 @@ private:
       /// vms
       if (msg->fit) {
         s->allocated_vms.push_back(msg->vm_sent);
-        s->vms.erase(s->vms.begin());
 
 
         ispd_debug("Vm %lu is allocated on machine %lu", msg->vm_sent, msg->allocated_in);
@@ -257,11 +260,11 @@ private:
       }
       /// rejects the vm
       else {
-        s->vms.erase(s->vms.begin());
         s->metrics.vms_rejected++;
       }
-      /// if it's the last vm, start scheduling process
-      if(s->workload->getRemainingVms() == 0)
+
+
+      if (s->metrics.vm_alloc + s->metrics.vms_rejected == s->total_vms)
       {
         tw_event *const e2 = tw_event_new(lp->gid, 0.0, lp);
         ispd_message *const m2 = static_cast<ispd_message *>(tw_event_data(e2));
@@ -270,7 +273,6 @@ private:
 
         tw_event_send(e2);
       }
-
     }
     /// arrival of an ordinary task
     else {
@@ -338,16 +340,7 @@ private:
         s->metrics.vm_alloc--;
       }
 
-      /// if it's the last vm, reestart allocation process
-      if(s->workload->getRemainingVms() == 0)
-      {
-        tw_event *const e2 = tw_event_new(lp->gid, 0.0, lp);
-        ispd_message *const m2 = static_cast<ispd_message *>(tw_event_data(e2));
 
-        m2->type = message_type::GENERATE;
-
-        tw_event_send(e2);
-      }
 
     } else {
       /// Calculate the task`s turnaround time.
