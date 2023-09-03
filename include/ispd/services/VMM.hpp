@@ -101,15 +101,18 @@ struct VMM {
   }
 
   static void reverse(VMM_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
+
     switch (msg->type) {
     case message_type::GENERATE:
       generate_rc(s, bf, msg, lp);
       break;
     case message_type::ARRIVAL:
       arrival_rc(s, bf, msg, lp);
+      break;
     default:
       std::cerr << "Unknown message type " << static_cast<int>(msg->type)
                 << " at VMM LP reverse handler." << std::endl;
+      ispd_debug("Came from LP %lu", msg->previous_service_id);
       abort();
       break;
     }
@@ -130,8 +133,8 @@ private:
     ispd_debug("There are %u tasks", s->workload->getRemainingTasks());
     if (s->workload->getRemainingVms() > 0)
       allocate(s, bf, msg, lp);
-    else
-      schedule(s, bf, msg, lp);
+//    else
+//      schedule(s, bf, msg, lp);
   }
 
   static void allocate(VMM_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
@@ -171,6 +174,19 @@ private:
     m->vm_sent = s->vms[0].id;
 
     tw_event_send(e);
+
+
+    /// send message to itself to continue allocation
+
+    if (s->workload->getRemainingVms() > 0) {
+      tw_event *const e2 = tw_event_new(lp->gid, 0.0, lp);
+      ispd_message *const m2 = static_cast<ispd_message *>(tw_event_data(e2));
+
+      m2->type = message_type::GENERATE;
+
+      tw_event_send(e2);
+    }
+
   }
 
   static void schedule(VMM_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
@@ -185,7 +201,7 @@ private:
       ispd_error("There is no machine responsible for vm %u", vm_id);
     const ispd::routing::Route *route =
         ispd::routing_table::getRoute(lp->gid, dest);
-    tw_event *const e = tw_event_new(route->get(0), 0.0, lp);
+    tw_event *const e = tw_event_new(route->get(0), 3, lp);
     ispd_message *const m = static_cast<ispd_message *>(tw_event_data(e));
 
     m->type = message_type::ARRIVAL;
@@ -244,11 +260,16 @@ private:
         s->vms.erase(s->vms.begin());
         s->metrics.vms_rejected++;
       }
-      /// send a message to continue the allocation
-      tw_event *const e = tw_event_new(lp->gid, 0.0, lp);
-      ispd_message *const m = static_cast<ispd_message *>(tw_event_data(e));
-      m->type = message_type::GENERATE;
-      tw_event_send(e);
+      /// if it's the last vm, start scheduling process
+      if(s->workload->getRemainingVms() == 0)
+      {
+        tw_event *const e2 = tw_event_new(lp->gid, 0.0, lp);
+        ispd_message *const m2 = static_cast<ispd_message *>(tw_event_data(e2));
+
+        m2->type = message_type::GENERATE;
+
+        tw_event_send(e2);
+      }
 
     }
     /// arrival of an ordinary task
@@ -315,6 +336,17 @@ private:
         s->allocated_vms.erase(s->allocated_vms.begin());
 
         s->metrics.vm_alloc--;
+      }
+
+      /// if it's the last vm, reestart allocation process
+      if(s->workload->getRemainingVms() == 0)
+      {
+        tw_event *const e2 = tw_event_new(lp->gid, 0.0, lp);
+        ispd_message *const m2 = static_cast<ispd_message *>(tw_event_data(e2));
+
+        m2->type = message_type::GENERATE;
+
+        tw_event_send(e2);
       }
 
     } else {

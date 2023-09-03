@@ -488,6 +488,7 @@ private:
       m->task = msg->task;
       m->task_processed = 0;
 
+      ispd_debug("Task will be sent to %lu", msg->vm_sent);
       tw_event_send(e);
 
     }
