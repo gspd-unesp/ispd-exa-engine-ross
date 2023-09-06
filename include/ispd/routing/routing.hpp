@@ -3,6 +3,7 @@
 
 #include <ross.h>
 #include <memory>
+#include <vector>
 #include <cstdint>
 #include <fstream>
 #include <numeric>
@@ -192,7 +193,7 @@ class RoutingTable {
   /// \note The value associated with each key is a constant pointer to the
   ///       corresponding `Route` object, ensuring that the routes themselves
   ///       cannot be modified through this map.
-  std::unordered_map<uint64_t, const Route *> m_Routes;
+  std::unordered_map<uint64_t, std::vector<const Route *>> m_Routes;
 
   /// \brief A hash map that keeps track of the number of routes originating
   ///        from each source vertex.

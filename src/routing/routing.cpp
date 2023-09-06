@@ -50,7 +50,7 @@ auto RoutingTable::addRoute(const tw_lpid src, const tw_lpid dest,
   m_RoutesCounting[src]++;
 
   /// Insert the route.
-  m_Routes.insert(std::make_pair(szudzik(src, dest), route));
+  m_Routes[szudzik(src, dest)].push_back(route);
 }
 
 auto RoutingTable::parseRouteLine(const std::string &routeLine, tw_lpid &src,
@@ -158,7 +158,7 @@ auto RoutingTable::load(const std::string &filepath) -> void {
 
 auto RoutingTable::getRoute(const tw_lpid src, const tw_lpid dest) const
     -> const Route * {
-  return m_Routes.at(szudzik(src, dest));
+  return m_Routes.at(szudzik(src, dest))[0];
 }
 
 auto RoutingTable::countRoutes(const tw_lpid src) const -> const std::uint32_t {
