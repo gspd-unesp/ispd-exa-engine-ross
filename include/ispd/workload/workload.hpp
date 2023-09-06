@@ -593,7 +593,7 @@ public:
   /// processing size. \param commSize A reference to the variable storing the
   /// generated communication size.
   void generateWorkload(tw_rng_stream *rng, double &procSize,
-                        double &commSize) override {
+                        double &commSize) noexcept override {
     ispd_error("[Null Workload] A null workload cannot be generated.");
   }
 
@@ -604,7 +604,7 @@ public:
   /// tasks will result in an error being raised.
   ///
   /// \param rng A pointer to the random number generator stream.
-  void reverseGenerateWorkload(tw_rng_stream *rng) override {
+  void reverseGenerateWorkload(tw_rng_stream *rng) noexcept override {
     ispd_error(
         "[Null Workload] A null workload generation cannot be reversed.");
   }
