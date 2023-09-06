@@ -67,8 +67,8 @@ public:
   /// \param interval The fixed interarrival time interval.
   [[nodiscard]] explicit FixedInterarrivalDistribution(const double interval);
 
-  /// Generates the time until the next event's arrival using the fixed
-  /// interarrival distribution.
+  /// \brief Generates the time until the next event's arrival using the fixed
+  ///        interarrival distribution.
   ///
   /// \param rng A pointer to the logical process reversible-pseudorandom number
   ///            generator.
@@ -76,7 +76,7 @@ public:
   ///               will be stored.
   void generateInterarrival(tw_rng_stream *const rng, double &offset) override;
 
-  /// Reverses the generation of the last interarrival time.
+  /// \brief Reverses the generation of the last interarrival time.
   ///
   /// Since there is no state to reverse in the fixed interarrival distribution,
   /// this function has an empty implementation.
@@ -89,7 +89,7 @@ public:
 
 /// \class PoissonInterarrivalDistribution
 /// \brief Represents a Poisson interarrival time distribution for generating
-/// event arrival times.
+///        event arrival times.
 ///
 /// This class implements the InterarrivalDistribution interface to provide a
 /// Poisson interarrival time distribution. The interarrival times follow a
@@ -104,21 +104,68 @@ public:
   /// \param lambda The Poisson distribution lambda parameter.
   [[nodiscard]] explicit PoissonInterarrivalDistribution(const double lambda);
 
-  /// Generates the time until the next event's arrival using the Poisson
-  /// interarrival distribution.
+  /// \brief Generates the time until the next event's arrival using the Poisson
+  ///        interarrival distribution.
   ///
   /// \param rng A pointer to the logical process reversible-pseudorandom number
   ///            generator.
-  /// \param offset A reference to a variable where the generated
-  ///               time offset will be stored.
+  /// \param offset A reference to a variable where the generated time offset
+  ///               will be stored.
   void generateInterarrival(tw_rng_stream *const rng, double &offset) override;
 
-  /// Reverses the generation of the last interarrival time.
+  /// \brief Reverses the generation of the last interarrival time.
   ///
   /// This function reverses the previously generated interarrival time by
-  /// reversing the exponential random number generator state.
+  /// reversing the reversible-pseudorandom number generator state.
   ///
   /// \param rng A pointer to the logical process reversible-pseudorandom number
+  ///            generator.
+  void reverseGenerateInterarrival(tw_rng_stream *const rng) override;
+};
+
+/// \class WeibullInterarrivalDistribution
+/// \brief Represents a Weibull interarrival time distribution for genereating
+///        event arrival times.
+///
+/// This class implements the InterarrivalDistribution interface to provide a
+/// Weibull interarrival time distribution. The interarrival times follows a
+/// Weibull distribution with the specified mean and shape parameters.
+class WeibullInterarrivalDistribution final : public InterarrivalDistribution {
+private:
+  double m_Mean;  ///< The Weibull distribution mean parameter.
+  double m_Shape; ///< The Weibull distributtion shape parameter.
+public:
+  /// \brief Constructor for WeibullInterarrivalDistribution.
+  ///
+  /// \param mean The Weibull distribution mean parameter.
+  /// \param shape The Weibull distribution shape parameter.
+  [[nodiscard]] explicit WeibullInterarrivalDistribution(
+      const double m_Mean, const double m_Shape) noexcept;
+
+  /// \brief Constructor for WeibullInterarrivalDistribution.
+  ///
+  /// \param weibullParametersDistribution A pair containing the parameters
+  ///                                      of the Weibull distribution, that is,
+  ///                                      the mean and shape parameter,
+  ///                                      respectively.
+  [[nodiscard]] explicit WeibullInterarrivalDistribution(
+      const std::pair<double, double> &weibullParameterDistribution) noexcept;
+
+  /// \brief Generates the time until the next event's arrival using the Weibull
+  ///        interarrival distribution.
+  ///
+  /// \param rng A pointer to the logical process reversible-pseudorandom number
+  ///            generator.
+  /// \param offset A reference to a variable where the generated time offset
+  ///               will be stored.
+  void generateInterarrival(tw_rng_stream *const rng, double &offset) override;
+
+  /// \brief Reverses the generation of the last interarrival time.
+  ///
+  /// The function reverses the previously generated interarrival time by
+  /// reversing the reversible-pseudorandom number generator state.
+  ///
+  /// \param rng A pointer to the logical rocess reversible-pseudorandom number
   ///            generator.
   void reverseGenerateInterarrival(tw_rng_stream *const rng) override;
 };
