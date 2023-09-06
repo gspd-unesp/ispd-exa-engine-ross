@@ -215,7 +215,7 @@ public:
 /// \brief A derived class representing a constant workload for simulation
 ///        tasks, all generated tasks will have the same workload.
 ///
-class ConstantWorkload : public Workload {
+class ConstantWorkload final : public Workload {
   /// \brief The constant processing size to be set for all generated tasks.
   ///
   /// The `m_ConstantProcSize` member stores the constant processing size that
@@ -300,7 +300,7 @@ public:
 ///
 /// \brief A derived class representing a uniform workload for simulation tasks.
 ///
-class UniformWorkload : public Workload {
+class UniformWorkload final : public Workload {
   /// \brief The minimum processing size for generated tasks.
   double m_MinProcSize;
 
@@ -432,7 +432,7 @@ enum TwoStageDistSelector { MINIMUM = 0, MEDIUM, MAXIMUM, PROBABILITY };
 /// \class TwoStageUniformWorkload
 ///
 /// \brief A derived class representing a two-stage uniform workload.
-class TwoStageUniformWorkload : public Workload {
+class TwoStageUniformWorkload final : public Workload {
   /// \brief The two-stage uniform distribution for generate processing sizes.
   TwoStageDistribution m_ProcDist;
 
@@ -573,7 +573,7 @@ public:
 /// interface, specifically designed to represent a "null" or "empty" workload.
 /// It is used when no actual tasks need to be generated or processed, serving
 /// as a placeholder to indicate the absence of workload.
-class NullWorkload : public Workload {
+class NullWorkload final : public Workload {
 public:
   /// \brief Null Workload Constructor
   ///
