@@ -175,17 +175,18 @@ namespace ispd::routing_table {
 /// \brief The global routing table.
 ispd::routing::RoutingTable *g_RoutingTable = new ispd::routing::RoutingTable();
 
-void load(const std::string &filepath) {
+auto load(const std::string &filepath) -> void {
   /// Forward the route tabl load to the global routing table.
-  return g_RoutingTable->load(filepath);
+  g_RoutingTable->load(filepath);
 }
 
-const ispd::routing::Route *getRoute(const tw_lpid src, const tw_lpid dest) {
+auto getRoute(const tw_lpid src, const tw_lpid dest)
+    -> const ispd::routing::Route * {
   /// Forward the route query to the global routing table.
   return g_RoutingTable->getRoute(src, dest);
 }
 
-const std::uint32_t countRoutes(const tw_lpid src) {
+auto countRoutes(const tw_lpid src) -> const std::uint32_t {
   /// Forward the route couting to the global routing table.
   return g_RoutingTable->countRoutes(src);
 }
