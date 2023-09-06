@@ -277,9 +277,26 @@ public:
   /// \note This function uses Szudzik's pairing function to generate the key
   ///       based on the source and destination vertices and looks up the route
   ///       in the `m_Routes` map. It returns the corresponding `Route` object
-  ///       if found, or  throws an exception otherwise.
+  ///       if found, or throws an exception otherwise.
   [[nodiscard]] auto getRoute(const tw_lpid src, const tw_lpid dest) const
       -> const Route *;
+
+  /// \brief Retrieves the routes between the specified source and destination
+  ///        vertices from the routing table.
+  ///
+  /// \param src The source vertex (`tw_lpid`) of the desired route.
+  /// \param dest The destination vertex (`tw_lpid`) of the desired route.
+  ///
+  /// \returns A constant (read-only) reference to the vector of routes that
+  ///          connects the source and destination vertices.
+  ///
+  /// \note This function uses Szudzik's pairing function to generate the key
+  ///       based on the source and destination vertices and looks up the vector
+  ///       of routes in the `m_Routes` map. It returns the corresponding
+  ///       reference vector of routes if found, or throws an exception
+  ///       otherwise.
+  [[nodiscard]] auto getRoutes(const tw_lpid src, const tw_lpid dest) const
+      -> const std::vector<const Route *> &;
 
   /// \brief Returns the number of routes originating from the specified source
   ///        vertex.
@@ -336,6 +353,23 @@ auto load(const std::string &filepath) -> void;
 ///       if found, or throws an exception otherwise.
 auto getRoute(const tw_lpid src, const tw_lpid dest)
     -> const ispd::routing::Route *;
+
+/// \brief Retrieves the routes between the specified source and destination
+///        vertices from the routing table.
+///
+/// \param src The source vertex (`tw_lpid`) of the desired route.
+/// \param dest The destination vertex (`tw_lpid`) of the desired route.
+///
+/// \returns A constant (read-only) reference to the vector of routes that
+///          connects the source and destination vertices.
+///
+/// \note This function uses Szudzik's pairing function to generate the key
+///       based on the source and destination vertices and looks up the vector
+///       of routes in the `m_Routes` map. It returns the corresponding
+///       reference vector of routes if found, or throws an exception
+///       otherwise.
+[[nodiscard]] auto getRoutes(const tw_lpid src, const tw_lpid dest)
+    -> const std::vector<const ispd::routing::Route *> &;
 
 /// \brief Returns the number of routes originating from the specified source
 ///        vertex.

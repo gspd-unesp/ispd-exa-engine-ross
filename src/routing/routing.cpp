@@ -175,6 +175,11 @@ auto RoutingTable::getRoute(const tw_lpid src, const tw_lpid dest) const
   return m_Routes.at(szudzik(src, dest))[0];
 }
 
+auto RoutingTable::getRoutes(const tw_lpid src, const tw_lpid dest) const
+    -> const std::vector<const Route *> & {
+  return m_Routes.at(szudzik(src, dest));
+}
+
 auto RoutingTable::countRoutes(const tw_lpid src) const -> const std::uint32_t {
   const auto it = m_RoutesCounting.find(src);
   if (it == m_RoutesCounting.end())
@@ -198,6 +203,11 @@ auto getRoute(const tw_lpid src, const tw_lpid dest)
     -> const ispd::routing::Route * {
   /// Forward the route query to the global routing table.
   return g_RoutingTable->getRoute(src, dest);
+}
+
+auto getRoutes(const tw_lpid src, const tw_lpid dest)
+    -> const std::vector<const ispd::routing::Route *> & {
+  return g_RoutingTable->getRoutes(src, dest);
 }
 
 auto countRoutes(const tw_lpid src) -> const std::uint32_t {
