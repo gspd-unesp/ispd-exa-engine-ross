@@ -16,6 +16,11 @@ private:
   double m_Load;         ///< Load factor of the machine (0.0 to 1.0).
   unsigned m_CoreCount;  ///< Number of cores in the machine.
 
+  double m_GpuPowerPerCore;
+  unsigned m_GpuCoreCount;        ///< Number of GPU cores in the machine.
+  double m_InterconnectBandwidth; ///< Total interconnection bandwidth (in
+                                  ///< gigatransfer per second).
+
   double m_WattageIdle; ///< Power consumption (in watts) being idle.
   double
       m_WattageMax; ///< Power consumpttion (in watts) at maximum utilization.
@@ -31,8 +36,12 @@ public:
   /// \param coreCount Number of cores in the machine.
   [[nodiscard]] constexpr explicit MachineConfiguration(
       const double power, const double load, const unsigned coreCount,
-      const double wattageIdle = 0.0, const double wattageMax = 0.0) noexcept
+      const double gpuPower, const unsigned gpuCoreCount,
+      const double interconnectionBandwidth, const double wattageIdle,
+      const double wattageMax) noexcept
       : m_PowerPerCore(power / coreCount), m_Load(load), m_CoreCount(coreCount),
+        m_InterconnectBandwidth(interconnectionBandwidth),
+        m_GpuPowerPerCore(gpuPower / gpuCoreCount), m_GpuCoreCount(gpuCoreCount),
         m_WattageIdle(wattageIdle), m_WattageMax(wattageMax),
         m_WattagePerCore((wattageMax - wattageIdle) / coreCount) {}
 
@@ -46,8 +55,35 @@ public:
   ///
   /// \return Time required to process the task (in seconds).
   [[nodiscard]] inline double
-  timeToProcess(const double processingSize) const noexcept {
-    return processingSize / ((1.0 - m_Load) * m_PowerPerCore);
+  timeToProcess(const double processingSize, const double communicationSize,
+                const double computingOffload) const noexcept {
+    /// Caclulates the offloaded computatioanl size to the GPU and the remaining
+    /// computtational size that will be processed by the CPU.
+    const double offloadProcSize = computingOffload * processingSize;
+    const double nonOffloadedProcSize =
+        (1.0 - computingOffload) * processingSize;
+
+#define GT_TO_GBITS (10.0)
+#define GBITS_TO_MBITS (1000.0)
+
+    /// Calculates the offloaded communication size to the GPU and the time
+    /// taken to offload the copmputation (in seconds).
+    const double offloadCommSize = computingOffload * communicationSize;
+    const double offloadCommTime =
+        offloadCommSize /
+        (m_InterconnectBandwidth * GT_TO_GBITS * GBITS_TO_MBITS);
+
+#undef GT_TO_GBITS
+#undef GBITS_TO_MBITS
+
+    /// Calculates the time taken (in seconds) to process the non-offloaded
+    /// computational size and the time taken (in seconds) to process the
+    /// offloaded computational size.
+    const double nonOffloadProcTime =
+        nonOffloadedProcSize / ((1.0 - m_Load) * m_PowerPerCore);
+    const double offloadProcTime = offloadProcSize / m_GpuPowerPerCore;
+
+    return nonOffloadProcTime + offloadCommTime + offloadProcTime;
   }
 
   /// \brief Returns the total computational power (in megaflops) of the
@@ -69,6 +105,28 @@ public:
   ///
   /// \return Load factor of the machine (0.0 to 1.0).
   [[nodiscard]] inline double getLoad() const noexcept { return m_Load; }
+
+  /// \brief Returns the amount of CPU cores in this machine.
+  ///
+  /// \return The core count of the machine.
+  [[nodiscard]] inline unsigned getCoreCount() const noexcept {
+    return m_CoreCount;
+  }
+
+  /// \brief Returns the total computational power supplied by the GPU (in
+  ///        megaflops).
+  ///
+  /// \return The total computational power supplied by the GPU (in megaflops).
+  [[nodiscard]] inline unsigned getGpuPower() const noexcept {
+    return m_GpuPowerPerCore * m_GpuCoreCount;
+  }
+
+  /// \brief Returns the amount of GPU cores in this machine.
+  ///
+  /// \return The GPU core count of the machine.
+  [[nodiscard]] inline unsigned getGpuCoreCount() const noexcept {
+    return m_GpuCoreCount;
+  }
 
   /// \brief Retrieves the idle power consumption of the machine.
   ///
@@ -114,4 +172,3 @@ public:
 };
 
 } // namespace ispd::configuration
-

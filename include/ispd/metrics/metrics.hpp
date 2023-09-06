@@ -54,6 +54,9 @@ enum class NodeMetricsFlag {
   
   /// \brief The accumulation of all the CPU cores count of all machines simulated in this node.
   NODE_TOTAL_CPU_CORES,
+
+  /// \brief The accumulation of all the GPU cores count of all machines simulated in this node.
+  NODE_TOTAL_GPU_CORES,
   
   /// \brief The accumulation of the turnaround time of all completed tasks received by the masters simulated in this node.
   NODE_TOTAL_TURNAROUND_TIME,
@@ -109,6 +112,7 @@ private:
 
   double m_NodeTotalComputationalPower;         ///< Total computational power simulatted in this node.
   unsigned m_NodeTotalCpuCores;                 ///< Total count of CPU cores simulated in this node.
+  unsigned m_NodeTotalGpuCores;                 ///< Total count of GPU cores simulated in this node.
 
   double m_NodeTotalCommunicatedMBits;          ///< Total communicated MBits simulated in this node.
   double m_NodeTotalProcessedMFlops;            ///< Total processed MFLOPS simulated in this node.
@@ -174,6 +178,7 @@ private:
 
     double m_GlobalTotalComputationalPower;         ///< Total computational power across all nodes.
     unsigned m_GlobalTotalCpuCores;                 ///< Total count of CPU cores across all nodes.
+    unsigned m_GlobalTotalGpuCores;                 ///< Total count of GPU cores across all nodes.
 
     double m_GlobalTotalCommunicatedMBits;          ///< Total communicated MBits across all nodes.
     double m_GlobalTotalProcessedMFlops;            ///< Total processed MFLOPS across all nodes.

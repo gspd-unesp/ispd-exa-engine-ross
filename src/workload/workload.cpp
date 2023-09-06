@@ -6,6 +6,7 @@ namespace ispd::workload {
 
 [[nodiscard]] Workload::Workload(
     const std::string &owner, const unsigned remainingTasks,
+    const double computingOffload,
     std::unique_ptr<InterarrivalDistribution> interarrivalDist) noexcept {
   // Fetch the registered users in the simulated model.
   const auto &registeredUsers = ispd::this_model::getUsers();
@@ -20,13 +21,16 @@ namespace ispd::workload {
   m_Owner = userIterator->second.getId();
   m_RemainingTasks = remainingTasks;
   m_InterarrivalDist = std::move(interarrivalDist);
+  m_ComputingOffload = computingOffload;
 }
 
 [[nodiscard]] ConstantWorkload::ConstantWorkload(
     const std::string &user, const unsigned remainingTasks,
     const double constantProcSize, const double constantCommSize,
+    const double computingOffload,
     std::unique_ptr<InterarrivalDistribution> interarrivalDist) noexcept
-    : Workload(user, remainingTasks, std::move(interarrivalDist)),
+    : Workload(user, remainingTasks, computingOffload,
+               std::move(interarrivalDist)),
       m_ConstantProcSize(constantProcSize),
       m_ConstantCommSize(constantCommSize) {
   if (constantProcSize <= 0.0)
@@ -47,8 +51,10 @@ namespace ispd::workload {
     const std::string &user, const unsigned remainingTasks,
     const double minProcSize, const double maxProcSize,
     const double minCommSize, const double maxCommSize,
+    const double computingOffload,
     std::unique_ptr<InterarrivalDistribution> interarrivalDist) noexcept
-    : Workload(user, remainingTasks, std::move(interarrivalDist)),
+    : Workload(user, remainingTasks, computingOffload,
+               std::move(interarrivalDist)),
       m_MinProcSize(minProcSize), m_MaxProcSize(maxProcSize),
       m_MinCommSize(minCommSize), m_MaxCommSize(maxCommSize) {
   if (minProcSize <= 0.0)
@@ -77,23 +83,26 @@ namespace ispd::workload {
 }
 
 [[nodiscard]] NullWorkload::NullWorkload(const std::string &user) noexcept
-    : Workload(user, 0, nullptr) {}
+    : Workload(user, 0, 0, nullptr) {}
 
 ConstantWorkload *
 constant(const std::string &user, const unsigned remainingTasks,
          const double constantProcSize, const double constantCommSize,
+         const double computingOffload,
          std::unique_ptr<InterarrivalDistribution> interarrivalDist) {
   return new ConstantWorkload(user, remainingTasks, constantProcSize,
-                              constantCommSize, std::move(interarrivalDist));
+                              constantCommSize, computingOffload,
+                              std::move(interarrivalDist));
 }
 
 UniformWorkload *
 uniform(const std::string &user, const unsigned remainingTasks,
         const double minProcSize, const double maxProcSize,
         const double minCommSize, const double maxCommSize,
+        const double computingOffload,
         std::unique_ptr<InterarrivalDistribution> interarrivalDist) {
   return new UniformWorkload(user, remainingTasks, minProcSize, maxProcSize,
-                             minCommSize, maxCommSize,
+                             minCommSize, maxCommSize, computingOffload,
                              std::move(interarrivalDist));
 }
 

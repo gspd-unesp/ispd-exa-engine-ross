@@ -170,6 +170,8 @@ private:
     /// processing and communication sizes.
     s->workload->generateWorkload(lp->rng, m->task.m_ProcSize, m->task.m_CommSize);
 
+    m->task.m_Offload = s->workload->getComputingOffload();
+
     /// Task information specification.
     m->task.m_Origin = lp->gid;
     m->task.m_Dest = scheduled_slave_id;
