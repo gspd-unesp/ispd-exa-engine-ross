@@ -53,7 +53,8 @@ auto RoutingTable::addRoute(const tw_lpid src, const tw_lpid dest,
   m_Routes[szudzik(src, dest)].push_back(route);
 }
 
-auto RoutingTable::parseRouteLine(const std::string &routeLine, tw_lpid &src,
+auto RoutingTable::parseRouteLine(const std::string &routeLine,
+                                  const std::size_t lineNumber, tw_lpid &src,
                                   tw_lpid &dest) -> Route * {
   const std::size_t routeLineLength = routeLine.length();
   std::size_t whitespaceCount = 0;
@@ -92,9 +93,11 @@ auto RoutingTable::parseRouteLine(const std::string &routeLine, tw_lpid &src,
   try {                                                                        \
     LEFT = std::stoul(routePart);                                              \
   } catch (const std::invalid_argument &e) {                                   \
-    ispd_error(TYPENAME " vertex is not a number.");                           \
+    ispd_error(TYPENAME " vertex is not a number (Line Number: %lu).",         \
+               lineNumber);                                                    \
   } catch (const std::out_of_range &e) {                                       \
-    ispd_error(TYPENAME "vertex is out of range.");                            \
+    ispd_error(TYPENAME "vertex is out of range (Line Number: %lu).",          \
+               lineNumber);                                                    \
   }
 
     switch (stage) {
@@ -126,6 +129,7 @@ auto RoutingTable::parseRouteLine(const std::string &routeLine, tw_lpid &src,
 
 auto RoutingTable::load(const std::string &filepath) -> void {
   std::ifstream file(filepath);
+  std::size_t lineNumber = 0;
 
   /// Check if the routing file could not be opened. If so, an error
   /// indicating the case is sent and the program is immediately aborted.
@@ -143,13 +147,15 @@ auto RoutingTable::load(const std::string &filepath) -> void {
   ///
   /// in which, [<ID>] indicates one or more identifiers.
   for (std::string routeLine; std::getline(file, routeLine);) {
+    lineNumber++;
+
     /// The source and destination identifier that will be identified from
     /// the route line.
     tw_lpid src, dest;
 
     /// Parse the route line obtaining the route structure containing the
     /// route's length and the route's intermediate services identifiers.
-    Route *route = parseRouteLine(routeLine, src, dest);
+    Route *route = parseRouteLine(routeLine, lineNumber, src, dest);
 
     /// Add the route.
     addRoute(src, dest, route);

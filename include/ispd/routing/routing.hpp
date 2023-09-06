@@ -241,7 +241,8 @@ class RoutingTable {
   ///       and creates a new `Route` object to represent the route. The caller
   ///       is responsible for managing the memory of the returned `Route`
   ///       object.
-  [[nodiscard]] auto parseRouteLine(const std::string &routeLine, tw_lpid &src,
+  [[nodiscard]] auto parseRouteLine(const std::string &routeLine,
+                                    const std::size_t lineNumber, tw_lpid &src,
                                     tw_lpid &dest) -> Route *;
 
 public:
