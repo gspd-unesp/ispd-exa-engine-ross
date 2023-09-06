@@ -129,7 +129,8 @@ public:
   ///       and manage its deallocation properly. After construction, the
   ///       `Route` object will be responsible for managing the memory and will
   ///       automatically deallocate it when the object is destructed.
-  Route(std::unique_ptr<tw_lpid *> path, const std::size_t length)
+  [[nodiscard]] Route(std::unique_ptr<tw_lpid *> path,
+                      const std::size_t length) noexcept
       : m_Path(std::move(path)), m_Length(length) {}
 
   /// \brief Access the element at the specified index in the route.
