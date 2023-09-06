@@ -87,6 +87,44 @@ public:
       [[maybe_unused]] tw_rng_stream *const rng) override;
 };
 
+/// \class ExponentialInterarrivalDistribution
+/// \brief Represents a Exponential interarrival time distribution for
+///        generating event interarrival times.
+///
+/// This class implements the %InterarrivalDistribution interface to provide a
+/// Exponential interarrival time distribution. The interarrival times follow a
+/// exponential distribution with the specified lambda parameter.
+class ExponentialInterarrivalDistribution final
+    : public InterarrivalDistribution {
+private:
+  double m_Lambda; ///< The Exponential distribution lambda parameter.
+
+public:
+  /// \brief Constructor for EExponentialIntearrivalDistribution.
+  ///
+  /// \param lambda The exponential distribution lambda paramater.
+  [[nodiscard]] explicit ExponentialInterarrivalDistribution(
+      const double lambda) noexcept;
+
+  /// \brief Generates the time euntil the next event's arrival using the
+  ///        exponential intearrival distribution.
+  ///
+  /// \param rng A pointer to the logical process reversible-pseudorandom number
+  ///            generator.
+  /// \param offset A reference to a variable where the generated time offset
+  ///               will be stored
+  void generateInterarrival(tw_rng_stream *const rng, double &offset) override;
+
+  /// \brief Reverses the generation of the last interarrival time.
+  ///
+  /// This function reverses the previously generated interarrival time by
+  /// reversing the reversible-pseudorandom number generator state.
+  ///
+  /// \param rng A pointer to the logical process reversible-pseudorando number
+  ///            generator.
+  void reverseGenerateInterarrival(tw_rng_stream *const rng) override;
+};
+
 /// \class PoissonInterarrivalDistribution
 /// \brief Represents a Poisson interarrival time distribution for generating
 ///        event arrival times.
@@ -99,7 +137,7 @@ private:
   double m_Lambda; ///< The Poisson distribution lambda parameter.
 
 public:
-  /// Constructor for PoissonInterarrivalDistribution.
+  /// \brief Constructor for PoissonInterarrivalDistribution.
   ///
   /// \param lambda The Poisson distribution lambda parameter.
   [[nodiscard]] explicit PoissonInterarrivalDistribution(const double lambda);
