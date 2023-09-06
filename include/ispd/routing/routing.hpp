@@ -239,8 +239,8 @@ class RoutingTable {
   ///       and creates a new `Route` object to represent the route. The caller
   ///       is responsible for managing the memory of the returned `Route`
   ///       object.
-  Route *parseRouteLine(const std::string &routeLine, tw_lpid &src,
-                        tw_lpid &dest);
+  [[nodiscard]] Route *parseRouteLine(const std::string &routeLine,
+                                      tw_lpid &src, tw_lpid &dest);
 
 public:
   /// \brief Loads route information from the specified file and populates the
@@ -275,7 +275,8 @@ public:
   ///       based on the source and destination vertices and looks up the route
   ///       in the `m_Routes` map. It returns the corresponding `Route` object
   ///       if found, or  throws an exception otherwise.
-  const Route *getRoute(const tw_lpid src, const tw_lpid dest) const;
+  [[nodiscard]] const Route *getRoute(const tw_lpid src,
+                                      const tw_lpid dest) const;
 
   /// \brief Returns the number of routes originating from the specified source
   ///        vertex.
@@ -290,7 +291,7 @@ public:
   ///       unsigned 32-bit integer. This information is useful for sanity
   ///       checking, ensuring that the routes from a specific vertex match the
   ///       expected model built.
-  const std::uint32_t countRoutes(const tw_lpid src) const;
+  [[nodiscard]] const std::uint32_t countRoutes(const tw_lpid src) const;
 };
 
 }; // namespace ispd::routing
