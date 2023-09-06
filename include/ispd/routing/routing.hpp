@@ -154,14 +154,15 @@ public:
   ///
   /// \param index The index of the element to be accessed in the route.
   /// \return The route's element at the specified index.
-  inline tw_lpid get(const std::size_t index) const {
+  __attribute__((always_inline)) inline auto
+  get(const std::size_t index) const noexcept -> tw_lpid {
     DEBUG({
-      /// Check if the index being accessed will cause an overflow
-      /// If so, the program is immediately aborted.
-      if (index >= m_Length)
-        ispd_error(
-            "Accessing an invalid route element (Index: %zu, Length: %zu).\n",
-            index, m_Length);
+      // Check if the index being accessed will cause an overflow
+      // If so, the program is immediately aborted.
+      if (index >= m_Length) [[unlikely]]
+        ispd_error("Accessing an invalid route element index (Index: %zu, "
+                   "Route Length: %zu).",
+                   index, m_Length);
     });
 
     return (*m_Path)[index];
