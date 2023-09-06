@@ -170,7 +170,9 @@ public:
   }
 
   /// \brief Returns the route's length.
-  inline std::size_t getLength() const { return m_Length; }
+  [[nodiscard]] constexpr auto getLength() const noexcept -> std::size_t {
+    return m_Length;
+  }
 };
 
 /// \class RoutingTable
