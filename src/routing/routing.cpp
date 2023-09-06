@@ -178,7 +178,7 @@ auto RoutingTable::getRoute(const tw_lpid src, const tw_lpid dest) const
 auto RoutingTable::countRoutes(const tw_lpid src) const -> const std::uint32_t {
   const auto it = m_RoutesCounting.find(src);
   if (it == m_RoutesCounting.end())
-    ispd_error("There is no routing with source at LP with GID %lu.\n", src);
+    ispd_error("There is no routing with source at LP with GID %lu.", src);
 
   return m_RoutesCounting.at(src);
 }
