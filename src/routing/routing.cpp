@@ -14,7 +14,7 @@ namespace {
 /// parsing of a specific service identifier, namely, the source service,
 /// destination service, and route service identifiers.
 ///
-enum ParsingStage {
+enum class ParsingStage {
   /// \brief This parsing stage indicates that the source service identifier
   ///        is being parsed by the reader.
   ///
@@ -88,21 +88,32 @@ auto RoutingTable::parseRouteLine(const std::string &routeLine, tw_lpid &src,
     // letters followed by a space, new line or end of file.
     const std::string routePart = routeLine.substr(partStart, partLength);
 
+#define TRY_CATCH_PARSE(LEFT, TYPENAME)                                        \
+  try {                                                                        \
+    LEFT = std::stoul(routePart);                                              \
+  } catch (const std::invalid_argument &e) {                                   \
+    ispd_error(TYPENAME " vertex is not a number.");                           \
+  } catch (const std::out_of_range &e) {                                       \
+    ispd_error(TYPENAME "vertex is out of range.");                            \
+  }
+
     switch (stage) {
     case ParsingStage::SOURCE_VERTEX:
-      src = std::stoul(routePart);
+      TRY_CATCH_PARSE(src, "Source")
       stage = ParsingStage::DESTINATION_VERTEX;
       break;
     case ParsingStage::DESTINATION_VERTEX:
-      dest = std::stoul(routePart);
+      TRY_CATCH_PARSE(dest, "Destination")
       stage = ParsingStage::INNER_VERTEX;
       break;
     case ParsingStage::INNER_VERTEX:
-      (*path)[pathIndex++] = std::stoul(routePart);
+      TRY_CATCH_PARSE((*path)[pathIndex++], "Inner")
       break;
     default:
-      ispd_error("[Routing] Unknown parsing stage.");
+      ispd_error("Unknown parsing stage while parsing a route line.");
     }
+
+#undef TRY_CATCH_PARSE
 
     partStart = i + 1;
     partLength = 0;
@@ -118,7 +129,7 @@ auto RoutingTable::load(const std::string &filepath) -> void {
 
   /// Check if the routing file could not be opened. If so, an error
   /// indicating the case is sent and the program is immediately aborted.
-  if (!file.is_open())
+  if (!file.is_open()) [[unlikely]]
     ispd_error("Routing file %s could not be opened.", filepath.c_str());
 
   /// Read the each line from the routing file. Each line in the file
@@ -132,12 +143,9 @@ auto RoutingTable::load(const std::string &filepath) -> void {
   ///
   /// in which, [<ID>] indicates one or more identifiers.
   for (std::string routeLine; std::getline(file, routeLine);) {
-    /// The source identifier that will be identified from the route line.
-    tw_lpid src;
-
-    /// The destination identifier that will be identified from the route
-    /// line.
-    tw_lpid dest;
+    /// The source and destination identifier that will be identified from
+    /// the route line.
+    tw_lpid src, dest;
 
     /// Parse the route line obtaining the route structure containing the
     /// route's length and the route's intermediate services identifiers.
