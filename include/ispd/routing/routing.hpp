@@ -5,12 +5,26 @@
 #include <memory>
 #include <cstdint>
 #include <fstream>
+#include <numeric>
+#include <type_traits>
 #include <unordered_map>
 #include <ispd/log/log.hpp>
 
 namespace ispd::routing {
 
 namespace {
+
+/// \brief Checks if %T type can be used in Szudzik's pairing function.
+///
+/// This value is %true, if and only if, the type can be used in the
+/// Szudzik's pairing function. The restrctions are that the type must
+/// be an unsigned integer type and must not be unsigned char.
+///
+/// \tparam T Type to be checked.
+template <typename T>
+inline constexpr bool is_szudzik_type_v =
+    std::is_integral_v<T> && std::is_unsigned_v<T> &&
+    !std::is_same_v<T, unsigned char>;
 
 /// \brief Szudzik's Pairing Function
 ///
@@ -47,9 +61,25 @@ namespace {
 /// \see
 /// https://en.wikipedia.org/wiki/Pairing_function#Szudzik's_pairing_function
 ///
-static uint64_t szudzik(const uint32_t a, const uint32_t b) {
-  const auto a64 = static_cast<uint64_t>(a);
-  const auto b64 = static_cast<uint64_t>(b);
+template <typename SzudzikIn = std::uint32_t,
+          typename SzudzikOut = std::uint64_t>
+[[nodiscard]] constexpr static auto szudzik(const SzudzikIn a,
+                                            const SzudzikIn b) noexcept
+    -> SzudzikOut {
+  static_assert(std::numeric_limits<SzudzikIn>::max() *
+                        std::numeric_limits<SzudzikIn>::max() <=
+                    std::numeric_limits<SzudzikOut>::max(),
+                "SzudzikIn type may cause overflow");
+  static_assert(is_szudzik_type_v<SzudzikIn>,
+                "SzudzikIn type must be an unsigned "
+                "integer type but not a "
+                "character one.");
+  static_assert(is_szudzik_type_v<SzudzikOut>,
+                "SzudzikOut type must be an "
+                "unsigned integer type but not a "
+                "character one.");
+  const auto a64 = static_cast<SzudzikOut>(a);
+  const auto b64 = static_cast<SzudzikOut>(b);
   return a64 >= b64 ? a64 * a64 + a64 + b64 : a64 + b64 * b64;
 }
 
