@@ -214,7 +214,8 @@ class RoutingTable {
   ///       key is obtained by applying Szudzik's pairing function on the source
   ///       and destination vertex IDs. The route is then stored in the
   ///       `m_Routes` map, indexed by this unique key.
-  void addRoute(const tw_lpid src, const tw_lpid dest, const Route *route);
+  auto addRoute(const tw_lpid src, const tw_lpid dest, const Route *route)
+      -> void;
 
   /// \brief Parses a route line from the input file and extracts the source and
   ///        destination vertices.
@@ -239,8 +240,8 @@ class RoutingTable {
   ///       and creates a new `Route` object to represent the route. The caller
   ///       is responsible for managing the memory of the returned `Route`
   ///       object.
-  [[nodiscard]] Route *parseRouteLine(const std::string &routeLine,
-                                      tw_lpid &src, tw_lpid &dest);
+  [[nodiscard]] auto parseRouteLine(const std::string &routeLine, tw_lpid &src,
+                                    tw_lpid &dest) -> Route *;
 
 public:
   /// \brief Loads route information from the specified file and populates the
@@ -260,7 +261,7 @@ public:
   ///       `parseRouteLine()`, and adds the routes to the `m_Routes` map. It
   ///       also updates the `m_RoutesCounting` map to increment the count for
   ///       the corresponding source vertex.
-  void load(const std::string &filepath);
+  auto load(const std::string &filepath) -> void;
 
   /// \brief Retrieves the route between the specified source and destination
   ///        vertices from the routing table.
@@ -275,8 +276,8 @@ public:
   ///       based on the source and destination vertices and looks up the route
   ///       in the `m_Routes` map. It returns the corresponding `Route` object
   ///       if found, or  throws an exception otherwise.
-  [[nodiscard]] const Route *getRoute(const tw_lpid src,
-                                      const tw_lpid dest) const;
+  [[nodiscard]] auto getRoute(const tw_lpid src, const tw_lpid dest) const
+      -> const Route *;
 
   /// \brief Returns the number of routes originating from the specified source
   ///        vertex.
@@ -291,7 +292,8 @@ public:
   ///       unsigned 32-bit integer. This information is useful for sanity
   ///       checking, ensuring that the routes from a specific vertex match the
   ///       expected model built.
-  [[nodiscard]] const std::uint32_t countRoutes(const tw_lpid src) const;
+  [[nodiscard]] auto countRoutes(const tw_lpid src) const
+      -> const std::uint32_t;
 };
 
 }; // namespace ispd::routing
@@ -315,7 +317,7 @@ namespace ispd::routing_table {
 ///       `parseRouteLine()`, and adds the routes to the `m_Routes` map. It
 ///       also updates the `m_RoutesCounting` map to increment the count for
 ///       the corresponding source vertex.
-void load(const std::string &filepath);
+auto load(const std::string &filepath) -> void;
 
 /// \brief Retrieves the route between the specified source and destination
 ///        vertices from the routing table.
@@ -330,7 +332,8 @@ void load(const std::string &filepath);
 ///       based on the source and destination vertices and looks up the route
 ///       in the `m_Routes` map. It returns the corresponding `Route` object
 ///       if found, or throws an exception otherwise.
-const ispd::routing::Route *getRoute(const tw_lpid src, const tw_lpid dest);
+auto getRoute(const tw_lpid src, const tw_lpid dest)
+    -> const ispd::routing::Route *;
 
 /// \brief Returns the number of routes originating from the specified source
 ///        vertex.
@@ -345,7 +348,7 @@ const ispd::routing::Route *getRoute(const tw_lpid src, const tw_lpid dest);
 ///       unsigned 32-bit integer. This information is useful for sanity
 ///       checking, ensuring that the routes from a specific vertex match the
 ///       expected model built.
-const std::uint32_t countRoutes(const tw_lpid src);
+auto countRoutes(const tw_lpid src) -> const std::uint32_t;
 
 }; // namespace ispd::routing_table
 

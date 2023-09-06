@@ -41,8 +41,8 @@ enum ParsingStage {
 };
 }; // namespace
 
-void RoutingTable::addRoute(const tw_lpid src, const tw_lpid dest,
-                            const Route *route) {
+auto RoutingTable::addRoute(const tw_lpid src, const tw_lpid dest,
+                            const Route *route) -> void {
   /// It counts how many routes have been registered starting from this source
   /// vertex. This is done for the purpose of provide an early sanity check
   /// about if the routes have been registered correctly with relation to the
@@ -53,8 +53,8 @@ void RoutingTable::addRoute(const tw_lpid src, const tw_lpid dest,
   m_Routes.insert(std::make_pair(szudzik(src, dest), route));
 }
 
-Route *RoutingTable::parseRouteLine(const std::string &routeLine, tw_lpid &src,
-                                    tw_lpid &dest) {
+auto RoutingTable::parseRouteLine(const std::string &routeLine, tw_lpid &src,
+                                  tw_lpid &dest) -> Route * {
   const std::size_t routeLineLength = routeLine.length();
   std::size_t whitespaceCount = 0;
   std::size_t pathLength = 0;
@@ -113,7 +113,7 @@ Route *RoutingTable::parseRouteLine(const std::string &routeLine, tw_lpid &src,
   return new Route(std::move(path), pathLength);
 }
 
-void RoutingTable::load(const std::string &filepath) {
+auto RoutingTable::load(const std::string &filepath) -> void {
   std::ifstream file(filepath);
 
   /// Check if the routing file could not be opened. If so, an error
@@ -156,12 +156,12 @@ void RoutingTable::load(const std::string &filepath) {
   }
 }
 
-const Route *RoutingTable::getRoute(const tw_lpid src,
-                                    const tw_lpid dest) const {
+auto RoutingTable::getRoute(const tw_lpid src, const tw_lpid dest) const
+    -> const Route * {
   return m_Routes.at(szudzik(src, dest));
 }
 
-const std::uint32_t RoutingTable::countRoutes(const tw_lpid src) const {
+auto RoutingTable::countRoutes(const tw_lpid src) const -> const std::uint32_t {
   const auto it = m_RoutesCounting.find(src);
   if (it == m_RoutesCounting.end())
     ispd_error("There is no routing with source at LP with GID %lu.\n", src);
