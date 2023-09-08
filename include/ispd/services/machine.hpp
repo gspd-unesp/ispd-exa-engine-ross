@@ -472,10 +472,6 @@ private:
 
   /**
    * Forward the message to the virtual machine hosted by this machine.
-   * @param s
-   * @param bf
-   * @param msg
-   * @param lp
    */
   static void sent_to_vm(machine_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp)
   {

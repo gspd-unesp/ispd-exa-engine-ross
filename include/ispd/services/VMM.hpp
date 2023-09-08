@@ -126,8 +126,17 @@ struct VMM {
         ispd::metrics::NodeMetricsFlag::NODE_TOTAL_ALLOCATED_VMS,
         s->metrics.vm_alloc);
     //  ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_REJECTED_VMS, s->metrics.vms_rejected);
-    std::printf("allocated vms: %u \n tasks processed: %u \n", s->metrics.vm_alloc,
-                s->metrics.tasks_proc);
+    ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_COMPLETED_TASKS,
+                                     s->metrics.tasks_proc);
+    std::printf(
+        "Virtual Machine Monitor metrics (%lu)\n"
+        " - Total Vms allocated......: %u (%lu)\n"
+        " - Total Vms rejected.......: %u (%lu) \n"
+        " - Total tasks processed....: %u (%lu) \n",
+        lp->gid, s->metrics.vm_alloc,lp->gid,  s->metrics.vms_rejected, lp->gid,
+        s->metrics.tasks_proc, lp->gid
+        );
+
   }
 
 private:
@@ -181,7 +190,12 @@ private:
 
     /// send message to itself to continue allocation
     if (s->workload->getRemainingVms() > 0) {
-      tw_event *const e2 = tw_event_new(lp->gid, 0.0, lp);
+      double offset;
+
+      s->workload->generateInterarrival(lp->rng, offset);
+      tw_event *const e2 = tw_event_new(lp->gid, offset, lp);
+
+
       ispd_message *const m2 = static_cast<ispd_message *>(tw_event_data(e2));
 
       m2->type = message_type::GENERATE;
@@ -192,8 +206,7 @@ private:
   }
 
   static void schedule(VMM_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
-    for (const auto &item : s->allocated_vms)
-      ispd_debug("Avaliable vms: %lu ", item);
+
     tw_lpid vm_id =
         s->scheduler->forward_schedule(s->allocated_vms, bf, msg, lp);
 
@@ -205,7 +218,7 @@ private:
       ispd_error("There is no machine responsible for vm %u", vm_id);
     const ispd::routing::Route *route =
         ispd::routing_table::getRoute(lp->gid, dest);
-    tw_event *const e = tw_event_new(route->get(0), 3, lp);
+    tw_event *const e = tw_event_new(route->get(0), 0.0, lp);
     ispd_message *const m = static_cast<ispd_message *>(tw_event_data(e));
 
     m->type = message_type::ARRIVAL;
@@ -225,13 +238,11 @@ private:
     m->task_processed = 0;
 
     tw_event_send(e);
-    /// Checks if the there are more remaining tasks to be generated. If so, a generate message is sent to the master by itself to generate a new task.
     if (s->workload->getRemainingTasks() > 0) {
       double offset;
 
       s->workload->generateInterarrival(lp->rng, offset);
 
-      /// Send a generate message to itself.
       tw_event *const e = tw_event_new(lp->gid, offset, lp);
       ispd_message *const m = static_cast<ispd_message *>(tw_event_data(e));
 
@@ -266,7 +277,10 @@ private:
 
       if (s->metrics.vm_alloc + s->metrics.vms_rejected == s->total_vms)
       {
-        tw_event *const e2 = tw_event_new(lp->gid, 0.0, lp);
+        double offset;
+
+        s->workload->generateInterarrival(lp->rng, offset);
+        tw_event *const e2 = tw_event_new(lp->gid, offset, lp);
         ispd_message *const m2 = static_cast<ispd_message *>(tw_event_data(e2));
 
         m2->type = message_type::GENERATE;
