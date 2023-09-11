@@ -71,7 +71,7 @@ struct master {
       s->workload->generateInterarrival(lp->rng, offset);
 
       /// Send a generate message to itself.
-      tw_event *const e = tw_event_new(lp->gid, offset, lp);
+      tw_event *const e = tw_event_new(lp->gid, g_tw_lookahead + offset, lp);
       ispd_message *const m = static_cast<ispd_message *>(tw_event_data(e));
 
       m->type = message_type::GENERATE;
@@ -161,7 +161,7 @@ private:
 
     /// @Todo: This zero-delay timestamped message, could affect the conservative synchronization.
     ///        This should be changed later.
-    tw_event *const e = tw_event_new(route->get(0), 0.0, lp);
+    tw_event *const e = tw_event_new(route->get(0), g_tw_lookahead, lp);
     ispd_message *const m = static_cast<ispd_message *>(tw_event_data(e));
 
     m->type = message_type::ARRIVAL;
@@ -193,7 +193,7 @@ private:
       s->workload->generateInterarrival(lp->rng, offset);
 
       /// Send a generate message to itself.
-      tw_event *const e = tw_event_new(lp->gid, offset, lp);
+      tw_event *const e = tw_event_new(lp->gid, g_tw_lookahead + offset, lp);
       ispd_message *const m = static_cast<ispd_message *>(tw_event_data(e));
 
       m->type = message_type::GENERATE;

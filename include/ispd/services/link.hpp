@@ -151,7 +151,7 @@ struct link {
         }
     });
 
-    tw_event *const e = tw_event_new(send_to, departure_delay, lp);
+    tw_event *const e = tw_event_new(send_to, g_tw_lookahead + departure_delay, lp);
     ispd_message *const m = static_cast<ispd_message *>(tw_event_data(e));
 
     m->type = message_type::ARRIVAL;

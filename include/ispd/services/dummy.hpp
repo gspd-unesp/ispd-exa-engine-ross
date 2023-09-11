@@ -40,7 +40,7 @@ struct dummy {
     const unsigned count = 5;
 
     for (int i = 0; i < count; i++) {
-      e = tw_event_new(lp->gid, tw_rand_exponential(lp->rng, mean), lp);
+      e = tw_event_new(lp->gid, g_tw_lookahead + tw_rand_exponential(lp->rng, mean), lp);
       m = static_cast<ispd_message *>(tw_event_data(e));
 
       /// Add some information to the message.

@@ -69,6 +69,11 @@ int main(int argc, char **argv) {
   tw_opt_add(opt);
   tw_init(&argc, &argv);
 
+  // If the synchronization protocol is different from conservative then,
+  // there is no need to have a conservative lookahead different from 0.
+  if (g_tw_synchronization_protocol != CONSERVATIVE)
+    g_tw_lookahead = 0;
+
   const tw_lpid highest_machine_id = g_star_machine_amount * 2;
   const tw_lpid highest_link_id = highest_machine_id - 1;
 

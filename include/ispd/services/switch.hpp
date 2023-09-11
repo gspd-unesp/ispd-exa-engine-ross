@@ -71,7 +71,7 @@ struct Switch {
         ispd::routing_table::getRoute(msg->task.m_Origin, msg->task.m_Dest);
 
     tw_event *const e =
-        tw_event_new(route->get(msg->route_offset), commTime, lp);
+        tw_event_new(route->get(msg->route_offset), g_tw_lookahead + commTime, lp);
     ispd_message *const m = static_cast<ispd_message *>(tw_event_data(e));
 
     m->type = message_type::ARRIVAL;
