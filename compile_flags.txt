@@ -3,5 +3,5 @@
 -I
 /home/ricardo/ROSS/ROSS/core
 -I
-/usr/include/mpi.h
+/usr/include/x86_64-linux-gnu/mpi
 -std=c++17
