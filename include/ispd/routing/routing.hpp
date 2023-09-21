@@ -1,15 +1,31 @@
 #ifndef ISPD_ROUTING_HPP
 #define ISPD_ROUTING_HPP
 
+#include <ross.h>
 #include <memory>
+#include <vector>
 #include <cstdint>
 #include <fstream>
+#include <numeric>
+#include <type_traits>
 #include <unordered_map>
 #include <ispd/log/log.hpp>
 
 namespace ispd::routing {
 
 namespace {
+
+/// \brief Checks if %T type can be used in Szudzik's pairing function.
+///
+/// This value is %true, if and only if, the type can be used in the
+/// Szudzik's pairing function. The restrctions are that the type must
+/// be an unsigned integer type and must not be unsigned char.
+///
+/// \tparam T Type to be checked.
+template <typename T>
+inline constexpr bool is_szudzik_type_v =
+    std::is_integral_v<T> && std::is_unsigned_v<T> &&
+    !std::is_same_v<T, unsigned char>;
 
 /// \brief Szudzik's Pairing Function
 ///
@@ -46,9 +62,25 @@ namespace {
 /// \see
 /// https://en.wikipedia.org/wiki/Pairing_function#Szudzik's_pairing_function
 ///
-static uint64_t szudzik(const uint32_t a, const uint32_t b) {
-  const auto a64 = static_cast<uint64_t>(a);
-  const auto b64 = static_cast<uint64_t>(b);
+template <typename SzudzikIn = std::uint32_t,
+          typename SzudzikOut = std::uint64_t>
+[[nodiscard]] constexpr static auto szudzik(const SzudzikIn a,
+                                            const SzudzikIn b) noexcept
+    -> SzudzikOut {
+  static_assert(std::numeric_limits<SzudzikIn>::max() *
+                        std::numeric_limits<SzudzikIn>::max() <=
+                    std::numeric_limits<SzudzikOut>::max(),
+                "SzudzikIn type may cause overflow");
+  static_assert(is_szudzik_type_v<SzudzikIn>,
+                "SzudzikIn type must be an unsigned "
+                "integer type but not a "
+                "character one.");
+  static_assert(is_szudzik_type_v<SzudzikOut>,
+                "SzudzikOut type must be an "
+                "unsigned integer type but not a "
+                "character one.");
+  const auto a64 = static_cast<SzudzikOut>(a);
+  const auto b64 = static_cast<SzudzikOut>(b);
   return a64 >= b64 ? a64 * a64 + a64 + b64 : a64 + b64 * b64;
 }
 
@@ -98,7 +130,8 @@ public:
   ///       and manage its deallocation properly. After construction, the
   ///       `Route` object will be responsible for managing the memory and will
   ///       automatically deallocate it when the object is destructed.
-  Route(std::unique_ptr<tw_lpid *> path, const std::size_t length)
+  [[nodiscard]] Route(std::unique_ptr<tw_lpid *> path,
+                      const std::size_t length) noexcept
       : m_Path(std::move(path)), m_Length(length) {}
 
   /// \brief Access the element at the specified index in the route.
@@ -123,21 +156,24 @@ public:
   ///
   /// \param index The index of the element to be accessed in the route.
   /// \return The route's element at the specified index.
-  inline tw_lpid get(const std::size_t index) const {
+  __attribute__((always_inline)) inline auto
+  get(const std::size_t index) const noexcept -> tw_lpid {
     DEBUG({
-      /// Check if the index being accessed will cause an overflow
-      /// If so, the program is immediately aborted.
-      if (index >= m_Length)
-        ispd_error(
-            "Accessing an invalid route element (Index: %zu, Length: %zu).\n",
-            index, m_Length);
+      // Check if the index being accessed will cause an overflow
+      // If so, the program is immediately aborted.
+      if (index >= m_Length) [[unlikely]]
+        ispd_error("Accessing an invalid route element index (Index: %zu, "
+                   "Route Length: %zu).",
+                   index, m_Length);
     });
 
     return (*m_Path)[index];
   }
 
   /// \brief Returns the route's length.
-  inline std::size_t getLength() const { return m_Length; }
+  [[nodiscard]] constexpr auto getLength() const noexcept -> std::size_t {
+    return m_Length;
+  }
 };
 
 /// \class RoutingTable
@@ -157,7 +193,7 @@ class RoutingTable {
   /// \note The value associated with each key is a constant pointer to the
   ///       corresponding `Route` object, ensuring that the routes themselves
   ///       cannot be modified through this map.
-  std::unordered_map<uint64_t, const Route *> m_Routes;
+  std::unordered_map<uint64_t, std::vector<const Route *>> m_Routes;
 
   /// \brief A hash map that keeps track of the number of routes originating
   ///        from each source vertex.
@@ -179,7 +215,8 @@ class RoutingTable {
   ///       key is obtained by applying Szudzik's pairing function on the source
   ///       and destination vertex IDs. The route is then stored in the
   ///       `m_Routes` map, indexed by this unique key.
-  void addRoute(const tw_lpid src, const tw_lpid dest, const Route *route);
+  auto addRoute(const tw_lpid src, const tw_lpid dest, const Route *route)
+      -> void;
 
   /// \brief Parses a route line from the input file and extracts the source and
   ///        destination vertices.
@@ -204,8 +241,9 @@ class RoutingTable {
   ///       and creates a new `Route` object to represent the route. The caller
   ///       is responsible for managing the memory of the returned `Route`
   ///       object.
-  Route *parseRouteLine(const std::string &routeLine, tw_lpid &src,
-                        tw_lpid &dest);
+  [[nodiscard]] auto parseRouteLine(const std::string &routeLine,
+                                    const std::size_t lineNumber, tw_lpid &src,
+                                    tw_lpid &dest) -> Route *;
 
 public:
   /// \brief Loads route information from the specified file and populates the
@@ -225,7 +263,7 @@ public:
   ///       `parseRouteLine()`, and adds the routes to the `m_Routes` map. It
   ///       also updates the `m_RoutesCounting` map to increment the count for
   ///       the corresponding source vertex.
-  void load(const std::string &filepath);
+  auto load(const std::string &filepath) -> void;
 
   /// \brief Retrieves the route between the specified source and destination
   ///        vertices from the routing table.
@@ -239,8 +277,26 @@ public:
   /// \note This function uses Szudzik's pairing function to generate the key
   ///       based on the source and destination vertices and looks up the route
   ///       in the `m_Routes` map. It returns the corresponding `Route` object
-  ///       if found, or  throws an exception otherwise.
-  const Route *getRoute(const tw_lpid src, const tw_lpid dest) const;
+  ///       if found, or throws an exception otherwise.
+  [[nodiscard]] auto getRoute(const tw_lpid src, const tw_lpid dest) const
+      -> const Route *;
+
+  /// \brief Retrieves the routes between the specified source and destination
+  ///        vertices from the routing table.
+  ///
+  /// \param src The source vertex (`tw_lpid`) of the desired route.
+  /// \param dest The destination vertex (`tw_lpid`) of the desired route.
+  ///
+  /// \returns A constant (read-only) reference to the vector of routes that
+  ///          connects the source and destination vertices.
+  ///
+  /// \note This function uses Szudzik's pairing function to generate the key
+  ///       based on the source and destination vertices and looks up the vector
+  ///       of routes in the `m_Routes` map. It returns the corresponding
+  ///       reference vector of routes if found, or throws an exception
+  ///       otherwise.
+  [[nodiscard]] auto getRoutes(const tw_lpid src, const tw_lpid dest) const
+      -> const std::vector<const Route *> &;
 
   /// \brief Returns the number of routes originating from the specified source
   ///        vertex.
@@ -255,7 +311,8 @@ public:
   ///       unsigned 32-bit integer. This information is useful for sanity
   ///       checking, ensuring that the routes from a specific vertex match the
   ///       expected model built.
-  const std::uint32_t countRoutes(const tw_lpid src) const;
+  [[nodiscard]] auto countRoutes(const tw_lpid src) const
+      -> const std::uint32_t;
 };
 
 }; // namespace ispd::routing
@@ -279,7 +336,7 @@ namespace ispd::routing_table {
 ///       `parseRouteLine()`, and adds the routes to the `m_Routes` map. It
 ///       also updates the `m_RoutesCounting` map to increment the count for
 ///       the corresponding source vertex.
-void load(const std::string &filepath);
+auto load(const std::string &filepath) -> void;
 
 /// \brief Retrieves the route between the specified source and destination
 ///        vertices from the routing table.
@@ -294,7 +351,25 @@ void load(const std::string &filepath);
 ///       based on the source and destination vertices and looks up the route
 ///       in the `m_Routes` map. It returns the corresponding `Route` object
 ///       if found, or throws an exception otherwise.
-const ispd::routing::Route *getRoute(const tw_lpid src, const tw_lpid dest);
+auto getRoute(const tw_lpid src, const tw_lpid dest)
+    -> const ispd::routing::Route *;
+
+/// \brief Retrieves the routes between the specified source and destination
+///        vertices from the routing table.
+///
+/// \param src The source vertex (`tw_lpid`) of the desired route.
+/// \param dest The destination vertex (`tw_lpid`) of the desired route.
+///
+/// \returns A constant (read-only) reference to the vector of routes that
+///          connects the source and destination vertices.
+///
+/// \note This function uses Szudzik's pairing function to generate the key
+///       based on the source and destination vertices and looks up the vector
+///       of routes in the `m_Routes` map. It returns the corresponding
+///       reference vector of routes if found, or throws an exception
+///       otherwise.
+[[nodiscard]] auto getRoutes(const tw_lpid src, const tw_lpid dest)
+    -> const std::vector<const ispd::routing::Route *> &;
 
 /// \brief Returns the number of routes originating from the specified source
 ///        vertex.
@@ -309,7 +384,7 @@ const ispd::routing::Route *getRoute(const tw_lpid src, const tw_lpid dest);
 ///       unsigned 32-bit integer. This information is useful for sanity
 ///       checking, ensuring that the routes from a specific vertex match the
 ///       expected model built.
-const std::uint32_t countRoutes(const tw_lpid src);
+auto countRoutes(const tw_lpid src) -> const std::uint32_t;
 
 }; // namespace ispd::routing_table
 

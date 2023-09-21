@@ -9,7 +9,7 @@
 #include <ispd/model/builder.hpp>
 #include <ispd/metrics/metrics.hpp>
 #include <ispd/metrics/user_metrics.hpp>
-#include <ispd/services/VMM.hpp>
+#include <ispd/services/vmm.hpp>
 #include <ispd/configuration/virtual_machine.hpp>
 #include <ispd/metrics/virtual_machine_metrics.hpp>
 
@@ -17,7 +17,7 @@ namespace ispd {
 
 namespace services {
 struct VM_state {
-  ispd::metrics::virtual_machine_metrics metrics;
+  ispd::metrics::VirtualMachineMetrics metrics;
   ispd::configuration::VmConfiguration conf;
   std::vector<double> cores_free_time;
 };
@@ -50,10 +50,6 @@ struct virtual_machine {
 
     service_initializer(s);
 
-    s->metrics.m_ProcMFlops = 0;
-    s->metrics.m_Proc_Tasks = 0;
-    s->metrics.m_ProcTime += 0;
-    s->metrics.m_ProcWaitingTime = 0;
 
     ispd_debug("Virtual machine %lu has been initialized.", lp->gid);
   }
@@ -64,7 +60,7 @@ struct virtual_machine {
         "and route offset (%u).",
         lp->gid, tw_now(lp), msg->type, msg->route_offset);
 
-    const double proc_size = msg->task.proc_size;
+    const double proc_size = msg->task.m_ProcSize;
     const double proc_time = s->conf.timeToProcess(proc_size);
     unsigned core_index;
     const double least_free_time =
@@ -72,14 +68,14 @@ struct virtual_machine {
     const double waiting_delay = ROSS_MAX(0.0, least_free_time - tw_now(lp));
     const double departure_delay = waiting_delay + proc_time;
 
-    s->metrics.m_Proc_Tasks++;
+    s->metrics.m_ProcTime++;
     s->metrics.m_ProcMFlops += proc_size;
     s->metrics.m_ProcTime = proc_time;
 
     s->cores_free_time[core_index] = tw_now(lp) + departure_delay;
 
     // acknowledge message to VMM
-    tw_event *const e = tw_event_new(msg->task.origin, departure_delay, lp);
+    tw_event *const e = tw_event_new(msg->task.m_Origin, departure_delay, lp);
 
     ispd_message *const m = static_cast<ispd_message *>(tw_event_data(e));
     *m = *msg;
@@ -94,27 +90,27 @@ struct virtual_machine {
   }
 
   static void commit(VM_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
-    const double proc_size = msg->task.proc_size;
+    const double proc_size = msg->task.m_ProcSize;
     const double proc_time = s->conf.timeToProcess(proc_size);
 
     const double least_free_time = msg->saved_core_next_available_time;
     const double waiting_delay = ROSS_MAX(0.0, least_free_time - tw_now(lp));
 
     ispd::metrics::UserMetrics &userMetrics =
-        ispd::this_model::getUserById(msg->task.owner).getMetrics();
+        ispd::this_model::getUserById(msg->task.m_Owner).getMetrics();
 
     userMetrics.m_ProcTime += proc_time;
     userMetrics.m_ProcWaitingTime += waiting_delay;
     userMetrics.m_CompletedTasks++;
   }
   static void reverse(VM_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
-    const double proc_size = msg->task.proc_size;
+    const double proc_size = msg->task.m_ProcSize;
     const double proc_time = s->conf.timeToProcess(proc_size);
 
     const double least_free_time = msg->saved_core_next_available_time;
     const double waiting_delay = ROSS_MAX(0.0, least_free_time - tw_now(lp));
 
-    s->metrics.m_Proc_Tasks--;
+    s->metrics.m_ProcTasks--;
     s->metrics.m_ProcMFlops -= proc_size;
     s->metrics.m_ProcTime -= proc_time;
 
@@ -141,8 +137,6 @@ struct virtual_machine {
         ispd::metrics::NodeMetricsFlag::NODE_TOTAL_PROCESSING_WAITING_TIME,
         s->metrics.m_ProcWaitingTime);
 
-    ispd::node_metrics::notifyMetric(
-        ispd::metrics::NodeMetricsFlag::NODE_TOTAL_MACHINE_SERVICES);
 
     ispd::node_metrics::notifyMetric(
         ispd::metrics::NodeMetricsFlag::NODE_TOTAL_CPU_CORES,
@@ -159,9 +153,9 @@ struct virtual_machine {
                 " - Avg. Processing Time: %lf seconds (%lu).\n"
                 " - Idleness............: %lf%% (%lu).\n",
                 lp->gid, last_activity_time, lp->gid, s->metrics.m_ProcMFlops,
-                lp->gid, s->metrics.m_Proc_Tasks, lp->gid,
+                lp->gid, s->metrics.m_ProcTasks, lp->gid,
                 s->metrics.m_ProcTime, lp->gid,
-                s->metrics.m_ProcTime / s->metrics.m_Proc_Tasks, lp->gid,
+                s->metrics.m_ProcTime / s->metrics.m_ProcTasks, lp->gid,
                 idleness * 100, lp->gid);
   }
 };

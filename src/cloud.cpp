@@ -6,47 +6,54 @@
 #include <ispd/model/builder.hpp>
 #include <ispd/services/link.hpp>
 #include <ispd/services/dummy.hpp>
-#include <ispd/services/virtual_machine.hpp>
-#include <ispd/allocator/first_fit.hpp>
-#include <ispd/allocator/first_fit_decreasing.hpp>
 #include <ispd/services/master.hpp>
+#include <ispd/allocator/allocator.hpp>
+#include <ispd/allocator/first_fit.hpp>
 #include <ispd/services/switch.hpp>
 #include <ispd/services/machine.hpp>
+#include <ispd/services/virtual_machine.hpp>
+#include <ispd/services/vmm.hpp>
 #include <ispd/message/message.hpp>
 #include <ispd/routing/routing.hpp>
 #include <ispd/metrics/metrics.hpp>
 #include <ispd/workload/workload.hpp>
 #include <ispd/workload/interarrival.hpp>
-#include <ispd/services/VMM.hpp>
+
 static unsigned g_star_machine_amount = 10;
-static unsigned g_star_vm_amount = 13;
-static unsigned g_star_task_amount = 100;
+static unsigned g_star_task_amount = 100 + 15;
+static unsigned g_star_vm_amount = 15;
 
 tw_peid mapping(tw_lpid gid) { return (tw_peid)gid / g_tw_nlp; }
+
 
 tw_lptype lps_type[] = {
     {(init_f)ispd::services::VMM::init, (pre_run_f)NULL,
      (event_f)ispd::services::VMM::forward,
-     (revent_f)ispd::services::VMM::reverse, (commit_f)NULL,
+     (revent_f)ispd::services::VMM::reverse,
+     (commit_f)NULL,
      (final_f)ispd::services::VMM::finish, (map_f)mapping,
-     sizeof(ispd::services::VMM_state)},
+     sizeof(ispd::services::VMM)},
+
     {(init_f)ispd::services::link::init, (pre_run_f)NULL,
      (event_f)ispd::services::link::forward,
      (revent_f)ispd::services::link::reverse, (commit_f)NULL,
      (final_f)ispd::services::link::finish, (map_f)mapping,
      sizeof(ispd::services::link_state)},
+
     {(init_f)ispd::services::machine::init, (pre_run_f)NULL,
      (event_f)ispd::services::machine::forward,
      (revent_f)ispd::services::machine::reverse,
      (commit_f)ispd::services::machine::commit,
      (final_f)ispd::services::machine::finish, (map_f)mapping,
      sizeof(ispd::services::machine_state)},
+
     {(init_f)ispd::services::virtual_machine::init, (pre_run_f)NULL,
      (event_f)ispd::services::virtual_machine::forward,
      (revent_f)ispd::services::virtual_machine::reverse,
      (commit_f)ispd::services::virtual_machine::commit,
      (final_f)ispd::services::virtual_machine::finish, (map_f)mapping,
-     sizeof(ispd::services::VM_state)},
+     sizeof(ispd::services::virtual_machine)},
+
     {(init_f)ispd::services::dummy::init, (pre_run_f)NULL,
      (event_f)ispd::services::dummy::forward,
      (revent_f)ispd::services::dummy::reverse, (commit_f)NULL,
@@ -54,6 +61,8 @@ tw_lptype lps_type[] = {
      sizeof(ispd::services::dummy_state)},
     {0},
 };
+
+
 
 const tw_optdef opt[] = {
     TWOPT_GROUP("iSPD Model"),
@@ -64,22 +73,27 @@ const tw_optdef opt[] = {
     TWOPT_END(),
 };
 
-int main(int argc, char **argv) {
-  ispd::log::set_log_file(NULL);
+int main(int argc, char **argv)
+{
+  ispd::log::setOutputFile(nullptr);
 
   /// Read the routing table from a specified file.
-  ispd::routing_table::load("/home/willao/ispd-exa-engine-ross/routes.route");
+  ispd::routing_table::load("/home/willao/Área de trabalho/novo-ROSS-adaptando/ispd-exa-engine-ross/src/routes.route");
 
   tw_opt_add(opt);
   tw_init(&argc, &argv);
+
+  // If the synchronization protocol is different from conservative then,
+  // there is no need to have a conservative lookahead different from 0.
+  if (g_tw_synchronization_protocol != CONSERVATIVE)
+    g_tw_lookahead = 0;
 
   const tw_lpid highest_machine_id = g_star_machine_amount * 2;
   const tw_lpid highest_link_id = highest_machine_id - 1;
   const tw_lpid highest_vm_id = highest_machine_id + g_star_vm_amount;
 
-  /// Register the user.
   ispd::this_model::registerUser("User1", 100.0);
-  /// register vmm
+
   std::vector<tw_lpid> machines;
   std::vector<tw_lpid> vms_ids;
   std::vector<double> vms_disk;
@@ -100,30 +114,31 @@ int main(int argc, char **argv) {
   }
 
 
+
   ispd::this_model::registerVMM(
       0, std::move(vms_ids), std::move(vms_memory), std::move(vms_disk),
-      std::move(vms_cores), std::move(machines), new ispd::allocator::first_fit,
-      new ispd::scheduler::round_robin,
+      std::move(vms_cores), std::move(machines), new ispd::allocator::FirstFit,
+      new ispd::scheduler::RoundRobin,
       ispd::workload::constant(
-          "User1", g_star_task_amount, g_star_vm_amount, 100, 80,
+          "User1", g_star_task_amount, 1000, 80, 0.95,
           std::make_unique<ispd::workload::PoissonInterarrivalDistribution>(
-              0.1)));
+              0.1)), g_star_vm_amount);
 
-  /// Registers service initializers for the links.
+
   for (tw_lpid link_id = 1; link_id <= highest_link_id; link_id += 2)
     ispd::this_model::registerLink(link_id, 0, link_id + 1, 50.0, 0.0, 1.0);
 
   /// Registers serivce initializers for the machines.
   for (tw_lpid machine_id = 2; machine_id <= highest_machine_id;
        machine_id += 2)
-    ispd::this_model::registerMachine(machine_id, 20.0, 0.0, 8, 16, 100,0,0);
+    ispd::this_model::registerMachine(machine_id, 20.0, 0.0, 8, 16, 100, 50, 50, 50, 9800.0, 4096,
+                                      6.4, 0.0, 0.0);
+
 
   /// registers service initializer for the virtual machine.
   for (tw_lpid vm_id = highest_machine_id + 1; vm_id <= highest_vm_id; vm_id++)
     ispd::this_model::registerVM(vm_id, 10, 0.0,4, 4, 10 );
 
-  /// Checks if no user has been registered. If so, the program is immediately
-  /// aborted, since at least one user must be registered.
   if (ispd::this_model::getUsers().size() == 0)
     ispd_error("At least one user must be registered.");
   /// The total number of logical processes.
@@ -204,8 +219,8 @@ int main(int argc, char **argv) {
       }
     }
 
-    ispd_log(LOG_INFO, "A total of %u dummies have been created at node %d.",
-             dummy_count, g_tw_mynode);
+//    ispd_log(LOG_INFO, "A total of %u dummies have been created at node %d.",
+//             dummy_count, g_tw_mynode);
   }
   /// Sequential.
   else {

@@ -1,4 +1,4 @@
-#include <iostream> 
+#include <iostream>
 #include <memory>
 #include <ross.h>
 #include <ross-extern.h>
@@ -61,13 +61,18 @@ const tw_optdef opt[] = {
 };
 
 int main(int argc, char **argv) {
-  ispd::log::set_log_file(NULL);
+  ispd::log::setOutputFile(nullptr);
 
   /// Read the routing table from a specified file.
   ispd::routing_table::load("routes.route");
 
   tw_opt_add(opt);
   tw_init(&argc, &argv);
+
+  // If the synchronization protocol is different from conservative then,
+  // there is no need to have a conservative lookahead different from 0.
+  if (g_tw_synchronization_protocol != CONSERVATIVE)
+    g_tw_lookahead = 0;
 
   const tw_lpid highest_machine_id = g_star_machine_amount * 2;
   const tw_lpid highest_link_id = highest_machine_id - 1;
@@ -82,9 +87,11 @@ int main(int argc, char **argv) {
     slaves.emplace_back(machine_id);
 
   ispd::this_model::registerMaster(
-      0, std::move(slaves), new ispd::scheduler::round_robin,
-      ispd::workload::constant("User1", g_star_task_amount, 1000.0, 80.0,
-        std::make_unique<ispd::workload::PoissonInterarrivalDistribution>(0.1)));
+      0, std::move(slaves), new ispd::scheduler::RoundRobin,
+      ispd::workload::constant(
+          "User1", g_star_task_amount, 1000.0, 80.0, 0.95,
+          std::make_unique<ispd::workload::PoissonInterarrivalDistribution>(
+              0.1)));
 
   /// Registers service initializers for the links.
   for (tw_lpid link_id = 1; link_id <= highest_link_id; link_id += 2)
@@ -93,16 +100,16 @@ int main(int argc, char **argv) {
   /// Registers serivce initializers for the machines.
   for (tw_lpid machine_id = 2; machine_id <= highest_machine_id;
        machine_id += 2)
-    ispd::this_model::registerMachine(machine_id, 20.0, 0.0, 8,0,0);
+    ispd::this_model::registerMachine(machine_id, 20.0, 0.0, 8, 9800.0, 4096,
+                                      6.4, 0.0, 0.0);
 
-  /// Checks if no user has been registered. If so, the program is immediately aborted,
-  /// since at least one user must be registered.
+  /// Checks if no user has been registered. If so, the program is immediately
+  /// aborted, since at least one user must be registered.
   if (ispd::this_model::getUsers().size() == 0)
     ispd_error("At least one user must be registered.");
 
   /// The total number of logical processes.
   const unsigned nlp = g_star_machine_amount * 2 + 1;
-
 
   /// Distributed.
   if (tw_nnodes() > 1) {
@@ -168,8 +175,8 @@ int main(int argc, char **argv) {
       }
     }
 
-    ispd_log(LOG_INFO, "A total of %u dummies have been created at node %d.",
-             dummy_count, g_tw_mynode);
+    ispd_info("A total of %u dummies have been created at node %d.",
+              dummy_count, g_tw_mynode);
   }
   /// Sequential.
   else {

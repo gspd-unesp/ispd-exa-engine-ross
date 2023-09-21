@@ -46,6 +46,7 @@ enum class NodeMetricsFlag {
   /// \brief The count of how many switches have been simulated in this node.
   NODE_TOTAL_SWITCH_SERVICES,
 
+
   /// \brief The count of how many completed tasks have been received by the masters simulated by this node.
   NODE_TOTAL_COMPLETED_TASKS,
 
@@ -54,6 +55,9 @@ enum class NodeMetricsFlag {
   
   /// \brief The accumulation of all the CPU cores count of all machines simulated in this node.
   NODE_TOTAL_CPU_CORES,
+
+  /// \brief The accumulation of all the GPU cores count of all machines simulated in this node.
+  NODE_TOTAL_GPU_CORES,
   
   /// \brief The accumulation of the turnaround time of all completed tasks received by the masters simulated in this node.
   NODE_TOTAL_TURNAROUND_TIME,
@@ -64,11 +68,17 @@ enum class NodeMetricsFlag {
   /// \brief The accumulation of the total power consumption of all services in this node while being idle.
   NODE_TOTAL_POWER_IDLE,
 
-  /// \brief Totality of virtual machines allocated in the simulation
+  /// \brief The totality of virtual machines allocated in the simulation.
   NODE_TOTAL_ALLOCATED_VMS,
 
-  /// \brief Totality of virtual machines rejected in the simulation
+  /// \brief The totality of virtual machines rejected in the simulation.
   NODE_TOTAL_REJECTED_VMS,
+
+  NODE_TOTAL_CPU_COST,
+
+  NODE_TOTAL_MEMORY_COST,
+
+  NODE_TOTAL_DISK_SPACE_COST,
 
   /// \brief The simulation time in this node.
   NODE_SIMULATION_TIME,
@@ -97,6 +107,19 @@ enum class NodeMetricsFlag {
   
   /// \brief The accumulation of the real time taken (ns) to reverse the process of an event in a switch.
   NODE_SWITCH_REVERSE_TIME,
+
+  /// \brief The accumulation of the real time taken (ns) to process forwarding an event in a virtual machine.
+  NODE_VM_FORWARD_TIME,
+
+  /// \brief The accumulation of the real time taken (ns) to reverse the process of an event in a virtual machine
+  NODE_VM_REVERSE_TIME,
+
+  /// \brief The accumulation of the real time taken (ns) to process forwarding an event in a virtual machine monitor.
+  NODE_VMM_FORWARD_TIME,
+
+  /// \brief The accumulation of the real time taken(ns) to reverse the process of an event in a virtual machine monitor.
+  NODE_VMM_REVERSE_TIME
+
 #endif // DEBUG_ON
 };
 
@@ -112,10 +135,12 @@ private:
   unsigned m_NodeTotalMachineServices;          ///< Total count of machine services simulated in this node.
   unsigned m_NodeTotalSwitchServices;           ///< Total count of switch services simulated in this node.
   unsigned m_NodeTotalCompletedTasks;           ///< Total count of completed tasks simulated in this node.
-  unsigned m_NodeTotalAllocatedVms;             ///< Total count of virtual machines allocated by a VMM
-  unsigned m_NodeTotalRejectedVms;              ///< Total count of virtual machines rejected.
+  unsigned m_NodeTotalAllocatedVms;             ///< Total count of virtual machines simulated in this node.
+  unsigned m_NodeTotalRejectedVms;              ///< Total count of rejected virtual machines simulated in this node.
+
   double m_NodeTotalComputationalPower;         ///< Total computational power simulatted in this node.
   unsigned m_NodeTotalCpuCores;                 ///< Total count of CPU cores simulated in this node.
+  unsigned m_NodeTotalGpuCores;                 ///< Total count of GPU cores simulated in this node.
 
   double m_NodeTotalCommunicatedMBits;          ///< Total communicated MBits simulated in this node.
   double m_NodeTotalProcessedMFlops;            ///< Total processed MFLOPS simulated in this node.
@@ -128,6 +153,10 @@ private:
   double m_NodeTotalPowerIdle;                  ///< Total idle power consumption from the services in this node.
   double m_NodeSimulationTime;                  ///< The highest last activity time of a service center simulated in this node.
 
+
+  double m_NodeTotalCpuCost;                   ///< Total CPU cost in this node.
+  double m_NodeTotalMemoryCost;                ///< Total memory cost in this node.
+  double m_NodeTotalDiskCost;                  ///< Total disk space cost in this node.
 #ifdef DEBUG_ON
   std::unordered_map<ispd::services::ServiceType, double> m_NodeTotalForwardTime;
   std::unordered_map<ispd::services::ServiceType, uint64_t> m_NodeTotalForwardEventsCount;
@@ -178,10 +207,11 @@ private:
     unsigned m_GlobalTotalMachineServices;          ///< Total count of machine services across all nodes.
     unsigned m_GlobalTotalSwitchServices;           ///< Total count of switch services across all nodes.
     unsigned m_GlobalTotalCompletedTasks;           ///< Total count of completed tasks across all nodes.
-    unsigned m_GlobalTotalAllocatedVms;             ///< Total count of virtual machines allocated by a VMM
-    unsigned m_GlobalTotalRejectedVms;              ///< Total count of virtual machines rejected.
+    unsigned m_GlobalTotalAllocatedVms;             ///< Total count of virtual machines allocated across all nodes.
+
     double m_GlobalTotalComputationalPower;         ///< Total computational power across all nodes.
     unsigned m_GlobalTotalCpuCores;                 ///< Total count of CPU cores across all nodes.
+    unsigned m_GlobalTotalGpuCores;                 ///< Total count of GPU cores across all nodes.
 
     double m_GlobalTotalCommunicatedMBits;          ///< Total communicated MBits across all nodes.
     double m_GlobalTotalProcessedMFlops;            ///< Total processed MFLOPS across all nodes.
@@ -193,6 +223,11 @@ private:
     double m_GlobalTotalNonIdleEnergyConsumption;   ///< Total non idle energy consumption across all nodes.
     double m_GlobalTotalPowerIdle;                  ///< Total power idle across all nodes.
     double m_GlobalSimulationTime;                  ///< Total simulation time.
+
+
+    double m_GlobalTotalCpuCost;                    ///< Total cpu cost across all machines.
+    double m_GlobalTotalMemoryCost;                 ///< Total memory cost across all machines.
+    double m_GlobalTotalDiskSpaceCost;              ///< Total disk space cost across all machines.
 
     std::unordered_map<ispd::model::User::uid_t, ispd::metrics::UserMetrics> m_GlobalUserMetrics; ///< Total user metrics.
 #ifdef DEBUG_ON

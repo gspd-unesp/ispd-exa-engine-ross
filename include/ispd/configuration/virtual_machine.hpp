@@ -1,78 +1,74 @@
 #pragma once
 
-namespace ispd::configuration{
+namespace ispd::configuration {
+/// \class VmConfiguration
+///
+/// \brief Represents the configuration of a virtual machine in the simulation
+///
+/// The VmConfiguration encapsulates various parameters related to the configuration of a virtual machine in the simulation environment and provides methods for obtaining information.
 
-/**
- * \class VmConfiguration
- *
- * \brief Represents the configuration of a virtual machine in the simulation
- *
- * Encapsulates various parameters related to the virtual machine configuration
- * in the simulation and provides methods for calculating the process time and
- * obtain more information.
- */
+class VmConfiguration final {
 
-class VmConfiguration final{
 private:
-  double m_PowerPerCore; ///< computational power in megaflops
-  double m_Load;         ///< load factor, between 0 and 1
-  unsigned m_CoreCount;
-  double m_AvaliableMemory;
-  double m_AvaliableStorage;
+  double m_PowerPerCore; ///< computational power in megaflops.
+  double m_Load;         ///< load factor of the virtual machine  (0.0 to 1.0).
+  unsigned m_CoreCount;  ///< Number of cores in this virtual machine.
+
+  double m_Memory;    ///< Memory of this virtual machine (GB).
+  double m_DiskSpace; ///< Disk space of this virtual machine (GB).
 
 public:
-  /**
-   * \brief Constructor for virtual machine class.
-   * @param power
-   * @param load
-   * @param coreCount
-   * @param avaliableMemory
-   * @param avaliableStorage
-   */
-  explicit VmConfiguration(const double power, const double load, const double
-                           coreCount, const double avaliableMemory,
-                           const double avaliableStorage):
-  m_PowerPerCore(power/coreCount), m_Load(load), m_CoreCount(coreCount),
-  m_AvaliableMemory(avaliableMemory), m_AvaliableStorage(avaliableStorage){}
+  /// \brief Constructor for VmConfiguration
+  ///
+  /// Initializes a new instance of VmConfiguration class with the provided parameters. \param power \param load \param coreCount \param memory \param diskSpace
 
-  /**
- * @brief Calculates and returns the time to process a given size of processing
- *
- * This function calculates the time to process a given size using the formula:
- * processingSize/((1.0 - m_Load) * m_PowerPerCore)
- *
- * @param processingSize The size of the processing to be carried out.
- * @return The time required to process the given size.
-   */
-  inline double timeToProcess(const double processingSize){
-    return processingSize/((1.0 - m_Load) * m_PowerPerCore);
+  [[nodiscard]] constexpr explicit VmConfiguration(
+      const double power, const double load, const unsigned coreCount,
+      const double memory, const double diskSpace) noexcept
+      : m_PowerPerCore(power / coreCount), m_Load(load), m_CoreCount(coreCount),
+        m_Memory(memory), m_DiskSpace(diskSpace) {}
+
+  /// \brief Calculates and returns the time to process given a processingSize
+  ///
+  /// Calculates and returns the time required to process a given processing size.
+  ///
+  /// \param processingSize The size of the processing to be carried out.
+  /// \return The time required to process the given size.
+  [[nodicard]] inline double timeToProcess(const double processingSize) {
+    return processingSize / (1.0 - m_Load) * m_PowerPerCore;
   }
 
-  // Getter for m_PowerPerCore
-  double GetPowerPerCore() const {
-    return m_PowerPerCore;
+  /// \brief Returns the total computational power (in megaflops)
+  /// of the machine.
+  ///
+  /// \return Total computational power of the machine (in megaflops).
+  [[nodiscard]] inline double getPower() const noexcept {
+    return m_PowerPerCore * m_CoreCount;
   }
 
-  // Getter for m_Load
-  double GetLoad() const {
-    return m_Load;
-  }
+  /// \brief Returns the load factor of the machine.
+  /// \return Load Factor of the machine (0.0 to 1.0).
+  [[nodiscard]] inline double getLoad() const noexcept { return m_Load; }
 
-  // Getter for m_CoreCount
-  unsigned GetCoreCount() const {
+  ///  \brief Returns the amount of CPU cores in this machine.
+  /// \return amount of cpu cores.
+  [[nodiscard]] inline unsigned getCoreCount() const noexcept {
     return m_CoreCount;
   }
 
-  // Getter for m_AvaliableMemory
-  double GetAvaliableMemory() const {
-    return m_AvaliableMemory;
+
+  /// \brief Returns the amount of memory in this machine.
+  /// return amount of memory in GB.
+  [[nodiscard]] inline double getMemory() const noexcept {
+    return m_Memory;
   }
 
-  // Getter for m_AvaliableStorage
-  double GetAvaliableStorage() const {
-    return m_AvaliableStorage;
-  }
 
+  /// \brief Returns the amount of disk space in this machine.
+  /// return amount of disk space in GB.
+  [[nodiscard]] inline double getDiskSpace() const noexcept{
+    return m_DiskSpace;
+  }
 
 
 

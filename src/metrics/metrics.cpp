@@ -29,6 +29,8 @@ void NodeMetricsCollector::reportNodeUserMetrics() {
     REDUCE_USER_METRIC(MPI_SUM, MPI_DOUBLE, m_EnergyConsumption, "energy consumption");
     REDUCE_USER_METRIC(MPI_SUM, MPI_UNSIGNED, m_IssuedTasks, "issued tasks");
     REDUCE_USER_METRIC(MPI_SUM, MPI_UNSIGNED, m_CompletedTasks, "completed tasks");
+    REDUCE_USER_METRIC(MPI_SUM, MPI_UNSIGNED, m_CompletedAllocations, "completed allocations");
+    REDUCE_USER_METRIC(MPI_SUM, MPI_UNSIGNED, m_IssuedAllocations, "issued allocations");
 
     #undef REDUCE_USER_METRIC
   }
@@ -80,7 +82,18 @@ void NodeMetricsCollector::notifyMetric(const NodeMetricsFlag flag, const double
       /// Updates simulation time.
       m_NodeSimulationTime = std::max(m_NodeSimulationTime, value);
       break;
-
+    case NodeMetricsFlag::NODE_TOTAL_CPU_COST:
+      /// updates the total cpu cost.
+      m_NodeTotalCpuCost += value;
+      break;
+    case NodeMetricsFlag::NODE_TOTAL_DISK_SPACE_COST:
+      /// Updates the total disk space cost;
+      m_NodeTotalDiskCost += value;
+      break;
+    case NodeMetricsFlag::NODE_TOTAL_MEMORY_COST:
+      /// Updates the total memory cost.
+      m_NodeTotalMemoryCost += value;
+      break;
 #ifdef DEBUG_ON
     case NodeMetricsFlag::NODE_MASTER_FORWARD_TIME:
       /// Updates the total forward time and forward events count by the master.
@@ -122,6 +135,28 @@ void NodeMetricsCollector::notifyMetric(const NodeMetricsFlag flag, const double
       m_NodeTotalReverseTime[ispd::services::ServiceType::SWITCH] += value;
       m_NodeTotalReverseEventsCount[ispd::services::ServiceType::SWITCH]++;
       break;
+    case NodeMetricsFlag::NODE_VM_FORWARD_TIME:
+      /// Updates the total forward time an forward events count by the vm.
+      m_NodeTotalForwardTime[ispd::services::ServiceType::VM] += value;
+      m_NodeTotalForwardEventsCount[ispd::services::ServiceType::VM]++;
+      break;
+    case NodeMetricsFlag::NODE_VM_REVERSE_TIME:
+      /// Upates the total reverse time and reverse events count by the vm.
+      m_NodeTotalReverseTime[ispd::services::ServiceType::VM] += value;
+      m_NodeTotalReverseEventsCount[ispd::services::ServiceType::VM]++;
+      break;
+    case NodeMetricsFlag::NODE_VMM_FORWARD_TIME:
+      /// Updates the total forward time an forward events count by the vm.
+      m_NodeTotalForwardTime[ispd::services::ServiceType::VMM] += value;
+      m_NodeTotalForwardEventsCount[ispd::services::ServiceType::VMM]++;
+      break;
+    case NodeMetricsFlag::NODE_VMM_REVERSE_TIME:
+      /// Upates the total reverse time and reverse events count by the vm.
+      m_NodeTotalReverseTime[ispd::services::ServiceType::VMM] += value;
+      m_NodeTotalReverseEventsCount[ispd::services::ServiceType::VMM]++;
+          break;
+
+
 #endif // DEBUG_ON
     default:
       ispd_error("Unknown node metrics flag (%d) or incorrect argument type.", flag);
@@ -135,15 +170,18 @@ void NodeMetricsCollector::notifyMetric(const enum NodeMetricsFlag flag, const u
       /// Updates total completed tasks.
       m_NodeTotalCompletedTasks += value;
       break;
+    case NodeMetricsFlag::NODE_TOTAL_ALLOCATED_VMS:
+      /// Updates total of virtual machines allocated in the simulation
+      m_NodeTotalAllocatedVms += value;
+      break;
     case NodeMetricsFlag::NODE_TOTAL_CPU_CORES:
       /// Updates the total CPU cores.
       m_NodeTotalCpuCores += value;
       break;
-    case NodeMetricsFlag::NODE_TOTAL_ALLOCATED_VMS:
-      m_NodeTotalAllocatedVms += value;
+    case NodeMetricsFlag::NODE_TOTAL_GPU_CORES:
+      /// Updates the total GPU cores.
+      m_NodeTotalGpuCores += value;
       break;
-    case NodeMetricsFlag::NODE_TOTAL_REJECTED_VMS:
-      m_NodeTotalRejectedVms += value;
     default:
       ispd_error("Unknown node metrics flag (%d) or it may be the case the flag is correct but the argument is not of the required type.", flag);
   }
@@ -215,9 +253,7 @@ void NodeMetricsCollector::reportNodeMetrics() {
   /// Report to the master node the total completed tasks.
   if (MPI_SUCCESS != MPI_Reduce(&m_NodeTotalCompletedTasks, &gmc->m_GlobalTotalCompletedTasks, 1, MPI_UNSIGNED, MPI_SUM, 0, MPI_COMM_ROSS))
     ispd_error("Global total completed tasks could not be reduced, exiting...");
-  if(MPI_SUCCESS != MPI_Reduce(&m_NodeTotalAllocatedVms, &gmc->m_GlobalTotalAllocatedVms, 1, MPI_UNSIGNED, MPI_SUM, 0, MPI_COMM_ROSS))
-    ispd_error("Global total allocated vms could not be reduced, exiting...");
-  if(MPI_SUCCESS != MPI_Reduce(&m_NodeTotalRejectedVms, &gmc->m_GlobalTotalRejectedVms, 1, MPI_UNSIGNED, MPI_SUM, 0, MPI_COMM_ROSS))
+
   /// Report to the master node the total computational power.
   if (MPI_SUCCESS != MPI_Reduce(&m_NodeTotalComputationalPower, &gmc->m_GlobalTotalComputationalPower, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_ROSS))
     ispd_error("Global total computational power could not be reduced, exiting...");
@@ -225,6 +261,11 @@ void NodeMetricsCollector::reportNodeMetrics() {
   /// Report to the master node the total CPU cores.
   if (MPI_SUCCESS != MPI_Reduce(&m_NodeTotalCpuCores, &gmc->m_GlobalTotalCpuCores, 1, MPI_UNSIGNED, MPI_SUM, 0, MPI_COMM_ROSS))
     ispd_error("Global total cpu cores could not be reduced, exiting...");
+
+  /// Report to the master node the total GPU cores.
+  if (MPI_SUCCESS != MPI_Reduce(&m_NodeTotalGpuCores, &gmc->m_GlobalTotalGpuCores, 1, MPI_UNSIGNED, MPI_SUM, 0, MPI_COMM_ROSS))
+    ispd_error("Global total gpu cores could not be reduced, exiting...");
+
 
   /// Report to the master node the processing time.
   if (MPI_SUCCESS != MPI_Reduce(&m_NodeTotalProcessingTime, &gmc->m_GlobalTotalProcessingTime, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_ROSS))
@@ -245,6 +286,16 @@ void NodeMetricsCollector::reportNodeMetrics() {
   /// Report to the master node the power idle.
   if (MPI_SUCCESS != MPI_Reduce(&m_NodeTotalPowerIdle, &gmc->m_GlobalTotalPowerIdle, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_ROSS))
     ispd_error("Global total power idle could not be reduced, exiting...");
+
+  /// Report to the vmm the information about the virtual machine process.
+  if(MPI_SUCCESS != MPI_Reduce(&m_NodeTotalAllocatedVms, &gmc->m_GlobalTotalAllocatedVms, 1, MPI_UNSIGNED, MPI_SUM, 0, MPI_COMM_ROSS))
+    ispd_error("Global total number of allocated vms could not be reduced, exiting... ");
+  if(MPI_SUCCESS != MPI_Reduce(&m_NodeTotalCpuCost, &gmc->m_GlobalTotalCpuCost, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_ROSS))
+    ispd_error("Global total cpu cost could not be reduced, exiting...");
+  if(MPI_SUCCESS != MPI_Reduce(&m_NodeTotalMemoryCost, &gmc->m_GlobalTotalMemoryCost, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_ROSS))
+    ispd_error("Global total memory cost could not be reduced, exiting...");
+  if(MPI_SUCCESS != MPI_Reduce(&m_NodeTotalDiskCost, &gmc->m_GlobalTotalDiskSpaceCost, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_ROSS))
+    ispd_error("Global total disk space cost could not be reduced, exiting...");
 
 #ifdef DEBUG_ON
   for (const auto& serviceType : ispd::services::g_ServiceTypes) {
@@ -313,45 +364,48 @@ void GlobalMetricsCollector::reportGlobalMetrics() {
   const double avgPower = totalEnergyConsumption / m_GlobalSimulationTime;
   const double energyEfficiency = maxComputationalPower / avgPower;
 
-  ispd_log(LOG_INFO, "");
-  ispd_log(LOG_INFO, "Global Simulation Time...........: %lf seconds.", m_GlobalSimulationTime);
-  ispd_log(LOG_INFO, "");
-  ispd_log(LOG_INFO, "Total Metrics");
-  ispd_log(LOG_INFO, " Total Processed MFLOPS..........: %lf MFLOPS.", m_GlobalTotalProcessedMFlops);
-  ispd_log(LOG_INFO, " Total Communicated MBits........: %lf MBits.", m_GlobalTotalCommunicatedMBits);
-  ispd_log(LOG_INFO, " Total Processing Waiting Time...: %lf seconds.", m_GlobalTotalProcessingWaitingTime);
-  ispd_log(LOG_INFO, " Total Communication Waiting Time: %lf seconds.", m_GlobalTotalCommunicationWaitingTime);
-  ispd_log(LOG_INFO, " Total Master Services...........: %u services.", m_GlobalTotalMasterServices);
-  ispd_log(LOG_INFO, " Total Link Services.............: %u services.", m_GlobalTotalLinkServices);
-  ispd_log(LOG_INFO, " Total Machine Services..........: %u services.", m_GlobalTotalMachineServices);
-  ispd_log(LOG_INFO, " Total Switch Services...........: %u services.", m_GlobalTotalSwitchServices);
-  ispd_log(LOG_INFO, " Total Completed Tasks...........: %u tasks.", m_GlobalTotalCompletedTasks);
-  ispd_log(LOG_INFO, " Total allocated vms.............: %u vms.", m_GlobalTotalAllocatedVms);
-  ispd_log(LOG_INFO, " Total rejected vms.............: %u vms.", m_GlobalTotalRejectedVms);
-  ispd_log(LOG_INFO, "");
-  ispd_log(LOG_INFO, "Average Metrics");
-  ispd_log(LOG_INFO, " Avg. Processing Time............: %lf seconds.", avgProcessingTime);
-  ispd_log(LOG_INFO, " Avg. Processing Waiting Time....: %lf seconds.", avgProcessingWaitingTime);
-  ispd_log(LOG_INFO, " Avg. Communication Time.........: %lf seconds.", avgCommunicationTime);
-  ispd_log(LOG_INFO, " Avg. Communication Waiting Time.: %lf seconds.", avgCommunicationWaitingTime);
-  ispd_log(LOG_INFO, " Avg. Turnaround Time............: %lf seconds.", avgTotalTurnaroundTime);
-  ispd_log(LOG_INFO, "");
-  ispd_log(LOG_INFO, "System Metrics");
-  ispd_log(LOG_INFO, "");
-  ispd_log(LOG_INFO, " Processing-related metrics");
-  ispd_log(LOG_INFO, "  Peak Computational Power........: %lf MFLOPS.", m_GlobalTotalComputationalPower);
-  ispd_log(LOG_INFO, "  Max. Computational Power........: %lf MFLOPS.", maxComputationalPower);
-  ispd_log(LOG_INFO, "  Efficiency......................: %lf%%.", efficiency * 100.0);
-  ispd_log(LOG_INFO, "");
-  ispd_log(LOG_INFO, " Energy-related metrics");
-  ispd_log(LOG_INFO, "  Energy Consumption..............: %lf J.", totalEnergyConsumption);
-  ispd_log(LOG_INFO, "  Energy Efficiency...............: %lf MFLOPS/W.", energyEfficiency);
-  ispd_log(LOG_INFO, "  Avg. Power......................: %lf W.", avgPower);
-  ispd_log(LOG_INFO, "  Idle Power......................: %lf W.", m_GlobalTotalPowerIdle);
-  ispd_log(LOG_INFO, "");
-  ispd_log(LOG_INFO, " Total CPU Cores.................: %u cores.", m_GlobalTotalCpuCores);
-  ispd_log(LOG_INFO, "");
-  ispd_log(LOG_INFO, "User Metrics");
+  ispd_info("");
+  ispd_info("Global Simulation Time...........: %lf seconds.", m_GlobalSimulationTime);
+  ispd_info("");
+  ispd_info("Total Metrics");
+  ispd_info(" Total Processed MFLOPS..........: %lf MFLOPS.", m_GlobalTotalProcessedMFlops);
+  ispd_info(" Total Communicated MBits........: %lf MBits.", m_GlobalTotalCommunicatedMBits);
+  ispd_info(" Total Processing Waiting Time...: %lf seconds.", m_GlobalTotalProcessingWaitingTime);
+  ispd_info(" Total Communication Waiting Time: %lf seconds.", m_GlobalTotalCommunicationWaitingTime);
+  ispd_info(" Total Master Services...........: %u services.", m_GlobalTotalMasterServices);
+  ispd_info(" Total Link Services.............: %u services.", m_GlobalTotalLinkServices);
+  ispd_info(" Total Machine Services..........: %u services.", m_GlobalTotalMachineServices);
+  ispd_info(" Total Switch Services...........: %u services.", m_GlobalTotalSwitchServices);
+  ispd_info(" Total Completed Tasks...........: %u tasks.", m_GlobalTotalCompletedTasks);
+  ispd_info(" Total virtual machines allocated: %u vms. ", m_GlobalTotalAllocatedVms);
+  ispd_info(" Total cpu cost..................: %lf $. ", m_GlobalTotalCpuCost);
+  ispd_info(" Total memory cost..................: %lf $. ", m_GlobalTotalMemoryCost);
+  ispd_info(" Total disk space cost..................: %lf $. ", m_GlobalTotalDiskSpaceCost);
+  ispd_info("");
+  ispd_info("Average Metrics");
+  ispd_info(" Avg. Processing Time............: %lf seconds.", avgProcessingTime);
+  ispd_info(" Avg. Processing Waiting Time....: %lf seconds.", avgProcessingWaitingTime);
+  ispd_info(" Avg. Communication Time.........: %lf seconds.", avgCommunicationTime);
+  ispd_info(" Avg. Communication Waiting Time.: %lf seconds.", avgCommunicationWaitingTime);
+  ispd_info(" Avg. Turnaround Time............: %lf seconds.", avgTotalTurnaroundTime);
+  ispd_info("");
+  ispd_info("System Metrics");
+  ispd_info("");
+  ispd_info(" Processing-related metrics");
+  ispd_info("  Peak Computational Power........: %lf MFLOPS.", m_GlobalTotalComputationalPower);
+  ispd_info("  Max. Computational Power........: %lf MFLOPS.", maxComputationalPower);
+  ispd_info("  Efficiency......................: %lf%%.", efficiency * 100.0);
+  ispd_info("");
+  ispd_info(" Energy-related metrics");
+  ispd_info("  Energy Consumption..............: %lf J.", totalEnergyConsumption);
+  ispd_info("  Energy Efficiency...............: %lf MFLOPS/W.", energyEfficiency);
+  ispd_info("  Avg. Power......................: %lf W.", avgPower);
+  ispd_info("  Idle Power......................: %lf W.", m_GlobalTotalPowerIdle);
+  ispd_info("");
+  ispd_info(" Total CPU Cores.................: %u cores.", m_GlobalTotalCpuCores);
+  ispd_info(" Total GPU Cores.................: %u cores.", m_GlobalTotalGpuCores);
+  ispd_info("");
+  ispd_info("User Metrics");
   
   for (const auto& [id, userMetrics] : m_GlobalUserMetrics) {
     const double userAvgProcTime = userMetrics.m_ProcTime / userMetrics.m_IssuedTasks;
@@ -360,20 +414,21 @@ void GlobalMetricsCollector::reportGlobalMetrics() {
     const double userAvgCommWaitingTime = userMetrics.m_CommWaitingTime / userMetrics.m_IssuedTasks;
 
 
-    ispd_log(LOG_INFO, "");
-    ispd_log(LOG_INFO, " %s", ispd::this_model::getUserById(id).getName().c_str());
-    ispd_log(LOG_INFO, "  Avg. Processing Time...........: %lf seconds.", userAvgProcTime);
-    ispd_log(LOG_INFO, "  Avg. Processing Waiting Time...: %lf seconds.", userAvgProcWaitingTime);
-    ispd_log(LOG_INFO, "  Avg. Communication Time........: %lf seconds.", userAvgCommTime);
-    ispd_log(LOG_INFO, "  Avg. Communication Waiting Time: %lf seconds.", userAvgCommWaitingTime);
-    ispd_log(LOG_INFO, "  Issued Tasks...................: %u tasks.", userMetrics.m_IssuedTasks);
-    ispd_log(LOG_INFO, "  Completed Tasks................: %u tasks.", userMetrics.m_CompletedTasks);
-    ispd_log(LOG_INFO, "  Energy Consumption.............: %lf J.", userMetrics.m_EnergyConsumption);
+    ispd_info("");
+    ispd_info(" %s", ispd::this_model::getUserById(id).getName().c_str());
+    ispd_info("  Avg. Processing Time...........: %lf seconds.", userAvgProcTime);
+    ispd_info("  Avg. Processing Waiting Time...: %lf seconds.", userAvgProcWaitingTime);
+    ispd_info("  Avg. Communication Time........: %lf seconds.", userAvgCommTime);
+    ispd_info("  Avg. Communication Waiting Time: %lf seconds.", userAvgCommWaitingTime);
+    ispd_info("  Issued Tasks...................: %u tasks.", userMetrics.m_IssuedTasks);
+    ispd_info(" Rejected vms....................: %u vms.", userMetrics.m_IssuedAllocations);
+    ispd_info("  Completed Tasks................: %u tasks.", userMetrics.m_CompletedTasks);
+    ispd_info("  Energy Consumption.............: %lf J.", userMetrics.m_EnergyConsumption);
   }
 
-  ispd_log(LOG_INFO, "");
+  ispd_info("");
 #ifdef DEBUG_ON
-  ispd_log(LOG_INFO, "Service Center Metrics");
+  ispd_info("Service Center Metrics");
   
   /// Calculate the average time taken for forward and reverse processing and, print the information
   /// about the average time of forward and reverse processing as well as the forward and reverse event count.
@@ -395,12 +450,12 @@ void GlobalMetricsCollector::reportGlobalMetrics() {
     
     const char *capitalizedServiceTypeName = ispd::services::getServiceTypeName<true>(serviceType);
     
-    ispd_log(LOG_INFO, " Avg. %s Forward Time........: %lf ns.", capitalizedServiceTypeName, avgForwardTime);
-    ispd_log(LOG_INFO, " Avg. %s Reverse Time........: %lf ns.", capitalizedServiceTypeName, avgReverseTime);
-    ispd_log(LOG_INFO, " %s Forward Events Count.....: %lu events.", capitalizedServiceTypeName, forwardEventsCount);
-    ispd_log(LOG_INFO, " %s Reverse Events Count.....: %lu events.", capitalizedServiceTypeName, reverseEventsCount);
-    ispd_log(LOG_INFO, " Avg. Forward/Reverse........: %lfx.", capitalizedServiceTypeName, forwardAndReverseRelation);
-    ispd_log(LOG_INFO, "");   
+    ispd_info(" Avg. %s Forward Time........: %lf ns.", capitalizedServiceTypeName, avgForwardTime);
+    ispd_info(" Avg. %s Reverse Time........: %lf ns.", capitalizedServiceTypeName, avgReverseTime);
+    ispd_info(" %s Forward Events Count.....: %lu events.", capitalizedServiceTypeName, forwardEventsCount);
+    ispd_info(" %s Reverse Events Count.....: %lu events.", capitalizedServiceTypeName, reverseEventsCount);
+    ispd_info(" Avg. Forward/Reverse........: %lfx.", capitalizedServiceTypeName, forwardAndReverseRelation);
+    ispd_info("");   
   }
 #endif // DEBUG_ON
 }

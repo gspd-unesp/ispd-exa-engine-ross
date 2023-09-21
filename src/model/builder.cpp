@@ -6,9 +6,10 @@
 #include <ispd/services/link.hpp>
 #include <ispd/services/machine.hpp>
 #include <ispd/services/switch.hpp>
-#include <ispd/configuration/machine.hpp>
-#include <ispd/services/VMM.hpp>
 #include <ispd/services/virtual_machine.hpp>
+#include <ispd/services/vmm.hpp>
+
+#include <ispd/configuration/machine.hpp>
 
 static inline std::string firstSlaves(const std::vector<tw_lpid> &slaves) {
   const auto maxToShow = std::vector<tw_lpid>::size_type(10);
@@ -24,10 +25,11 @@ static inline std::string firstSlaves(const std::vector<tw_lpid> &slaves) {
 
 namespace ispd::model {
 
-void SimulationModel::registerMachine(
-    const tw_lpid gid, const double power, const double load,
-    const unsigned coreCount, const double memory, const double disk_space,
-    const double wattageIdle, const double wattageMax) {
+void SimulationModel::registerMachine(const tw_lpid gid, const double power, const double load, const unsigned int coreCount,
+                                      const double memory, const double disk, const double cpu_price, const double memory_price,
+                                      const double disk_price, const double gpuPower, const unsigned int gpuCoreCount,
+                                      const double interconnectionBandwidth, const double wattageIdle, const double wattageMax) {
+
   /// Check if the power is not positive. If so, an error indicating the
   /// case is sent and the program is immediately aborted.
   if (power <= 0.0)
@@ -46,9 +48,23 @@ void SimulationModel::registerMachine(
   /// the case is sent and the program is immediately aborted.
   if (coreCount <= 0)
     ispd_error(
-        "At registering  the machine %lu the core count must be positive "
+        "At registering the machine %lu the core count must be positive "
         "(Specified Core Count: %u).",
         gid, coreCount);
+
+  /// Checks if the interconnection bandwidth is not positive. IF so, an error
+  /// indicating the case is sent and the program is immediately aborted.
+  if (interconnectionBandwidth <= 0)
+    ispd_error(
+        "At registering the machine %lu the interconnection bandwidth must be positive "
+        "(Specified Interconnection Bandwidth: %lf).",
+        gid, interconnectionBandwidth);
+
+  if(memory_price < 0 || disk_price < 0|| cpu_price < 0 )
+    ispd_error(
+        "At registering the machine %lu the prices must be positive",
+        gid);
+
 
   /// Register the service initializer for a machine with the specified
   /// logical process global identifier (GID).
@@ -58,7 +74,11 @@ void SimulationModel::registerMachine(
 
     /// Initialize machine's configuration.
     s->conf = ispd::configuration::MachineConfiguration(
-        power, load, coreCount, memory, disk_space, wattageIdle, wattageMax);
+        power, load, coreCount,memory, disk,gpuPower, gpuCoreCount,
+        interconnectionBandwidth, wattageIdle, wattageMax);
+    s->prices.memory_individual_cost = memory_price;
+    s->prices.cpu_individual_cost = cpu_price;
+    s->prices.storage_individual_cost = disk_price;
     s->cores_free_time.resize(coreCount, 0.0);
   });
 
@@ -67,6 +87,8 @@ void SimulationModel::registerMachine(
       "A machine with GID %lu has been registered (P: %lf, L: %lf, C: %u).",
       gid, power, load, coreCount);
 }
+
+
 
 void SimulationModel::registerLink(const tw_lpid gid, const tw_lpid from,
                                    const tw_lpid to, const double bandwidth,
@@ -142,9 +164,8 @@ void SimulationModel::registerSwitch(const tw_lpid gid, const double bandwidth,
         static_cast<ispd::services::SwitchState *>(state);
 
     /// Initialize the switch's configuration.
-    s->m_Conf.m_Bandwidth = bandwidth;
-    s->m_Conf.m_Load = load;
-    s->m_Conf.m_Latency = latency;
+    s->m_Conf =
+        ispd::configuration::SwitchConfiguration(bandwidth, load, latency);
   });
 
   /// Print a debug indicating that a switch initializer has been registered.
@@ -155,7 +176,7 @@ void SimulationModel::registerSwitch(const tw_lpid gid, const double bandwidth,
 
 void SimulationModel::registerMaster(
     const tw_lpid gid, std::vector<tw_lpid> &&slaves,
-    ispd::scheduler::scheduler *const scheduler,
+    ispd::scheduler::Scheduler *const scheduler,
     ispd::workload::Workload *const workload) {
 
   /// Check if the scheduler has not been specified. If so, an error indicating
@@ -194,96 +215,7 @@ void SimulationModel::registerMaster(
              slaveCount, someSlaves.c_str());
 }
 
-void SimulationModel::registerVMM(const tw_lpid gid, std::vector<tw_lpid> &&vms, std::vector<double> &&vms_mem,
-                     std::vector<double> &&vms_disk, std::vector<unsigned> &&vms_cores,
-                     std::vector<tw_lpid> &&machines, ispd::allocator::allocator *const allocator,
-                     ispd::scheduler::scheduler *const scheduler,
-                     ispd::workload::Workload *const workload) {
-  /// Check if the scheduler has not been specified. If so, an error indicating
-  /// the case is sent and the program is immediately aborted.
-  if (!scheduler)
-    ispd_error(
-        "At registering the vmm %lu the scheduler has not been specified.",
-        gid);
 
-  /// Check if the workload has not been specified. If so, an error indicating
-  /// the case is sent and the program is immediately aborted.
-  if (!workload)
-    ispd_error(
-        "At registering the VMM %lu the workload has not been specified.", gid);
-  if (!allocator)
-    ispd_error(
-        "At registering the VMM %lu the allocator has not been specified.",
-        gid);
-
-  registerServiceInitializer(
-      gid, [workload, scheduler, allocator, &vms, &vms_mem, &vms_disk, &vms_cores, &machines](void *state) {
-        ispd::services::VMM_state *s =
-            static_cast<ispd::services::VMM_state *>(state);
-
-        s->machines = std::move(machines);
-         std::vector<ispd::services::slave_vms_info> slaves;
-        for (int i = 0; i < vms.size(); i++)
-        {
-          struct ispd::services::slave_vms_info temp;
-          unsigned num_cores = vms_cores[i];
-          double memory = vms_mem[i];
-          double disk = vms_disk[i];
-          unsigned id = vms[i];
-        temp.id = id;
-        temp.avaliable_memory = memory;
-        temp.avaliable_disk = disk;
-        temp.num_cores = num_cores;
-        s->vms.emplace_back(temp);
-        }
-
-        s->scheduler = scheduler;
-        s->allocator = allocator;
-        s->workload = workload;
-      });
-
-  ispd_debug("A VMM with GID %lu has been registered ", gid   );
-}
-
-void SimulationModel::registerVM(const tw_lpid gid, const double power, const double load,
-                const unsigned coreCount, const double memory, const double space){
-  if (power <= 0.0)
-    ispd_error("At registering the vm %lu the power must be positive "
-               "(Specified Power: %lf).",
-               gid, power);
-  if (load < 0 || load > 1)
-  {
-    ispd_error("At registering the vm %lu the load factor must be between 0.0 and 1.0 "
-               "(Specified load: %lf).",
-               gid, load);
-  }
-
-  if (coreCount < 0 )
-    ispd_error("At registering the vm %lu the core count must be positive "
-               "(Specified core count: %lu).",
-               gid,coreCount);
-  if (memory < 0)
-    ispd_error("At registering the vm %lu the avaliable memory must be positive "
-               "(Specified memory: %lf).",
-               gid, memory);
-  if (space < 0)
-    ispd_error("At registering the vm %lu the disk space must be positive "
-               "(Specified space: %lf).",
-               gid, space);
-  registerServiceInitializer(gid, [=](void *state){
-    ispd::services::VM_state *s = static_cast<ispd::services::VM_state *>(state);
-
-    /// initialize the vm's configuration
-    s->conf = ispd::configuration::VmConfiguration(power, load, coreCount, memory, space);
-    s->cores_free_time.resize(coreCount, 0.0);
-  });
-
-  /// Print a debug indicating that a machine initializer has been registered
-  ispd_debug(
-      "A vm with GID %lu has been registered(P: %lf, L: %lf, C: %u",
-      gid,power,load,coreCount
-      );
-}
 
 void SimulationModel::registerUser(const std::string &name,
                                    const double energyConsumptionLimit) {
@@ -330,8 +262,91 @@ void SimulationModel::registerUser(const std::string &name,
       name.c_str(), energyConsumptionLimit);
 }
 
-const std::function<void(void *)> &
-SimulationModel::getServiceInitializer(const tw_lpid gid) {
+
+void SimulationModel::registerVMM(const tw_lpid gid, std::vector<tw_lpid> &&vms, std::vector<double> &&vms_mem,
+                                  std::vector<double> &&vms_disk, std::vector<unsigned> &&vms_cores,
+                                  std::vector<tw_lpid> &&machines, ispd::allocator::Allocator *const allocator,
+                                  ispd::scheduler::Scheduler *const scheduler,
+                                  ispd::workload::Workload *const workload, unsigned total_vms) {
+  /// Check if the scheduler has not been specified. If so, an error indicating
+  /// the case is sent and the program is immediately aborted.
+  if (!scheduler)
+    ispd_error(
+        "At registering the vmm %lu the scheduler has not been specified.",
+        gid);
+
+  /// Check if the workload has not been specified. If so, an error indicating
+  /// the case is sent and the program is immediately aborted.
+  if (!workload)
+    ispd_error(
+        "At registering the VMM %lu the workload has not been specified.", gid);
+  if (!allocator)
+    ispd_error(
+        "At registering the VMM %lu the allocator has not been specified.",
+        gid);
+
+  registerServiceInitializer(gid, [workload, scheduler, allocator, &vms,
+                                   &vms_mem, &vms_disk, &vms_cores, &machines,
+                                   total_vms](void *state) {
+    ispd::services::VMM_state *s =
+        static_cast<ispd::services::VMM_state *>(state);
+
+    s->machines = std::move(machines);
+    std::vector<ispd::services::slave_vms_info> slaves;
+    for (int i = 0; i < vms.size(); i++) {
+      struct ispd::services::slave_vms_info temp;
+      unsigned num_cores = vms_cores[i];
+      double memory = vms_mem[i];
+      double disk = vms_disk[i];
+      unsigned id = vms[i];
+      temp.id = id;
+      temp.memory = memory;
+      temp.disk = disk;
+      temp.num_cores = num_cores;
+      s->vms.emplace_back(temp);
+    }
+
+    s->scheduler = scheduler;
+    s->allocator = allocator;
+    s->workload = workload;
+    s->total_vms = total_vms;
+  });
+}
+
+void SimulationModel::registerVM(const tw_lpid gid, const double power, const double load, const unsigned int coreCount, const double memory, const double space) {
+  if (power <= 0.0)
+    ispd_error("At registering the vm %lu the power must be positive "
+               "(Specified Power: %lf).",
+               gid, power);
+  if (load < 0 || load > 1)
+  {
+    ispd_error("At registering the vm %lu the load factor must be between 0.0 and 1.0 "
+               "(Specified load: %lf).",
+               gid, load);
+  }
+
+  if (coreCount < 0 )
+    ispd_error("At registering the vm %lu the core count must be positive "
+               "(Specified core count: %lu).",
+               gid,coreCount);
+  if (memory < 0)
+    ispd_error("At registering the vm %lu the avaliable memory must be positive "
+               "(Specified memory: %lf).",
+               gid, memory);
+  if (space < 0)
+    ispd_error("At registering the vm %lu the disk space must be positive "
+               "(Specified space: %lf).",
+               gid, space);
+  registerServiceInitializer(gid, [=](void *state){
+    ispd::services::VM_state *s = static_cast<ispd::services::VM_state *>(state);
+
+    /// initialize the vm's configuration
+    s->conf = ispd::configuration::VmConfiguration(power, load, coreCount, memory, space);
+    s->cores_free_time.resize(coreCount, 0.0);
+});
+}
+[[nodiscard]] const std::function<void(void *)> &
+SimulationModel::getServiceInitializer(const tw_lpid gid) noexcept {
   /// Checks if a service initializer for the specified global identifier has
   /// not been registered. If so, the program is immediately aborted, since
   /// service initializer is mandatory for every service.
@@ -341,6 +356,8 @@ SimulationModel::getServiceInitializer(const tw_lpid gid) {
         gid);
   return service_initializers.at(gid);
 }
+
+
 }; // namespace ispd::model
 
 namespace ispd::this_model {
@@ -348,13 +365,16 @@ namespace ispd::this_model {
 /// The simulation model global variable.
 ispd::model::SimulationModel *g_Model = new ispd::model::SimulationModel();
 
-void registerMachine(const tw_lpid gid, const double power, const double load,
-                const unsigned coreCount, const double memory,
-                const double disk_space, const double wattageIdle,
-                const double wattageMax) {
+
+void registerMachine(const tw_lpid gid, const double power, const double load, const unsigned int coreCount,
+                const double memory, const double disk, const double cpu_price, const double memory_price,
+                const double disk_price, const double gpuPower, const unsigned int gpuCoreCount,
+                const double interconnectionBandwidth, const double wattageIdle, const double wattageMax)
+{
   /// Forward the machine registration to the global model.
-  g_Model->registerMachine(gid, power, load, coreCount, memory, disk_space,
-                           wattageIdle, wattageMax);
+  g_Model->registerMachine(gid, power, load, coreCount, memory, disk, cpu_price,
+                           memory_price, disk_price, gpuPower, gpuCoreCount,
+                           interconnectionBandwidth, wattageIdle, wattageMax);
 }
 
 void registerLink(const tw_lpid gid, const tw_lpid from, const tw_lpid to,
@@ -371,50 +391,54 @@ void registerSwitch(const tw_lpid gid, const double bandwidth,
 }
 
 void registerMaster(const tw_lpid gid, std::vector<tw_lpid> &&slaves,
-                    ispd::scheduler::scheduler *const scheduler,
+                    ispd::scheduler::Scheduler *const scheduler,
                     ispd::workload::Workload *const workload) {
   /// Forward the master registration to the global model.
   g_Model->registerMaster(gid, std::move(slaves), scheduler, workload);
 }
 
-void registerVMM(const tw_lpid gid, std::vector<tw_lpid> &&vms, std::vector<double> &&vms_mem,
-                            std::vector<double> &&vms_disk, std::vector<unsigned> &&vms_cores,
-                            std::vector<tw_lpid> &&machines, ispd::allocator::allocator *const allocator,
-                            ispd::scheduler::scheduler *const scheduler,
-                            ispd::workload::Workload *const workload) {
-
-
-  g_Model->registerVMM(gid, std::move(vms), std::move(vms_mem), std::move(vms_disk),
-                       std::move(vms_cores), std::move(machines), allocator, scheduler, workload);
-}
-void registerVM(const tw_lpid gid, const double power, const double load,
-                const unsigned coreCount, const double memory, const double space){
-  g_Model->registerVM(gid, power, load, coreCount, memory, space);
-}
 void registerUser(const std::string &name,
                   const double energyConsumptionLimit) {
   /// Forward the user registration to the global model.
   g_Model->registerUser(name, energyConsumptionLimit);
 }
 
-const std::function<void(void *)> &getServiceInitializer(const tw_lpid gid) {
+
+void registerVMM(const tw_lpid gid, std::vector<tw_lpid> &&vms, std::vector<double> &&vms_mem,
+                 std::vector<double> &&vms_disk, std::vector<unsigned> &&vms_cores,
+                 std::vector<tw_lpid> &&machines, ispd::allocator::Allocator *const allocator,
+                 ispd::scheduler::Scheduler *const scheduler,
+                 ispd::workload::Workload *const workload, unsigned total_vms) {
+
+
+  g_Model->registerVMM(gid, std::move(vms), std::move(vms_mem), std::move(vms_disk),
+                       std::move(vms_cores), std::move(machines), allocator, scheduler, workload, total_vms);
+}
+void registerVM(const tw_lpid gid, const double power, const double load,
+                const unsigned coreCount, const double memory, const double space){
+  g_Model->registerVM(gid, power, load, coreCount, memory, space);
+}
+
+[[nodiscard]] const std::function<void(void *)> &
+getServiceInitializer(const tw_lpid gid) {
   /// Forward the service initializer query to the global model.
   return g_Model->getServiceInitializer(gid);
 }
 
-const std::unordered_map<ispd::model::User::uid_t, ispd::model::User> &
+[[nodiscard]] const std::unordered_map<ispd::model::User::uid_t,
+                                       ispd::model::User> &
 getUsers() {
   /// Forward the users query to the global model.
   return g_Model->getUsers();
 }
 
-ispd::model::User &getUserById(ispd::model::User::uid_t id) {
+[[nodiscard]] ispd::model::User &getUserById(ispd::model::User::uid_t id) {
   /// Forward the user query to the global model.
   return g_Model->getUserById(id);
 }
 
-const std::unordered_map<ispd::model::User::uid_t,
-                         ispd::model::User>::const_iterator
+[[nodiscard]] const std::unordered_map<ispd::model::User::uid_t,
+                                       ispd::model::User>::const_iterator
 getUserByName(const std::string &name) {
   /// Forward the user query by name to the global model.
   return g_Model->getUserByName(name);

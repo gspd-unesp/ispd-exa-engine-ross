@@ -13,7 +13,7 @@ struct ispd_message {
   message_type type;
 
   /// \brief The message payload.
-  ispd::customer::task task;
+  ispd::customer::Task task;
 
   /// \brief Reverse Computational Fields.
   double saved_link_next_available_time;
@@ -25,19 +25,20 @@ struct ispd_message {
   int route_offset;
   tw_lpid previous_service_id;
 
-  /// \brief Virtual machine info
+  /// \brief Virtual machine information
+  tw_lpid vm_id;
   unsigned vm_num_cores;
   double vm_memory_space;
   double vm_disk_space;
-  tw_lpid vm_sent;
   tw_lpid allocated_in;
 
+
   /// \brief Message flags.
-  unsigned int downward_direction : 1;
-  unsigned int task_processed : 1;
-  unsigned int is_vm : 1;
-  unsigned int fit : 1;
-  unsigned int : 4; /// Reversed flags.
+  unsigned int downward_direction: 1;
+  unsigned int task_processed: 1;
+  unsigned int is_vm: 1;
+  unsigned int vm_fit: 1;
+  unsigned int: 4;
 };
 
 #endif // ISPD_MESSAGE_H

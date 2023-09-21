@@ -32,11 +32,28 @@ struct MachineMetrics final {
       0; ///< The total number of tasks forwarded by the machine
          ///< to other components within the simulation.
 
-  unsigned m_allocated_vms = 0;
 
-  double m_Total_cpu_cost = 0;
-  double m_Total_memory_cost = 0;
-  double m_Total_storage_cost = 0;
+  /// \name Virtual Machine related metrics.
+  unsigned m_AllocatedVms = 0; ///< The total number of virtual machines allocated
+///< in this machine.
+
+  unsigned m_RejectedVms = 0; ///< The total number of virtual machines rejected
+                              ///< in this machine
+
+  double m_TotalCpuCost = 0; ///< The total cost charged for using the cores of
+                            ///< this machine (individual price multiplied by the
+                            ///< number of cores used).
+
+
+  double m_TotalMemoryCost = 0; ///< The total cost charged for using the memory
+                                ///< of this machine (individual price multiplied
+                                ///< by the amount of memory used).
+
+
+  double m_TotalDiskSpaceCost = 0; ///< The total cost charged for using the disk space
+                                ///< of this machine (individual price multiplied
+                                ///< by the amount of disk space used).
+
   /// \name Energy-related Metrics
   double m_EnergyConsumption; ///< Total energy consumpttion (in Joules).
 };

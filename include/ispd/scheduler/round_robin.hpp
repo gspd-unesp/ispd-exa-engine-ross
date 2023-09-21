@@ -1,39 +1,53 @@
-#ifndef ISPD_SCHEDULER_ROUND_ROBIN_HPP
-#define ISPD_SCHEDULER_ROUND_ROBIN_HPP
+/// \file round_robin.hpp
+///
+/// \brief This file defines the RoundRobin class, a concrete implementation of
+/// the Scheduler interface.
+///
+/// The RoundRobin class implements a simple round-robin scheduling algorithm.
+/// It cycles through a list of slaves in a circular manner, distributing tasks
+/// to each slave in sequence. The next slave to be selected is tracked using
+/// the `m_NextSlaveIndex` member variable.
+///
+#pragma once
 
+#include <cstdint>
 #include <ispd/scheduler/scheduler.hpp>
 
-namespace ispd {
-namespace scheduler {
+namespace ispd::scheduler {
 
-struct round_robin : scheduler {
-
+/// \class RoundRobin
+///
+/// \brief Implements a round-robin scheduling algorithm.
+///
+/// The RoundRobin class inherits from the Scheduler base class and implements
+/// the round-robin scheduling strategy. It cycles through a list of slaves in a
+/// circular manner, distributing tasks to each slave in sequence.
+///
+class RoundRobin final : public Scheduler {
+private:
   /// \brief The next slave index that will be selected
   ///        in the circular queue.
-  unsigned next_slave_index;
+  std::vector<tw_lpid>::size_type m_NextSlaveIndex;
 
-  void init_scheduler() {
-    next_slave_index = 0;
+public:
+  void initScheduler() override {
+    m_NextSlaveIndex = std::vector<tw_lpid>::size_type{0};
   }
 
-  tw_lpid forward_schedule(
-      std::vector<tw_lpid> &slaves,
-      tw_bf *bf,
-      ispd_message *msg,
-      tw_lp *lp
-  ) {
+  [[nodiscard]] tw_lpid forwardSchedule(std::vector<tw_lpid> &slaves, tw_bf *bf,
+                                        ispd_message *msg, tw_lp *lp) override {
     bf->c0 = 0;
 
     /// Select the next slave.
-    const tw_lpid slave_id = slaves[next_slave_index];
+    const tw_lpid slave_id = slaves[m_NextSlaveIndex];
 
     /// Increment to the next slave identifier.
-    next_slave_index++;
+    m_NextSlaveIndex++;
 
     /// Check if the next slave index to be selected has
     /// overflown the slaves vector. Therefore, the next
     /// slave index is set back to 0.
-    if (next_slave_index == slaves.size()) {
+    if (m_NextSlaveIndex == slaves.size()) {
       /// Mark the bitfield that the next slave identifier
       /// has overflown and, therefore, has set back to 0.
       ///
@@ -41,37 +55,29 @@ struct round_robin : scheduler {
       bf->c0 = 1;
 
       /// Set the next slave identifier back to 0.
-      next_slave_index = 0;
+      m_NextSlaveIndex = 0;
     }
 
     return slave_id;
   }
 
-  void reverse_schedule(
-      std::vector<tw_lpid> &slaves,
-      tw_bf *bf,
-      ispd_message *msg,
-      tw_lp *lp
-  ) {
+  void reverseSchedule(std::vector<tw_lpid> &slaves, tw_bf *bf,
+                       ispd_message *msg, tw_lp *lp) override {
     /// Check if the bitfield if the incoming event when
     /// forward processed HAS overflown the slave count. Therefore,
     /// the next slave index MUST be set to the slave count minus 1.
     if (bf->c0) {
       bf->c0 = 0;
 
-      next_slave_index = slaves.size() - 1;
+      m_NextSlaveIndex = slaves.size() - 1;
     }
     /// Check the bitfield if the incoming event when forward
     /// processed HAS NOT overflown the slave count. Therefore,
     /// the next slave identifier is ONLY decremented.
     else {
-      next_slave_index--;
+      m_NextSlaveIndex--;
     }
   }
-
 };
 
-}; // namespace scheduler
-}; // namespace ispd
-
-#endif // ISPD_SCHEDULER_ROUND_ROBIN_HPP
+} // namespace ispd::scheduler

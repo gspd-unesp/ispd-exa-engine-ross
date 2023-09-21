@@ -3,7 +3,7 @@ SET(CMAKE_CXX_STANDARD 17)
 
 INCLUDE_DIRECTORIES(${ROSS_BINARY_DIR} ./include)
 IF(USE_DAMARIS)
-    INCLUDE_DIRECTORIES(${DAMARIS_INCLUDE}) 
+    INCLUDE_DIRECTORIES(${DAMARIS_INCLUDE})
 ENDIF(USE_DAMARIS)
 IF(BGPM)
 	INCLUDE_DIRECTORIES(${ROSS_SOURCE_DIR} ${BGPM_LIB})
@@ -13,20 +13,20 @@ ENDIF(BGPM)
 
 SET(ispd_srcs
   # Main entry point.
-  #./src/main.cpp
-./src/cloud.cpp
+  #  ./src/main.cpp
+        ./src/cloud.cpp
   # Logging-related files.
   ./src/log/log.cpp
-  
+
   # Model-building related files.
   ./src/model/builder.cpp
-  
+
   # Routing-related files.
   ./src/routing/routing.cpp
-  
+
   # Metric-related files.
   ./src/metrics/metrics.cpp
-  
+
   # Workload-related files.
   ./src/workload/workload.cpp
   ./src/workload/interarrival.cpp

@@ -31,8 +31,8 @@ struct UserMetrics final {
   /// \name Workload-related metrics
   unsigned m_IssuedTasks = 0;    ///< The total number of tasks issued by the user.
   unsigned m_CompletedTasks = 0; ///< The total number of tasks completed by the user.
-  unsigned m_IssuedAllocations = 0; /// < The total number of virtual machines issued by the user
-  unsigned m_CompletedAllocations = 0; /// < The total number or virtual machines allocated by the user
+  unsigned m_IssuedAllocations = 0; ///< The total number of allocations issued by the user.
+  unsigned m_CompletedAllocations = 0; ///< The total number of virtual machines allocated by the user.
 };
 
 } // namespace ispd::metrics

@@ -1,28 +1,26 @@
-//
-// Created by willao on 29/08/23.
-//
-
 #ifndef ISPD_METRICS_VIRTUAL_MACHINE_HPP
 #define ISPD_METRICS_VIRTUAL_MACHINE_HPP
+namespace ispd::metrics {
 
-namespace  ispd::metrics{
+/// \struct VirtualMachineMetrics
+///
+/// \brief This structure encapsulates various metrics and information related
+/// to a virtual machine's performance and behaviour during simulation.
+///
+/// Collects and organize metrics that enable users to analyze and evaluate
+/// the performance of virtual machines within a simulated enviroment.
+struct VirtualMachineMetrics final {
 
-/// \struct Virtual Machine Metrics
-/// \brief Encapsulates various metrics and information related to the
-/// virtual machine's performance during the simulation.
+  double m_ProcMFlops = 0.0; ///< Total of megaflops processed by this virtual machine
 
-struct virtual_machine_metrics final{
+  double m_ProcTime = 0.0; ///< Total time in seconds the virtual machine spent processing.
 
-  double m_ProcMFlops = 0.0; /// total of megaflops processed by this virtual machine
+  double m_ProcWaitingTime = 0.0; ///< Total time in seconds the tasks wait in the queue
+                                  ///< before being executed
 
-  double m_ProcTime = 0.0; /// total time in seconds the vm spent processing tasks
-
-  double m_ProcWaitingTime = 0.0; /// total time in seconds the tasks wait in the queue
-                                  /// before being executed
-
-  unsigned m_Proc_Tasks = 0.0; /// the total of tasks successfully executed by the machine.
-
+  unsigned m_ProcTasks = 0.0; ///< Total of tasks successfully executed by this machine.
+};
 
 };
-}
-#endif // ISPD_EXA_ENGINE_ROSS_VIRTUAL_MACHINE_METRICS_HPP
+
+#endif

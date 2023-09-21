@@ -1,9 +1,7 @@
 
 
-#ifndef ISPD_SERVICE_VMM_HPP
-#define ISPD_SERVICE_VMM_HPP
-#define VM_FLAG 0
-#define TASK_FLAG 1
+#ifndef ISPD_VIRTUAL_MACHINE_MONITOR_HPP
+#define ISPD_VIRTUAL_MACHINE_MONITOR_HPP
 #include <utility>
 #include <ross.h>
 #include <vector>
@@ -14,79 +12,79 @@
 #include <ispd/metrics/metrics.hpp>
 #include<ispd/services/services.hpp>
 #include <ispd/allocator/allocator.hpp>
-#include <ispd/allocator/first_fit_decreasing.hpp>
 #include <ispd/scheduler/scheduler.hpp>
 #include <ispd/routing/routing.hpp>
-namespace ispd {
 
-namespace services {
-/// The virtual machine monitor has basic information about the virtual machines
-/// it's responsible
-struct slave_vms_info {
+
+namespace ispd::services{
+
+
+/// the virtual machine monitor has information about the virtual machines.
+struct slave_vms_info{
   tw_lpid id;
-  double avaliable_memory;
-  double avaliable_disk;
-  unsigned num_cores;
+  double memory;
+  double disk;
+  double num_cores;
 };
 
-struct VMM_metrics {
-  unsigned tasks_proc;
-  unsigned vm_alloc;
+struct VMM_metrics
+{
+  unsigned task_proc;
+  unsigned vms_alloc;
   unsigned vms_rejected;
   double total_turnaround_time;
 };
 
-struct VMM_state {
-
+struct VMM_state
+{
   std::vector<struct slave_vms_info> vms;
   std::vector<tw_lpid> allocated_vms;
   std::vector<tw_lpid> machines;
+
   /// links a virtual machine with its owner.
   std::unordered_map<tw_lpid, tw_lpid> *owner;
-  ispd::allocator::allocator *allocator;
+  ispd::allocator::Allocator *allocator;
   ispd::workload::Workload *workload;
-  ispd::scheduler::scheduler *scheduler;
+  ispd::scheduler::Scheduler *scheduler;
+
   unsigned total_vms;
+  unsigned tmp;
 
   VMM_metrics metrics;
+
 };
 
-struct VMM {
+struct VMM{
 
   static void init(VMM_state *s, tw_lp *lp) {
     const auto &service_initializer =
         ispd::this_model::getServiceInitializer(lp->gid);
 
     service_initializer(s);
-  s->owner = new std::unordered_map<tw_lpid, tw_lpid>();
-    s->scheduler->init_scheduler();
-    s->allocator->init();
+    s->owner = new std::unordered_map<tw_lpid, tw_lpid>();
+    s->scheduler->initScheduler();
+    s->allocator->initAllocator();
 
-    /// checks if allocator is an instance of first_fit_decreasing and sorts the vms for that'
-    if (ispd::allocator::firt_fit_decreasing *derived_ptr =
-            dynamic_cast<ispd::allocator::firt_fit_decreasing *>(
-                s->allocator)) {
-      std::sort(s->vms.begin(), s->vms.end(), sorting_criteria);
-    }
-    s->metrics.tasks_proc = 0;
-    s->metrics.vm_alloc = 0;
+    s->metrics.task_proc = 0;
+    s->metrics.vms_alloc = 0;
     s->metrics.vms_rejected = 0;
-    s->total_vms = s->workload->getRemainingVms();
+    s->tmp = s->total_vms;
     /// Send a generate message to itself.
     double offset = 0.0;
-    s->workload->generateInterarrival(lp->rng, offset);
 
     tw_event *const e = tw_event_new(lp->gid, offset, lp);
     ispd_message *const m = static_cast<ispd_message *>(tw_event_data(e));
 
     m->type = message_type::GENERATE;
     tw_event_send(e);
-    ispd_debug("VMM %lu has been initialized.", lp->gid);
+    ispd_debug("VMM %lu has been initialized with %lu vms to allocate.", lp->gid, s->tmp);
   }
+
 
   static void forward(VMM_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
     ispd_debug("Message came from %lu of type %lu", msg->previous_service_id,
                msg->type);
+
     switch (msg->type) {
     case message_type::GENERATE:
       generate(s, bf, msg, lp);
@@ -101,6 +99,7 @@ struct VMM {
       break;
     }
   }
+
 
   static void reverse(VMM_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
 
@@ -122,39 +121,43 @@ struct VMM {
 
   static void finish(VMM_state *s, tw_lp *lp) {
 
-    ispd::node_metrics::notifyMetric(
-        ispd::metrics::NodeMetricsFlag::NODE_TOTAL_ALLOCATED_VMS,
-        s->metrics.vm_alloc);
-    //  ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_REJECTED_VMS, s->metrics.vms_rejected);
-    ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_COMPLETED_TASKS,
-                                     s->metrics.tasks_proc);
+//    ispd::node_metrics::notifyMetric(
+//        ispd::metrics::NodeMetricsFlag::NODE_TOTAL_ALLOCATED_VMS,
+//        s->metrics.vms_alloc);
+//     ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_REJECTED_VMS, s->metrics.vms_rejected);
+//    ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_COMPLETED_TASKS,
+//                                     s->metrics.task_proc);
     std::printf(
         "Virtual Machine Monitor metrics (%lu)\n"
         " - Total Vms allocated......: %u (%lu)\n"
         " - Total Vms rejected.......: %u (%lu) \n"
         " - Total tasks processed....: %u (%lu) \n",
-        lp->gid, s->metrics.vm_alloc,lp->gid,  s->metrics.vms_rejected, lp->gid,
-        s->metrics.tasks_proc, lp->gid
-        );
+        lp->gid, s->metrics.vms_alloc,lp->gid,  s->metrics.vms_rejected, lp->gid,
+        s->metrics.task_proc, lp->gid
+    );
 
   }
 
+
 private:
   static void generate(VMM_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
-    ispd_debug("There are %u tasks and %u vms", s->workload->getRemainingTasks(), s->workload->getRemainingVms());
-    if (s->workload->getRemainingVms() > 0)
+    ispd_debug("There are %u tasks and %u vms", s->workload->getRemainingTasks(), s->total_vms);
+    if ( s->total_vms > 0)
       allocate(s, bf, msg, lp);
     else
       schedule(s, bf, msg, lp);
   }
+
+
   static void allocate(VMM_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
     ispd_debug(
         "VMM %lu will generate an allocation process at %lf, remaining %u.",
-        lp->gid, tw_now(lp), s->workload->getRemainingVms());
+        lp->gid, tw_now(lp), s->total_vms);
+
+
 
     const tw_lpid machine_chosen =
-        s->allocator->forward_allocation(s->machines, bf, msg, lp);
-    ispd_debug("%lu ", machine_chosen);
+        s->allocator->forwardAllocation(s->machines, bf, msg, lp);
 
     const ispd::routing::Route *route =
         ispd::routing_table::getRoute(lp->gid, machine_chosen);
@@ -163,13 +166,14 @@ private:
 
     m->type = message_type::ARRIVAL;
 
-    s->workload->generateWorkload(lp->rng, m->task.proc_size,
-                                  m->task.comm_size, VM_FLAG);
+    s->workload->generateWorkload(lp->rng, m->task.m_ProcSize,
+                                  m->task.m_CommSize);
+    s->total_vms--;
 
-    m->task.origin = lp->gid;
-    m->task.dest = machine_chosen;
-    m->task.submit_time = tw_now(lp);
-    m->task.owner = s->workload->getOwner();
+    m->task.m_Origin = lp->gid;
+    m->task.m_Dest = machine_chosen;
+    m->task.m_SubmitTime = tw_now(lp);
+    m->task.m_Owner = s->workload->getOwner();
 
     m->route_offset = 1;
     m->previous_service_id = lp->gid;
@@ -177,11 +181,11 @@ private:
     m->task_processed = 0;
 
     m->is_vm = 1;
-    m->fit = 0;
-    m->vm_disk_space = s->vms[0].avaliable_disk;
+    m->vm_fit = 0;
+    m->vm_disk_space = s->vms[0].disk;
     m->vm_num_cores = s->vms[0].num_cores;
-    m->vm_memory_space = s->vms[0].avaliable_memory;
-    m->vm_sent = s->vms[0].id;
+    m->vm_memory_space = s->vms[0].memory;
+    m->vm_id = s->vms[0].id;
 
     s->vms.erase(s->vms.begin());
 
@@ -189,7 +193,7 @@ private:
 
 
     /// send message to itself to continue allocation
-    if (s->workload->getRemainingVms() > 0) {
+    if (s->total_vms > 0) {
       double offset;
 
       s->workload->generateInterarrival(lp->rng, offset);
@@ -205,10 +209,12 @@ private:
 
   }
 
+
   static void schedule(VMM_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
 
+
     tw_lpid vm_id =
-        s->scheduler->forward_schedule(s->allocated_vms, bf, msg, lp);
+        s->scheduler->forwardSchedule(s->allocated_vms, bf, msg, lp);
 
     auto verify = s->owner->find(vm_id);
     tw_lpid dest;
@@ -218,19 +224,22 @@ private:
       ispd_error("There is no machine responsible for vm %u", vm_id);
     const ispd::routing::Route *route =
         ispd::routing_table::getRoute(lp->gid, dest);
+
     tw_event *const e = tw_event_new(route->get(0), 0.0, lp);
     ispd_message *const m = static_cast<ispd_message *>(tw_event_data(e));
 
     m->type = message_type::ARRIVAL;
 
-    s->workload->generateWorkload(lp->rng, m->task.proc_size,
-                                  m->task.comm_size, TASK_FLAG);
+    s->workload->generateWorkload(lp->rng, m->task.m_ProcSize,
+                                  m->task.m_CommSize);
 
-    m->task.origin = lp->gid;
-    m->task.dest = dest;
-    m->vm_sent = vm_id;
-    m->task.submit_time = tw_now(lp);
-    m->task.owner = s->workload->getOwner();
+    m->task.m_Origin = lp->gid;
+    m->task.m_Dest = dest;
+    m->vm_id = vm_id;
+    m->is_vm = 0;
+    m->task.m_SubmitTime = tw_now(lp);
+    m->task.m_Owner = s->workload->getOwner();
+
 
     m->route_offset = 1;
     m->previous_service_id = lp->gid;
@@ -251,22 +260,24 @@ private:
       tw_event_send(e);
     }
   }
+
   static void arrival(VMM_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
     ispd_debug("Arrived a message in vmm of vm %lu and fit %lu ", msg->is_vm,
-               msg->fit);
+               msg->vm_fit);
 
     if (msg->is_vm) {
       /// erases the vm in the list of vms and put it on the list of allocated
       /// vms
-      if (msg->fit) {
-        s->allocated_vms.push_back(msg->vm_sent);
+      if (msg->vm_fit) {
+        s->allocated_vms.push_back(msg->vm_id);
 
 
-        ispd_debug("Vm %lu is allocated on machine %lu", msg->vm_sent, msg->allocated_in);
-        s->owner->emplace(std::make_pair(msg->vm_sent, msg->allocated_in));
+        ispd_debug("Vm %lu is allocated on machine %lu", msg->vm_id, msg->allocated_in);
+        s->owner->emplace(std::make_pair(msg->vm_id, msg->allocated_in));
 
 
-        s->metrics.vm_alloc++;
+        s->metrics.vms_alloc++;
+
 
       }
       /// rejects the vm
@@ -275,7 +286,8 @@ private:
       }
 
 
-      if (s->metrics.vm_alloc + s->metrics.vms_rejected == s->total_vms)
+
+      if (s->metrics.vms_alloc + s->metrics.vms_rejected == s->tmp)
       {
         double offset;
 
@@ -290,28 +302,31 @@ private:
     }
     /// arrival of an ordinary task
     else {
-      msg->task.end_time = tw_now(lp);
-      const double turnaround_time = msg->task.end_time - msg->task.submit_time;
-      s->metrics.tasks_proc++;
+      msg->task.m_EndTime = tw_now(lp);
+      const double turnaround_time = msg->task.m_EndTime - msg->task.m_SubmitTime;
+      s->metrics.task_proc++;
       s->metrics.total_turnaround_time += turnaround_time;
     }
   }
+
+
 
   static void generate_rc(VMM_state *s, tw_bf *bf, ispd_message *msg,
                           tw_lp *lp) {
     /// the last processed message was a vm
     if (msg->is_vm)
       allocate_rc(s, bf, msg, lp);
-         else
-            schedule_rc(s,bf,msg,lp);
+    else
+      schedule_rc(s,bf,msg,lp);
   }
 
   static void  allocate_rc(VMM_state *s, tw_bf *bf, ispd_message *msg,
                           tw_lp *lp) {
 
-    s->allocator->reverse_allocation(s->machines, bf, msg, lp);
+    s->allocator->reverseAllocation(s->machines, bf, msg, lp);
 
-    s->workload->reverseGenerateWorkload(lp->rng, VM_FLAG);
+    s->workload->reverseGenerateWorkload(lp->rng);
+    s->total_vms++;
 
     /// Checks if after reversing the workload generator, there are remaining
     /// vms to be generated. If so, the random number generator is reversed
@@ -323,10 +338,10 @@ private:
   static void schedule_rc(VMM_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp)
   {
     /// Reverse the schedule.
-    s->scheduler->reverse_schedule(s->allocated_vms, bf, msg, lp);
+    s->scheduler->reverseSchedule(s->allocated_vms, bf, msg, lp);
 
     /// Reverse the workload generator.
-    s->workload->reverseGenerateWorkload(lp->rng, TASK_FLAG);
+    s->workload->reverseGenerateWorkload(lp->rng);
 
     /// Checks if after reversing the workload generator, there are remaining tasks to be generated.
     /// If so, the random number generator is reversed since it is used to generate the interarrival
@@ -340,47 +355,32 @@ private:
                          tw_lp *lp) {
     if (msg->is_vm) {
 
-      if (msg->fit) {
+      if (msg->vm_fit) {
         struct slave_vms_info vm;
-        vm.id = msg->vm_sent;
-        vm.avaliable_memory = msg->vm_memory_space;
-        vm.avaliable_disk = msg->vm_disk_space;
+        vm.id = msg->vm_id;
+        vm.memory = msg->vm_memory_space;
+        vm.disk = msg->vm_disk_space;
         vm.num_cores = msg->vm_num_cores;
 
         s->vms.insert(s->vms.begin(), vm);
 
         s->allocated_vms.erase(s->allocated_vms.begin());
 
-        s->metrics.vm_alloc--;
+        s->metrics.vms_alloc--;
       }
 
 
 
     } else {
       /// Calculate the task`s turnaround time.
-      const double turnaround_time = msg->task.end_time - msg->task.submit_time;
+      const double turnaround_time = msg->task.m_EndTime - msg->task.m_SubmitTime;
 
       /// Reverse the master's metrics.
-      s->metrics.tasks_proc--;
+      s->metrics.task_proc--;
       s->metrics.total_turnaround_time -= turnaround_time;
     }
   }
 
-  /// sorting criteria for the First Fit Decreasing algorithm that requires
-  /// the vms sorted in a decreasing order.
-  static bool sorting_criteria(const slave_vms_info &a, const slave_vms_info &b)
-  {
-    const int multiplier = 100000;
-    double A = multiplier * (a.num_cores + (int)a.avaliable_memory + (int) a.avaliable_disk);
-    double B   = multiplier * (b.num_cores + (int)b.avaliable_memory + (int) b.avaliable_disk);
-
-    return A > B;
-  }
-
-
-  };
-
-}; // namespace services
-}; // namespace ispd
-
-#endif // ISPD_EXA_ENGINE_ROSS_VMM_HPP
+};
+};
+#endif
