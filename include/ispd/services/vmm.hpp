@@ -262,7 +262,6 @@ private:
   static void arrival(VMM_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
     ispd_debug("Arrived a message in vmm of vm %lu and fit %lu ", msg->is_vm,
                msg->vm_fit);
-    MPI_Barrier(MPI_COMM_WORLD);
 
     if (msg->is_vm) {
       /// erases the vm in the list of vms and put it on the list of allocated
