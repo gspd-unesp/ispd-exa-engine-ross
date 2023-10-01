@@ -78,8 +78,7 @@ int main(int argc, char **argv)
   ispd::log::setOutputFile(nullptr);
 
   /// Read the routing table from a specified file.
-  ispd::routing_table::load("/home/willao/Área de trabalho/novo-ROSS-adaptando/ispd-exa-engine-ross/src/routes.route");
-
+  ispd::routing_table::load("/home/willao/Documentos/GitHub/ispd-exa-engine-ross/src/routes.route");
   tw_opt_add(opt);
   tw_init(&argc, &argv);
 

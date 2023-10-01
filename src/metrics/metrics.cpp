@@ -182,6 +182,9 @@ void NodeMetricsCollector::notifyMetric(const enum NodeMetricsFlag flag, const u
       /// Updates the total GPU cores.
       m_NodeTotalGpuCores += value;
       break;
+    case NodeMetricsFlag::NODE_TOTAL_REJECTED_VMS:
+      /// Updates the total rejected mvs
+      m_NodeTotalRejectedVms += value;
     default:
       ispd_error("Unknown node metrics flag (%d) or it may be the case the flag is correct but the argument is not of the required type.", flag);
   }

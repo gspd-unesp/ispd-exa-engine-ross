@@ -68,6 +68,7 @@ struct VMM{
     s->metrics.task_proc = 0;
     s->metrics.vms_alloc = 0;
     s->metrics.vms_rejected = 0;
+
     s->tmp = s->total_vms;
     /// Send a generate message to itself.
     double offset = 0.0;
@@ -121,12 +122,9 @@ struct VMM{
 
   static void finish(VMM_state *s, tw_lp *lp) {
 
-//    ispd::node_metrics::notifyMetric(
-//        ispd::metrics::NodeMetricsFlag::NODE_TOTAL_ALLOCATED_VMS,
-//        s->metrics.vms_alloc);
-//     ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_REJECTED_VMS, s->metrics.vms_rejected);
-//    ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_COMPLETED_TASKS,
-//                                     s->metrics.task_proc);
+ //   ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_ALLOCATED_VMS,s->metrics.vms_alloc);
+   // ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_REJECTED_VMS, s->metrics.vms_rejected);
+   // ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_COMPLETED_TASKS,s->metrics.task_proc);
     std::printf(
         "Virtual Machine Monitor metrics (%lu)\n"
         " - Total Vms allocated......: %u (%lu)\n"
@@ -264,13 +262,17 @@ private:
   static void arrival(VMM_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
     ispd_debug("Arrived a message in vmm of vm %lu and fit %lu ", msg->is_vm,
                msg->vm_fit);
+    MPI_Barrier(MPI_COMM_WORLD);
 
     if (msg->is_vm) {
       /// erases the vm in the list of vms and put it on the list of allocated
       /// vms
-      if (msg->vm_fit) {
-        s->allocated_vms.push_back(msg->vm_id);
 
+      if (msg->vm_fit) {
+
+        if(s->allocated_vms.empty() == true)
+          ispd_debug("teste");
+        s->allocated_vms.push_back(msg->vm_id);
 
         ispd_debug("Vm %lu is allocated on machine %lu", msg->vm_id, msg->allocated_in);
         s->owner->emplace(std::make_pair(msg->vm_id, msg->allocated_in));
@@ -283,6 +285,7 @@ private:
       /// rejects the vm
       else {
         s->metrics.vms_rejected++;
+
       }
 
 
