@@ -71,6 +71,7 @@ struct virtual_machine {
     s->metrics.m_ProcTime++;
     s->metrics.m_ProcMFlops += proc_size;
     s->metrics.m_ProcTime = proc_time;
+    s->metrics.m_ProcTasks++;
 
     s->cores_free_time[core_index] = tw_now(lp) + departure_delay;
 
