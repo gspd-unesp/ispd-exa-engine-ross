@@ -12,7 +12,7 @@
 #include <ispd/metrics/metrics.hpp>
 #include<ispd/services/services.hpp>
 #include <ispd/allocator/allocator.hpp>
-#include <ispd/scheduler/scheduler.hpp>
+#include <ispd/cloud_scheduler/cloud_scheduler.hpp>
 #include <ispd/routing/routing.hpp>
 
 
@@ -38,17 +38,18 @@ struct VMM_metrics
 struct VMM_state
 {
   std::vector<struct slave_vms_info> vms;
-  std::vector<tw_lpid> allocated_vms;
   std::vector<tw_lpid> machines;
+
+  tw_lpid allocated_vms[10000];
 
   /// links a virtual machine with its owner.
   std::unordered_map<tw_lpid, tw_lpid> *owner;
   ispd::allocator::Allocator *allocator;
   ispd::workload::Workload *workload;
-  ispd::scheduler::Scheduler *scheduler;
+  ispd::cloud_scheduler::CloudScheduler *scheduler;
 
+  unsigned total_vms_to_allocate;
   unsigned total_vms;
-  unsigned tmp;
 
   VMM_metrics metrics;
 
@@ -62,14 +63,14 @@ struct VMM{
 
     service_initializer(s);
     s->owner = new std::unordered_map<tw_lpid, tw_lpid>();
-    s->scheduler->initScheduler();
+    s->scheduler->initScheduler(s->total_vms_to_allocate);
     s->allocator->initAllocator();
 
     s->metrics.task_proc = 0;
     s->metrics.vms_alloc = 0;
     s->metrics.vms_rejected = 0;
 
-    s->tmp = s->total_vms;
+    s->total_vms = s->total_vms_to_allocate;
     /// Send a generate message to itself.
     double offset = 0.0;
 
@@ -78,7 +79,7 @@ struct VMM{
 
     m->type = message_type::GENERATE;
     tw_event_send(e);
-    ispd_debug("VMM %lu has been initialized with %lu vms to allocate.", lp->gid, s->tmp);
+    ispd_debug("VMM %lu has been initialized with %lu vms to allocate.", lp->gid, s->total_vms);
   }
 
 
@@ -139,8 +140,8 @@ struct VMM{
 
 private:
   static void generate(VMM_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
-    ispd_debug("There are %u tasks and %u vms", s->workload->getRemainingTasks(), s->total_vms);
-    if ( s->total_vms > 0)
+    ispd_debug("There are %u tasks and %u vms", s->workload->getRemainingTasks(), s->total_vms_to_allocate);
+    if ( s->total_vms_to_allocate > 0)
       allocate(s, bf, msg, lp);
     else
       schedule(s, bf, msg, lp);
@@ -150,7 +151,7 @@ private:
   static void allocate(VMM_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
     ispd_debug(
         "VMM %lu will generate an allocation process at %lf, remaining %u.",
-        lp->gid, tw_now(lp), s->total_vms);
+        lp->gid, tw_now(lp), s->total_vms_to_allocate);
 
 
 
@@ -166,7 +167,7 @@ private:
 
     s->workload->generateWorkload(lp->rng, m->task.m_ProcSize,
                                   m->task.m_CommSize);
-    s->total_vms--;
+    s->total_vms_to_allocate--;
 
     m->task.m_Origin = lp->gid;
     m->task.m_Dest = machine_chosen;
@@ -191,7 +192,7 @@ private:
 
 
     /// send message to itself to continue allocation
-    if (s->total_vms > 0) {
+    if (s->total_vms_to_allocate > 0) {
       double offset;
 
       s->workload->generateInterarrival(lp->rng, offset);
@@ -209,11 +210,11 @@ private:
 
 
   static void schedule(VMM_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
-
-
     tw_lpid vm_id =
         s->scheduler->forwardSchedule(s->allocated_vms, bf, msg, lp);
 
+
+      ispd_info("vm id : %lu", vm_id);
     auto verify = s->owner->find(vm_id);
     tw_lpid dest;
     if (verify != s->owner->end())
@@ -269,9 +270,7 @@ private:
 
       if (msg->vm_fit) {
 
-        if(s->allocated_vms.empty() == true)
-          ispd_debug("teste");
-        s->allocated_vms.push_back(msg->vm_id);
+        s->allocated_vms[s->metrics.vms_alloc] = msg->vm_id;
 
         ispd_debug("Vm %lu is allocated on machine %lu", msg->vm_id, msg->allocated_in);
         s->owner->emplace(std::make_pair(msg->vm_id, msg->allocated_in));
@@ -289,7 +288,7 @@ private:
 
 
 
-      if (s->metrics.vms_alloc + s->metrics.vms_rejected == s->tmp)
+      if (s->metrics.vms_alloc + s->metrics.vms_rejected == s->total_vms)
       {
         double offset;
 
@@ -328,7 +327,7 @@ private:
     s->allocator->reverseAllocation(s->machines, bf, msg, lp);
 
     s->workload->reverseGenerateWorkload(lp->rng);
-    s->total_vms++;
+    s->total_vms_to_allocate++;
 
     /// Checks if after reversing the workload generator, there are remaining
     /// vms to be generated. If so, the random number generator is reversed
@@ -366,8 +365,19 @@ private:
 
         s->vms.insert(s->vms.begin(), vm);
 
-        s->allocated_vms.erase(s->allocated_vms.begin());
+        uint index_to_remove;
+        for (uint i = 0; i < s->metrics.vms_alloc; i ++)
+        {
+            if (s->allocated_vms[i] == msg->vm_id){
+                index_to_remove = i;
+                break;
+            }
+         }
 
+        for (uint i = index_to_remove; i < s->metrics.vms_alloc - index_to_remove; i++)
+        {
+            s->allocated_vms[i] = s->allocated_vms[i+1];
+        }
         s->metrics.vms_alloc--;
       }
 

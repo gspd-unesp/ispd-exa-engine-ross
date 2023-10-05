@@ -9,6 +9,7 @@
 #include <ispd/model/user.hpp>
 #include <ispd/workload/workload.hpp>
 #include <ispd/scheduler/scheduler.hpp>
+#include <ispd/cloud_scheduler/cloud_scheduler.hpp>
 #include <ispd/allocator/allocator.hpp>
 
 namespace ispd::model {
@@ -46,7 +47,7 @@ public:
   void registerVMM(const tw_lpid gid, std::vector<tw_lpid> &&vms, std::vector<double> &&vms_mem,
                    std::vector<double> &&vms_disk, std::vector<unsigned> &&vms_cores,
                    std::vector<tw_lpid> &&machines, ispd::allocator::Allocator *const allocator,
-                   ispd::scheduler::Scheduler *const scheduler,
+                   ispd::cloud_scheduler::CloudScheduler *const scheduler,
                    ispd::workload::Workload *const workload, const unsigned total_vms);
 
   void registerUser(const std::string &name,
@@ -117,7 +118,7 @@ void registerVM(const tw_lpid gid, const double power, const double load,
 void registerVMM(const tw_lpid gid, std::vector<tw_lpid> &&vms, std::vector<double> &&vms_mem,
                  std::vector<double> &&vms_disk, std::vector<unsigned> &&vms_cores,
                  std::vector<tw_lpid> &&machines, ispd::allocator::Allocator *const allocator,
-                 ispd::scheduler::Scheduler *const scheduler,
+                 ispd::cloud_scheduler::CloudScheduler *const scheduler,
                  ispd::workload::Workload *const workload, const unsigned total_vms);
 
 void registerUser(const std::string &name, const double energyConsumptionLimit);

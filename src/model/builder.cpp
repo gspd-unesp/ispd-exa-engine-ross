@@ -266,7 +266,7 @@ void SimulationModel::registerUser(const std::string &name,
 void SimulationModel::registerVMM(const tw_lpid gid, std::vector<tw_lpid> &&vms, std::vector<double> &&vms_mem,
                                   std::vector<double> &&vms_disk, std::vector<unsigned> &&vms_cores,
                                   std::vector<tw_lpid> &&machines, ispd::allocator::Allocator *const allocator,
-                                  ispd::scheduler::Scheduler *const scheduler,
+                                  ispd::cloud_scheduler::CloudScheduler *const scheduler,
                                   ispd::workload::Workload *const workload, unsigned total_vms) {
   /// Check if the scheduler has not been specified. If so, an error indicating
   /// the case is sent and the program is immediately aborted.
@@ -309,7 +309,7 @@ void SimulationModel::registerVMM(const tw_lpid gid, std::vector<tw_lpid> &&vms,
     s->scheduler = scheduler;
     s->allocator = allocator;
     s->workload = workload;
-    s->total_vms = total_vms;
+    s->total_vms_to_allocate = total_vms;
   });
 }
 
@@ -407,7 +407,7 @@ void registerUser(const std::string &name,
 void registerVMM(const tw_lpid gid, std::vector<tw_lpid> &&vms, std::vector<double> &&vms_mem,
                  std::vector<double> &&vms_disk, std::vector<unsigned> &&vms_cores,
                  std::vector<tw_lpid> &&machines, ispd::allocator::Allocator *const allocator,
-                 ispd::scheduler::Scheduler *const scheduler,
+                 ispd::cloud_scheduler::CloudScheduler *const scheduler,
                  ispd::workload::Workload *const workload, unsigned total_vms) {
 
 

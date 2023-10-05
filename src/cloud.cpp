@@ -6,6 +6,9 @@
 #include <ispd/model/builder.hpp>
 #include <ispd/services/link.hpp>
 #include <ispd/services/dummy.hpp>
+#include <ispd/cloud_scheduler/cloud_scheduler.hpp>
+#include <ispd/cloud_scheduler/round_robin_cloud.hpp>
+
 #include <ispd/services/master.hpp>
 #include <ispd/allocator/allocator.hpp>
 #include <ispd/allocator/first_fit.hpp>
@@ -117,7 +120,7 @@ int main(int argc, char **argv)
   ispd::this_model::registerVMM(
       0, std::move(vms_ids), std::move(vms_memory), std::move(vms_disk),
       std::move(vms_cores), std::move(machines), new ispd::allocator::FirstFit,
-      new ispd::scheduler::RoundRobin,
+      new ispd::cloud_scheduler::RoundRobinCloud,
       ispd::workload::constant(
           "User1", g_star_task_amount, 1000, 80, 0.95,
           std::make_unique<ispd::workload::PoissonInterarrivalDistribution>(
