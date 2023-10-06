@@ -287,7 +287,8 @@ private:
       }
 
 
-
+        /// checks if every virtual machine were allocated already.If so, sends a message to itself to start
+        /// the scheduling.
       if (s->metrics.vms_alloc + s->metrics.vms_rejected == s->total_vms)
       {
         double offset;
