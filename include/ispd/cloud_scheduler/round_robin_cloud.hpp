@@ -1,13 +1,4 @@
-/// \file round_robin.hpp
-///
-/// \brief This file defines the RoundRobin class, a concrete implementation of
-/// the Scheduler interface.
-///
-/// The RoundRobin class implements a simple round-robin scheduling algorithm.
-/// It cycles through a list of slaves in a circular manner, distributing tasks
-/// to each slave in sequence. The next slave to be selected is tracked using
-/// the `m_NextSlaveIndex` member variable.
-///
+
 #pragma once
 
 #include <cstdint>
@@ -15,14 +6,7 @@
 
 namespace ispd::cloud_scheduler {
 
-/// \class RoundRobin
-///
-/// \brief Implements a round-robin scheduling algorithm.
-///
-/// The RoundRobin class inherits from the Scheduler base class and implements
-/// the round-robin scheduling strategy. It cycles through a list of slaves in a
-/// circular manner, distributing tasks to each slave in sequence.
-///
+
     class RoundRobinCloud final : public CloudScheduler {
     private:
 
