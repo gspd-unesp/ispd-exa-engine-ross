@@ -1,4 +1,3 @@
-
 #ifndef ISPD_CLOUD_WORKLOAD_HPP
 #define ISPD_CLOUD_WORKLOAD_HPP
 
@@ -16,8 +15,7 @@
                  "generator has not been provided.");                          \
   })
 
-namespace ispd::cloud_workload
-{
+namespace ispd::cloud_workload{
 
     /// \class CloudWorkload
     /// \brief A base class representing a workload to be used in the cloud simulation
@@ -57,7 +55,7 @@ namespace ispd::cloud_workload
         /// allows flexible and efficient handling of different interarrival
         /// distribution types and ensures that the object is properly deallocated
         /// when the Workload is no longer in use.
-        std::unique_ptr<InterarrivalDistribution> m_InterarrivalDist;
+        std::unique_ptr<ispd::workload::InterarrivalDistribution> m_InterarrivalDist;
 
 
 
@@ -69,7 +67,7 @@ namespace ispd::cloud_workload
         /// \param interarrivalDist An unique pointer to InteraarivalDistribution
         [[nodiscard]] explicit CloudWorkload(
                 const std::string &owner, const unsigned remainingApplications,
-                std::unique_ptr<InterarrivalDistribution> interarrivalDist) noexcept;
+                std::unique_ptr<ispd::workload::InterarrivalDistribution> interarrivalDist) noexcept;
 
 
 
@@ -82,7 +80,7 @@ namespace ispd::cloud_workload
         /// \param rng The logical process reversible-pseudonumber random generator.
         /// \param application The application that contains a vector of tasks
         ///                     that will be generated.
-        virtual  void generateWorkload(tw_rng_stream *rng, ispd_cloud_message &application) = 0;
+        virtual  void generateWorkload(tw_rng_stream *rng, ispd_cloud_message *application) = 0;
 
         /// \brief Reverse the workload generation, necessary due to the Time Warp's
         ///        rollback mechanism.
@@ -154,6 +152,54 @@ namespace ispd::cloud_workload
         }
 
     };
-}
+    /// \class ConstantCloudWorkload
+    ///
+    /// \brief  Derived class representing a constant cloud workload for the simulation
+    /// tasks. All generated tasks will have the same workload
+
+    class ConstantCloudWorkload final : public CloudWorkload{
+
+        /// \brief The constant size to be generated for all tasks
+        double m_ConstantProcSize;
+
+        double m_ConstantCommSize;
+
+    public:
+
+        [[nodiscard]] explicit ConstantCloudWorkload(
+                const std::string &owner, const unsigned remainingApplications,
+                const double constantCommSize, const double constantProcSize,
+                std::unique_ptr<ispd::workload::InterarrivalDistribution> interarrivalDist) noexcept;
+
+
+        void generateWorkload(tw_rng_stream *rng, ispd_cloud_message *application) override
+        {
+            CHECK_RNG(rng);
+            application->m_CommSize = 0;
+            application->m_ProcSize= 0;
+
+
+            application->m_CommSize = m_ConstantProcSize * TASK_FOR_APP;
+            application->m_ProcSize += m_ConstantProcSize * TASK_FOR_APP;
+
+
+            CloudWorkload::m_RemainingApplications--;
+
+        }
+
+        void reverseGenerateWorkload(tw_rng_stream *rng) override {
+            CHECK_RNG(rng);
+
+            CloudWorkload::m_RemainingApplications++;
+        }
+
+    };
+
+
+    ConstantCloudWorkload *
+    constant(const std::string &owner, const unsigned remainingApplications,
+                                    const double constantCommSize, const double constantProcSize,
+                                    std::unique_ptr<ispd::workload::InterarrivalDistribution> interarrivalDist);
+};
 
 #endif

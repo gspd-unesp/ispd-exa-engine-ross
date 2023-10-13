@@ -10,7 +10,7 @@ namespace ispd::cloud_scheduler {
     class RoundRobinCloud final : public CloudScheduler {
     private:
 
-        std::vector<tw_lpid>::size_type m_NextSlaveIndex;
+       int m_NextSlaveIndex;
         int m_ArraySize;
 
     public:
@@ -26,7 +26,8 @@ namespace ispd::cloud_scheduler {
             /// Select the next slave.
             const tw_lpid slave_id = slaves[m_NextSlaveIndex];
 
-            ispd_info("%d ", m_ArraySize);
+            ispd_info("%d e  %d", m_ArraySize, m_NextSlaveIndex);
+
             /// Increment to the next slave identifier.
             m_NextSlaveIndex++;
 

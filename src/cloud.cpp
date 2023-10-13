@@ -20,10 +20,11 @@
 #include <ispd/routing/routing.hpp>
 #include <ispd/metrics/metrics.hpp>
 #include <ispd/workload/workload.hpp>
+#include <ispd/cloud_workload/cloud_workload.hpp>
 #include <ispd/workload/interarrival.hpp>
 
 static unsigned g_star_machine_amount = 10;
-static unsigned g_star_task_amount = 100 + 15;
+static unsigned g_star_task_amount = 100;
 static unsigned g_star_vm_amount = 15;
 
 tw_peid mapping(tw_lpid gid) { return (tw_peid)gid / g_tw_nlp; }
@@ -122,9 +123,14 @@ int main(int argc, char **argv)
       std::move(vms_cores), std::move(machines), new ispd::allocator::FirstFit,
       new ispd::cloud_scheduler::RoundRobinCloud,
       ispd::workload::constant(
-          "User1", g_star_task_amount, 1000, 80, 0.95,
+          "User1", g_star_vm_amount, 1000, 80, 0.95,
           std::make_unique<ispd::workload::PoissonInterarrivalDistribution>(
-              0.1)), g_star_vm_amount);
+              0.1)),
+              ispd::cloud_workload::constant("User1", g_star_task_amount, 80, 1000, std::make_unique<ispd::workload::PoissonInterarrivalDistribution>(
+                      0.1)),g_star_vm_amount);
+
+  
+
 
 
   for (tw_lpid link_id = 1; link_id <= highest_link_id; link_id += 2)

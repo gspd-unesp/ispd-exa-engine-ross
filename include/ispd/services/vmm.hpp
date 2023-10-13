@@ -14,6 +14,8 @@
 #include <ispd/allocator/allocator.hpp>
 #include <ispd/cloud_scheduler/cloud_scheduler.hpp>
 #include <ispd/routing/routing.hpp>
+#include<ispd/cloud_workload/cloud_workload.hpp>
+
 
 
 namespace ispd::services{
@@ -45,7 +47,8 @@ struct VMM_state
   /// links a virtual machine with its owner.
   std::unordered_map<tw_lpid, tw_lpid> *owner;
   ispd::allocator::Allocator *allocator;
-  ispd::workload::Workload *workload;
+  ispd::workload::Workload *allocation_workload; ///< Workload for allocating vms
+  ispd::cloud_workload::CloudWorkload *vms_workload; ///< Workload for virtual machines composed by applications.
   ispd::cloud_scheduler::CloudScheduler *scheduler;
 
   unsigned total_vms_to_allocate;
@@ -63,8 +66,16 @@ struct VMM{
 
     service_initializer(s);
     s->owner = new std::unordered_map<tw_lpid, tw_lpid>();
-    s->scheduler->initScheduler(s->total_vms_to_allocate);
     s->allocator->initAllocator();
+
+
+    /// TESTE
+
+
+
+
+    /// FIM TESTE
+
 
     s->metrics.task_proc = 0;
     s->metrics.vms_alloc = 0;
@@ -140,7 +151,7 @@ struct VMM{
 
 private:
   static void generate(VMM_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
-    ispd_debug("There are %u tasks and %u vms", s->workload->getRemainingTasks(), s->total_vms_to_allocate);
+    //ispd_debug("There are %u tasks and %u vms", s->->getRemainingTasks(), s->total_vms_to_allocate);
     if ( s->total_vms_to_allocate > 0)
       allocate(s, bf, msg, lp);
     else
@@ -165,14 +176,14 @@ private:
 
     m->type = message_type::ARRIVAL;
 
-    s->workload->generateWorkload(lp->rng, m->task.m_ProcSize,
+    s->allocation_workload->generateWorkload(lp->rng, m->task.m_ProcSize,
                                   m->task.m_CommSize);
     s->total_vms_to_allocate--;
 
     m->task.m_Origin = lp->gid;
     m->task.m_Dest = machine_chosen;
     m->task.m_SubmitTime = tw_now(lp);
-    m->task.m_Owner = s->workload->getOwner();
+    m->task.m_Owner = s->allocation_workload->getOwner();
 
     m->route_offset = 1;
     m->previous_service_id = lp->gid;
@@ -195,7 +206,7 @@ private:
     if (s->total_vms_to_allocate > 0) {
       double offset;
 
-      s->workload->generateInterarrival(lp->rng, offset);
+      s->allocation_workload->generateInterarrival(lp->rng, offset);
       tw_event *const e2 = tw_event_new(lp->gid, offset, lp);
 
 
@@ -229,15 +240,18 @@ private:
 
     m->type = message_type::ARRIVAL;
 
-    s->workload->generateWorkload(lp->rng, m->task.m_ProcSize,
-                                  m->task.m_CommSize);
+    s->vms_workload->generateWorkload(lp->rng, &m->application);
 
-    m->task.m_Origin = lp->gid;
+    m->application.m_Origin = lp->gid;
+    m->application.m_Dest= dest;
     m->task.m_Dest = dest;
+    m->task.m_Origin = lp->gid;
     m->vm_id = vm_id;
     m->is_vm = 0;
-    m->task.m_SubmitTime = tw_now(lp);
-    m->task.m_Owner = s->workload->getOwner();
+    m->application.m_SubmitTime = tw_now(lp);
+    m->application.m_Owner = s->vms_workload->getOwner();
+    m->task.m_CommSize = m->application.m_CommSize;
+    m->task.m_ProcSize = m->application.m_ProcSize;
 
 
     m->route_offset = 1;
@@ -246,10 +260,10 @@ private:
     m->task_processed = 0;
 
     tw_event_send(e);
-    if (s->workload->getRemainingTasks() > 0) {
+    if (s->vms_workload->getRemainingApplications() > 0) {
       double offset;
 
-      s->workload->generateInterarrival(lp->rng, offset);
+      s->vms_workload->generateInterarrival(lp->rng, offset);
 
       tw_event *const e = tw_event_new(lp->gid, offset, lp);
       ispd_message *const m = static_cast<ispd_message *>(tw_event_data(e));
@@ -293,7 +307,9 @@ private:
       {
         double offset;
 
-        s->workload->generateInterarrival(lp->rng, offset);
+          s->scheduler->initScheduler(s->metrics.vms_alloc);
+
+        s->vms_workload->generateInterarrival(lp->rng, offset);
         tw_event *const e2 = tw_event_new(lp->gid, offset, lp);
         ispd_message *const m2 = static_cast<ispd_message *>(tw_event_data(e2));
 
@@ -327,14 +343,14 @@ private:
 
     s->allocator->reverseAllocation(s->machines, bf, msg, lp);
 
-    s->workload->reverseGenerateWorkload(lp->rng);
+    s->allocation_workload->reverseGenerateWorkload(lp->rng);
     s->total_vms_to_allocate++;
 
     /// Checks if after reversing the workload generator, there are remaining
     /// vms to be generated. If so, the random number generator is reversed
     /// since it is used to generate the interarrival time of the vm.
-    if (s->workload->getRemainingTasks() > 0)
-      s->workload->reverseGenerateInterarrival(lp->rng);
+    if (s->allocation_workload->getRemainingTasks() > 0)
+      s->allocation_workload->reverseGenerateInterarrival(lp->rng);
   }
 
   static void schedule_rc(VMM_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp)
@@ -343,13 +359,13 @@ private:
     s->scheduler->reverseSchedule(s->allocated_vms, bf, msg, lp);
 
     /// Reverse the workload generator.
-    s->workload->reverseGenerateWorkload(lp->rng);
+    s->vms_workload->reverseGenerateWorkload(lp->rng);
 
     /// Checks if after reversing the workload generator, there are remaining tasks to be generated.
     /// If so, the random number generator is reversed since it is used to generate the interarrival
     /// time of the tasks.
-    if (s->workload->getRemainingTasks() > 0)
-      s->workload->reverseGenerateInterarrival(lp->rng);
+    if (s->vms_workload->getRemainingApplications() > 0)
+      s->vms_workload->reverseGenerateInterarrival(lp->rng);
 
   }
 

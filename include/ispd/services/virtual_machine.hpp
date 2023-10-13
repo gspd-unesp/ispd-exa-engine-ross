@@ -60,8 +60,10 @@ struct virtual_machine {
         "and route offset (%u).",
         lp->gid, tw_now(lp), msg->type, msg->route_offset);
 
-    const double proc_size = msg->task.m_ProcSize;
+     double proc_size = msg->application.m_ProcSize;
     const double proc_time = s->conf.timeToProcess(proc_size);
+
+
     unsigned core_index;
     const double least_free_time =
         least_core_time(s->cores_free_time, core_index);
@@ -80,7 +82,7 @@ struct virtual_machine {
 
     ispd_message *const m = static_cast<ispd_message *>(tw_event_data(e));
     *m = *msg;
-    m->task = msg->task;
+    m->application = msg->application;
     m->type = message_type::ARRIVAL;
     m->task_processed = 1;
     m->saved_core_index = core_index;
@@ -91,21 +93,21 @@ struct virtual_machine {
   }
 
   static void commit(VM_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
-    const double proc_size = msg->task.m_ProcSize;
+      double proc_size = msg->application.m_ProcSize;
     const double proc_time = s->conf.timeToProcess(proc_size);
 
     const double least_free_time = msg->saved_core_next_available_time;
     const double waiting_delay = ROSS_MAX(0.0, least_free_time - tw_now(lp));
 
     ispd::metrics::UserMetrics &userMetrics =
-        ispd::this_model::getUserById(msg->task.m_Owner).getMetrics();
+        ispd::this_model::getUserById(msg->application.m_Owner).getMetrics();
 
     userMetrics.m_ProcTime += proc_time;
     userMetrics.m_ProcWaitingTime += waiting_delay;
     userMetrics.m_CompletedTasks++;
   }
   static void reverse(VM_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
-    const double proc_size = msg->task.m_ProcSize;
+      double proc_size = msg->application.m_ProcSize;
     const double proc_time = s->conf.timeToProcess(proc_size);
 
     const double least_free_time = msg->saved_core_next_available_time;

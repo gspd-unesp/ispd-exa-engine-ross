@@ -69,6 +69,9 @@ struct machine {
     ispd_debug("[Forward] Machine %lu received a message at %lf of type (%d) and route offset (%u).", lp->gid, tw_now(lp), msg->type, msg->route_offset);
 
     ispd_debug("Type of message %u", msg->is_vm);
+
+
+
 #ifdef DEBUG_ON
   const auto start = std::chrono::high_resolution_clock::now();
 #endif // DEBUG_ON
@@ -81,7 +84,8 @@ struct machine {
     }
     /// Checks if the task's destination is this machine. If so, the task is processed
     /// and the task's results is sent back to the master by the same route it came along.
-    if (msg->task.m_Dest == lp->gid) {
+    if (msg->task.m_Dest == lp->gid || msg->application.m_Dest == lp->gid) {
+
 
       /// Checks if the message is for a virtual machine hosted in this machine.
       ///If so, forwards send the task for the virtual machine.
@@ -441,7 +445,7 @@ private:
       tw_event *const e = tw_event_new(msg->vm_id, 0.0, lp);
       ispd_message *const m = static_cast<ispd_message *>(tw_event_data(e));
       *m = *msg;
-      m->task = msg->task;
+      m->application = msg->application;
       m->task_processed = 0;
 
       tw_event_send(e);

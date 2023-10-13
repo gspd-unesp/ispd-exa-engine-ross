@@ -29,6 +29,7 @@ SET(ispd_srcs
 
   # Workload-related files.
   ./src/workload/workload.cpp
+  ./src/workload/cloud_workload.cpp
   ./src/workload/interarrival.cpp
 )
 

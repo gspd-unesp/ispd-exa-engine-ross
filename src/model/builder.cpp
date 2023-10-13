@@ -267,7 +267,9 @@ void SimulationModel::registerVMM(const tw_lpid gid, std::vector<tw_lpid> &&vms,
                                   std::vector<double> &&vms_disk, std::vector<unsigned> &&vms_cores,
                                   std::vector<tw_lpid> &&machines, ispd::allocator::Allocator *const allocator,
                                   ispd::cloud_scheduler::CloudScheduler *const scheduler,
-                                  ispd::workload::Workload *const workload, unsigned total_vms) {
+                                  ispd::workload::Workload *const workload,
+                                  ispd::cloud_workload::CloudWorkload *const cloudWorkload,
+                                  unsigned total_vms) {
   /// Check if the scheduler has not been specified. If so, an error indicating
   /// the case is sent and the program is immediately aborted.
   if (!scheduler)
@@ -277,7 +279,7 @@ void SimulationModel::registerVMM(const tw_lpid gid, std::vector<tw_lpid> &&vms,
 
   /// Check if the workload has not been specified. If so, an error indicating
   /// the case is sent and the program is immediately aborted.
-  if (!workload)
+  if (!workload || !cloudWorkload)
     ispd_error(
         "At registering the VMM %lu the workload has not been specified.", gid);
   if (!allocator)
@@ -285,7 +287,7 @@ void SimulationModel::registerVMM(const tw_lpid gid, std::vector<tw_lpid> &&vms,
         "At registering the VMM %lu the allocator has not been specified.",
         gid);
 
-  registerServiceInitializer(gid, [workload, scheduler, allocator, &vms,
+  registerServiceInitializer(gid, [workload, cloudWorkload, scheduler, allocator, &vms,
                                    &vms_mem, &vms_disk, &vms_cores, &machines,
                                    total_vms](void *state) {
     ispd::services::VMM_state *s =
@@ -308,7 +310,8 @@ void SimulationModel::registerVMM(const tw_lpid gid, std::vector<tw_lpid> &&vms,
 
     s->scheduler = scheduler;
     s->allocator = allocator;
-    s->workload = workload;
+    s->allocation_workload = workload;
+    s->vms_workload = cloudWorkload;
     s->total_vms_to_allocate = total_vms;
   });
 }
@@ -408,11 +411,13 @@ void registerVMM(const tw_lpid gid, std::vector<tw_lpid> &&vms, std::vector<doub
                  std::vector<double> &&vms_disk, std::vector<unsigned> &&vms_cores,
                  std::vector<tw_lpid> &&machines, ispd::allocator::Allocator *const allocator,
                  ispd::cloud_scheduler::CloudScheduler *const scheduler,
-                 ispd::workload::Workload *const workload, unsigned total_vms) {
+                 ispd::workload::Workload *const workload,
+                 ispd::cloud_workload::CloudWorkload *const cloudWorkload,
+                 unsigned total_vms) {
 
 
   g_Model->registerVMM(gid, std::move(vms), std::move(vms_mem), std::move(vms_disk),
-                       std::move(vms_cores), std::move(machines), allocator, scheduler, workload, total_vms);
+                       std::move(vms_cores), std::move(machines), allocator, scheduler, workload, cloudWorkload, total_vms);
 }
 void registerVM(const tw_lpid gid, const double power, const double load,
                 const unsigned coreCount, const double memory, const double space){

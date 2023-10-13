@@ -166,6 +166,7 @@ struct link {
     m->vm_disk_space = msg->vm_disk_space;
     m->vm_id = msg->vm_id;
 
+    m->application = msg->application;
     /// Save information (for reverse computation).
     msg->saved_link_next_available_time = saved_next_available_time;
     msg->saved_waiting_time = waiting_delay;
