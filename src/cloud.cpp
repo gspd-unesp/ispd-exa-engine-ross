@@ -24,17 +24,15 @@
 #include <ispd/workload/interarrival.hpp>
 
 static unsigned g_star_machine_amount = 10;
-static unsigned g_star_task_amount = 100;
+static unsigned g_star_task_amount = 20;
 static unsigned g_star_vm_amount = 15;
 
 tw_peid mapping(tw_lpid gid) { return (tw_peid)gid / g_tw_nlp; }
 
-
 tw_lptype lps_type[] = {
     {(init_f)ispd::services::VMM::init, (pre_run_f)NULL,
      (event_f)ispd::services::VMM::forward,
-     (revent_f)ispd::services::VMM::reverse,
-     (commit_f)NULL,
+     (revent_f)ispd::services::VMM::reverse, (commit_f)NULL,
      (final_f)ispd::services::VMM::finish, (map_f)mapping,
      sizeof(ispd::services::VMM)},
 
@@ -66,8 +64,6 @@ tw_lptype lps_type[] = {
     {0},
 };
 
-
-
 const tw_optdef opt[] = {
     TWOPT_GROUP("iSPD Model"),
     TWOPT_UINT("machine-amount", g_star_machine_amount,
@@ -77,12 +73,12 @@ const tw_optdef opt[] = {
     TWOPT_END(),
 };
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
   ispd::log::setOutputFile(nullptr);
 
   /// Read the routing table from a specified file.
-  ispd::routing_table::load("/home/willao/Documentos/GitHub/ispd-exa-engine-ross/src/routes.route");
+  ispd::routing_table::load(
+      "/home/willao/Documentos/GitHub/ispd-exa-engine-ross/src/routes.route");
   tw_opt_add(opt);
   tw_init(&argc, &argv);
 
@@ -116,8 +112,6 @@ int main(int argc, char **argv)
     vms_memory.emplace_back(4);
   }
 
-
-
   ispd::this_model::registerVMM(
       0, std::move(vms_ids), std::move(vms_memory), std::move(vms_disk),
       std::move(vms_cores), std::move(machines), new ispd::allocator::FirstFit,
@@ -126,12 +120,11 @@ int main(int argc, char **argv)
           "User1", g_star_vm_amount, 1000, 80, 0.95,
           std::make_unique<ispd::workload::PoissonInterarrivalDistribution>(
               0.1)),
-              ispd::cloud_workload::constant("User1", g_star_task_amount, 80, 1000, std::make_unique<ispd::workload::PoissonInterarrivalDistribution>(
-                      0.1)),g_star_vm_amount);
-
-  
-
-
+      ispd::cloud_workload::constant(
+          "User1", g_star_task_amount, 80, 1000,
+          std::make_unique<ispd::workload::PoissonInterarrivalDistribution>(
+              0.1)),
+      g_star_vm_amount);
 
   for (tw_lpid link_id = 1; link_id <= highest_link_id; link_id += 2)
     ispd::this_model::registerLink(link_id, 0, link_id + 1, 50.0, 0.0, 1.0);
@@ -139,13 +132,12 @@ int main(int argc, char **argv)
   /// Registers serivce initializers for the machines.
   for (tw_lpid machine_id = 2; machine_id <= highest_machine_id;
        machine_id += 2)
-    ispd::this_model::registerMachine(machine_id, 20.0, 0.0, 8, 16, 100, 50, 50, 50, 9800.0, 4096,
-                                      6.4, 0.0, 0.0);
-
+    ispd::this_model::registerMachine(machine_id, 20.0, 0.0, 8, 16, 100, 50, 50,
+                                      50, 9800.0, 4096, 6.4, 0.0, 0.0);
 
   /// registers service initializer for the virtual machine.
   for (tw_lpid vm_id = highest_machine_id + 1; vm_id <= highest_vm_id; vm_id++)
-    ispd::this_model::registerVM(vm_id, 10, 0.0,4, 4, 10 );
+    ispd::this_model::registerVM(vm_id, 10, 0.0, 4, 4, 10);
 
   if (ispd::this_model::getUsers().size() == 0)
     ispd_error("At least one user must be registered.");
@@ -186,7 +178,7 @@ int main(int argc, char **argv)
 
           if (current_gid <= highest_vm_id)
             tw_lp_settype(i, &lps_type[3]);
-          else{
+          else {
             tw_lp_settype(i, &lps_type[4]);
             dummy_count++;
           }
@@ -209,7 +201,7 @@ int main(int argc, char **argv)
 
           if (current_gid <= highest_vm_id)
             tw_lp_settype(i, &lps_type[3]);
-          else{
+          else {
             tw_lp_settype(i, &lps_type[4]);
             dummy_count++;
           }
@@ -227,8 +219,9 @@ int main(int argc, char **argv)
       }
     }
 
-//    ispd_log(LOG_INFO, "A total of %u dummies have been created at node %d.",
-//             dummy_count, g_tw_mynode);
+    //    ispd_log(LOG_INFO, "A total of %u dummies have been created at node
+    //    %d.",
+    //             dummy_count, g_tw_mynode);
   }
   /// Sequential.
   else {
@@ -248,8 +241,6 @@ int main(int argc, char **argv)
     }
     for (unsigned i = highest_machine_id + 1; i <= highest_vm_id; i++)
       tw_lp_settype(i, &lps_type[3]);
-
-
   }
 
   tw_run();

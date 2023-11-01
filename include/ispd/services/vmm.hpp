@@ -10,35 +10,30 @@
 #include <ispd/message/message.hpp>
 #include <ispd/model/builder.hpp>
 #include <ispd/metrics/metrics.hpp>
-#include<ispd/services/services.hpp>
+#include <ispd/services/services.hpp>
 #include <ispd/allocator/allocator.hpp>
 #include <ispd/cloud_scheduler/cloud_scheduler.hpp>
 #include <ispd/routing/routing.hpp>
-#include<ispd/cloud_workload/cloud_workload.hpp>
+#include <ispd/cloud_workload/cloud_workload.hpp>
 
-
-
-namespace ispd::services{
-
+namespace ispd::services {
 
 /// the virtual machine monitor has information about the virtual machines.
-struct slave_vms_info{
+struct slave_vms_info {
   tw_lpid id;
   double memory;
   double disk;
   double num_cores;
 };
 
-struct VMM_metrics
-{
-  unsigned task_proc;
+struct VMM_metrics {
+  unsigned applications_proc;
   unsigned vms_alloc;
   unsigned vms_rejected;
   double total_turnaround_time;
 };
 
-struct VMM_state
-{
+struct VMM_state {
   std::vector<struct slave_vms_info> vms;
   std::vector<tw_lpid> machines;
 
@@ -47,18 +42,19 @@ struct VMM_state
   /// links a virtual machine with its owner.
   std::unordered_map<tw_lpid, tw_lpid> *owner;
   ispd::allocator::Allocator *allocator;
-  ispd::workload::Workload *allocation_workload; ///< Workload for allocating vms
-  ispd::cloud_workload::CloudWorkload *vms_workload; ///< Workload for virtual machines composed by applications.
+  ispd::workload::Workload
+      *allocation_workload; ///< Workload for allocating vms
+  ispd::cloud_workload::CloudWorkload *
+      vms_workload; ///< Workload for virtual machines composed by applications.
   ispd::cloud_scheduler::CloudScheduler *scheduler;
 
   unsigned total_vms_to_allocate;
   unsigned total_vms;
 
   VMM_metrics metrics;
-
 };
 
-struct VMM{
+struct VMM {
 
   static void init(VMM_state *s, tw_lp *lp) {
     const auto &service_initializer =
@@ -68,16 +64,7 @@ struct VMM{
     s->owner = new std::unordered_map<tw_lpid, tw_lpid>();
     s->allocator->initAllocator();
 
-
-    /// TESTE
-
-
-
-
-    /// FIM TESTE
-
-
-    s->metrics.task_proc = 0;
+    s->metrics.applications_proc = 0;
     s->metrics.vms_alloc = 0;
     s->metrics.vms_rejected = 0;
 
@@ -90,9 +77,9 @@ struct VMM{
 
     m->type = message_type::GENERATE;
     tw_event_send(e);
-    ispd_debug("VMM %lu has been initialized with %lu vms to allocate.", lp->gid, s->total_vms);
+    ispd_debug("VMM %lu has been initialized with %lu vms to allocate.",
+               lp->gid, s->total_vms);
   }
-
 
   static void forward(VMM_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
     ispd_debug("Message came from %lu of type %lu", msg->previous_service_id,
@@ -112,7 +99,6 @@ struct VMM{
       break;
     }
   }
-
 
   static void reverse(VMM_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
 
@@ -134,37 +120,32 @@ struct VMM{
 
   static void finish(VMM_state *s, tw_lp *lp) {
 
- //   ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_ALLOCATED_VMS,s->metrics.vms_alloc);
-   // ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_REJECTED_VMS, s->metrics.vms_rejected);
-   // ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_COMPLETED_TASKS,s->metrics.task_proc);
-    std::printf(
-        "Virtual Machine Monitor metrics (%lu)\n"
-        " - Total Vms allocated......: %u (%lu)\n"
-        " - Total Vms rejected.......: %u (%lu) \n"
-        " - Total tasks processed....: %u (%lu) \n",
-        lp->gid, s->metrics.vms_alloc,lp->gid,  s->metrics.vms_rejected, lp->gid,
-        s->metrics.task_proc, lp->gid
-    );
-
+       ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_ALLOCATED_VMS,s->metrics.vms_alloc);
+     ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_REJECTED_VMS,
+     s->metrics.vms_rejected);
+     ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_COMPLETED_TASKS,s->metrics.applications_proc);
+    std::printf("Virtual Machine Monitor metrics (%lu)\n"
+                " - Total Vms allocated......: %u (%lu)\n"
+                " - Total Vms rejected.......: %u (%lu) \n"
+                " - Total tasks processed....: %u (%lu) \n",
+                lp->gid, s->metrics.vms_alloc, lp->gid, s->metrics.vms_rejected,
+                lp->gid, s->metrics.applications_proc, lp->gid);
   }
-
 
 private:
   static void generate(VMM_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
-    //ispd_debug("There are %u tasks and %u vms", s->->getRemainingTasks(), s->total_vms_to_allocate);
-    if ( s->total_vms_to_allocate > 0)
+    // ispd_debug("There are %u tasks and %u vms", s->->getRemainingTasks(),
+    // s->total_vms_to_allocate);
+    if (s->total_vms_to_allocate > 0)
       allocate(s, bf, msg, lp);
     else
       schedule(s, bf, msg, lp);
   }
 
-
   static void allocate(VMM_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
     ispd_debug(
         "VMM %lu will generate an allocation process at %lf, remaining %u.",
         lp->gid, tw_now(lp), s->total_vms_to_allocate);
-
-
 
     const tw_lpid machine_chosen =
         s->allocator->forwardAllocation(s->machines, bf, msg, lp);
@@ -177,7 +158,7 @@ private:
     m->type = message_type::ARRIVAL;
 
     s->allocation_workload->generateWorkload(lp->rng, m->task.m_ProcSize,
-                                  m->task.m_CommSize);
+                                             m->task.m_CommSize);
     s->total_vms_to_allocate--;
 
     m->task.m_Origin = lp->gid;
@@ -201,7 +182,6 @@ private:
 
     tw_event_send(e);
 
-
     /// send message to itself to continue allocation
     if (s->total_vms_to_allocate > 0) {
       double offset;
@@ -209,23 +189,19 @@ private:
       s->allocation_workload->generateInterarrival(lp->rng, offset);
       tw_event *const e2 = tw_event_new(lp->gid, offset, lp);
 
-
       ispd_message *const m2 = static_cast<ispd_message *>(tw_event_data(e2));
 
       m2->type = message_type::GENERATE;
 
       tw_event_send(e2);
     }
-
   }
-
 
   static void schedule(VMM_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
     tw_lpid vm_id =
         s->scheduler->forwardSchedule(s->allocated_vms, bf, msg, lp);
 
-
-      ispd_info("vm id : %lu", vm_id);
+    ispd_info("vm id : %lu", vm_id);
     auto verify = s->owner->find(vm_id);
     tw_lpid dest;
     if (verify != s->owner->end())
@@ -243,7 +219,7 @@ private:
     s->vms_workload->generateWorkload(lp->rng, &m->application);
 
     m->application.m_Origin = lp->gid;
-    m->application.m_Dest= dest;
+    m->application.m_Dest = dest;
     m->task.m_Dest = dest;
     m->task.m_Origin = lp->gid;
     m->vm_id = vm_id;
@@ -252,7 +228,6 @@ private:
     m->application.m_Owner = s->vms_workload->getOwner();
     m->task.m_CommSize = m->application.m_CommSize;
     m->task.m_ProcSize = m->application.m_ProcSize;
-
 
     m->route_offset = 1;
     m->previous_service_id = lp->gid;
@@ -286,28 +261,24 @@ private:
 
         s->allocated_vms[s->metrics.vms_alloc] = msg->vm_id;
 
-        ispd_debug("Vm %lu is allocated on machine %lu", msg->vm_id, msg->allocated_in);
+        ispd_debug("Vm %lu is allocated on machine %lu", msg->vm_id,
+                   msg->allocated_in);
         s->owner->emplace(std::make_pair(msg->vm_id, msg->allocated_in));
 
-
         s->metrics.vms_alloc++;
-
 
       }
       /// rejects the vm
       else {
         s->metrics.vms_rejected++;
-
       }
 
-
-        /// checks if every virtual machine were allocated already.If so, sends a message to itself to start
-        /// the scheduling.
-      if (s->metrics.vms_alloc + s->metrics.vms_rejected == s->total_vms)
-      {
+      /// checks if every virtual machine were allocated already.If so, sends a
+      /// message to itself to start the scheduling.
+      if (s->metrics.vms_alloc + s->metrics.vms_rejected == s->total_vms) {
         double offset;
 
-          s->scheduler->initScheduler(s->metrics.vms_alloc);
+        s->scheduler->initScheduler(s->metrics.vms_alloc);
 
         s->vms_workload->generateInterarrival(lp->rng, offset);
         tw_event *const e2 = tw_event_new(lp->gid, offset, lp);
@@ -321,13 +292,12 @@ private:
     /// arrival of an ordinary task
     else {
       msg->task.m_EndTime = tw_now(lp);
-      const double turnaround_time = msg->task.m_EndTime - msg->task.m_SubmitTime;
-      s->metrics.task_proc++;
+      const double turnaround_time =
+          msg->task.m_EndTime - msg->task.m_SubmitTime;
+      s->metrics.applications_proc++;
       s->metrics.total_turnaround_time += turnaround_time;
     }
   }
-
-
 
   static void generate_rc(VMM_state *s, tw_bf *bf, ispd_message *msg,
                           tw_lp *lp) {
@@ -335,10 +305,10 @@ private:
     if (msg->is_vm)
       allocate_rc(s, bf, msg, lp);
     else
-      schedule_rc(s,bf,msg,lp);
+      schedule_rc(s, bf, msg, lp);
   }
 
-  static void  allocate_rc(VMM_state *s, tw_bf *bf, ispd_message *msg,
+  static void allocate_rc(VMM_state *s, tw_bf *bf, ispd_message *msg,
                           tw_lp *lp) {
 
     s->allocator->reverseAllocation(s->machines, bf, msg, lp);
@@ -353,20 +323,19 @@ private:
       s->allocation_workload->reverseGenerateInterarrival(lp->rng);
   }
 
-  static void schedule_rc(VMM_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp)
-  {
+  static void schedule_rc(VMM_state *s, tw_bf *bf, ispd_message *msg,
+                          tw_lp *lp) {
     /// Reverse the schedule.
     s->scheduler->reverseSchedule(s->allocated_vms, bf, msg, lp);
 
     /// Reverse the workload generator.
     s->vms_workload->reverseGenerateWorkload(lp->rng);
 
-    /// Checks if after reversing the workload generator, there are remaining tasks to be generated.
-    /// If so, the random number generator is reversed since it is used to generate the interarrival
-    /// time of the tasks.
+    /// Checks if after reversing the workload generator, there are remaining
+    /// tasks to be generated. If so, the random number generator is reversed
+    /// since it is used to generate the interarrival time of the tasks.
     if (s->vms_workload->getRemainingApplications() > 0)
       s->vms_workload->reverseGenerateInterarrival(lp->rng);
-
   }
 
   static void arrival_rc(VMM_state *s, tw_bf *bf, ispd_message *msg,
@@ -383,33 +352,30 @@ private:
         s->vms.insert(s->vms.begin(), vm);
 
         uint index_to_remove;
-        for (uint i = 0; i < s->metrics.vms_alloc; i ++)
-        {
-            if (s->allocated_vms[i] == msg->vm_id){
-                index_to_remove = i;
-                break;
-            }
-         }
+        for (uint i = 0; i < s->metrics.vms_alloc; i++) {
+          if (s->allocated_vms[i] == msg->vm_id) {
+            index_to_remove = i;
+            break;
+          }
+        }
 
-        for (uint i = index_to_remove; i < s->metrics.vms_alloc - index_to_remove; i++)
-        {
-            s->allocated_vms[i] = s->allocated_vms[i+1];
+        for (uint i = index_to_remove;
+             i < s->metrics.vms_alloc - index_to_remove; i++) {
+          s->allocated_vms[i] = s->allocated_vms[i + 1];
         }
         s->metrics.vms_alloc--;
       }
 
-
-
     } else {
       /// Calculate the task`s turnaround time.
-      const double turnaround_time = msg->task.m_EndTime - msg->task.m_SubmitTime;
+      const double turnaround_time =
+          msg->task.m_EndTime - msg->task.m_SubmitTime;
 
       /// Reverse the master's metrics.
-      s->metrics.task_proc--;
+      s->metrics.applications_proc--;
       s->metrics.total_turnaround_time -= turnaround_time;
     }
   }
-
 };
-};
+}; // namespace ispd::services
 #endif

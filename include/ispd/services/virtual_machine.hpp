@@ -50,7 +50,6 @@ struct virtual_machine {
 
     service_initializer(s);
 
-
     ispd_debug("Virtual machine %lu has been initialized.", lp->gid);
   }
 
@@ -60,9 +59,8 @@ struct virtual_machine {
         "and route offset (%u).",
         lp->gid, tw_now(lp), msg->type, msg->route_offset);
 
-     double proc_size = msg->application.m_ProcSize;
+    double proc_size = msg->application.m_ProcSize;
     const double proc_time = s->conf.timeToProcess(proc_size);
-
 
     unsigned core_index;
     const double least_free_time =
@@ -73,7 +71,7 @@ struct virtual_machine {
     s->metrics.m_ProcTime++;
     s->metrics.m_ProcMFlops += proc_size;
     s->metrics.m_ProcTime = proc_time;
-    s->metrics.m_ProcTasks++;
+    s->metrics.m_ProcApplications++;
 
     s->cores_free_time[core_index] = tw_now(lp) + departure_delay;
 
@@ -93,7 +91,7 @@ struct virtual_machine {
   }
 
   static void commit(VM_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
-      double proc_size = msg->application.m_ProcSize;
+    double proc_size = msg->application.m_ProcSize;
     const double proc_time = s->conf.timeToProcess(proc_size);
 
     const double least_free_time = msg->saved_core_next_available_time;
@@ -107,13 +105,13 @@ struct virtual_machine {
     userMetrics.m_CompletedTasks++;
   }
   static void reverse(VM_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
-      double proc_size = msg->application.m_ProcSize;
+    double proc_size = msg->application.m_ProcSize;
     const double proc_time = s->conf.timeToProcess(proc_size);
 
     const double least_free_time = msg->saved_core_next_available_time;
     const double waiting_delay = ROSS_MAX(0.0, least_free_time - tw_now(lp));
 
-    s->metrics.m_ProcTasks--;
+    s->metrics.m_ProcApplications--;
     s->metrics.m_ProcMFlops -= proc_size;
     s->metrics.m_ProcTime -= proc_time;
 
@@ -140,7 +138,6 @@ struct virtual_machine {
         ispd::metrics::NodeMetricsFlag::NODE_TOTAL_PROCESSING_WAITING_TIME,
         s->metrics.m_ProcWaitingTime);
 
-
     ispd::node_metrics::notifyMetric(
         ispd::metrics::NodeMetricsFlag::NODE_TOTAL_CPU_CORES,
         static_cast<unsigned>(s->cores_free_time.size()));
@@ -148,18 +145,22 @@ struct virtual_machine {
         ispd::metrics::NodeMetricsFlag::NODE_TOTAL_PROCESSING_TIME,
         s->metrics.m_ProcTime);
 
+    ispd::node_metrics::notifyMetric(
+        ispd::metrics::NodeMetricsFlag::NODE_TOTAL_COMPLETED_APPLICATIONS,
+        s->metrics.m_ProcApplications);
+    
+
     std::printf("Virtual machine metrics (%lu) \n"
                 " - Last Activity Time..: %lf seconds (%lu).\n"
                 " - Processed MFLOPS:...: %lf MFLOPS (%lu). \n"
-                " - Processed Tasks.....: %u tasks (%lu).\n"
+                " - Processed Applications.....: %u applications (%lu).\n"
                 " - Waiting Time........: %lf seconds (%lu).\n"
                 " - Avg. Processing Time: %lf seconds (%lu).\n"
                 " - Idleness............: %lf%% (%lu).\n",
                 lp->gid, last_activity_time, lp->gid, s->metrics.m_ProcMFlops,
-                lp->gid, s->metrics.m_ProcTasks, lp->gid,
-                s->metrics.m_ProcTime, lp->gid,
-                s->metrics.m_ProcTime / s->metrics.m_ProcTasks, lp->gid,
-                idleness * 100, lp->gid);
+                lp->gid, s->metrics.m_ProcApplications, lp->gid, s->metrics.m_ProcTime,
+                lp->gid, s->metrics.m_ProcTime / s->metrics.m_ProcApplications,
+                lp->gid, idleness * 100, lp->gid);
   }
 };
 }; // namespace services

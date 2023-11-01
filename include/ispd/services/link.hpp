@@ -60,11 +60,12 @@ struct link {
 
   static void init(link_state *s, tw_lp *lp) {
     /// Fetch the service initializer from this logical process.
-    const auto &service_initializer = ispd::this_model::getServiceInitializer(lp->gid);
+    const auto &service_initializer =
+        ispd::this_model::getServiceInitializer(lp->gid);
 
     /// Call the service initializer for this logical process.
     service_initializer(s);
-    
+
     /// Initialize link's metrics.
     s->metrics.upward_comm_time = 0;
     s->metrics.downward_comm_time = 0;
@@ -84,10 +85,11 @@ struct link {
   }
 
   static void forward(link_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
-    ispd_debug("[Forward] Link %lu received a message at %lf of type (%d).", lp->gid, tw_now(lp), msg->type);
+    ispd_debug("[Forward] Link %lu received a message at %lf of type (%d).",
+               lp->gid, tw_now(lp), msg->type);
 
 #ifdef DEBUG_ON
-  const auto start = std::chrono::high_resolution_clock::now();
+    const auto start = std::chrono::high_resolution_clock::now();
 #endif // DEBUG_ON
 
     /// Fetch the communication size and calculates the communication time.
@@ -109,7 +111,8 @@ struct link {
     saved_next_available_time = next_available_time;
 
     /// Calculate the waiting delay and the departure delay.
-    const double waiting_delay = ROSS_MAX(0.0, next_available_time - tw_now(lp));
+    const double waiting_delay =
+        ROSS_MAX(0.0, next_available_time - tw_now(lp));
     const double departure_delay = waiting_delay + comm_time;
 
     /// Update the downward link's metrics.
@@ -141,17 +144,20 @@ struct link {
     }
 
     DEBUG({
-        /// Checks if the incoming messages has been arrived
-        /// from a logical process that differs from the link's ends.
-        /// If so, the program is immediately aborted.
-        if (msg->previous_service_id != s->to &&
-            msg->previous_service_id != s->from) {
-            std::printf("Link with GID %lu has received a packet from a service different from its ends (%lu).", lp->gid, msg->previous_service_id);
-            abort();
-        }
+      /// Checks if the incoming messages has been arrived
+      /// from a logical process that differs from the link's ends.
+      /// If so, the program is immediately aborted.
+      if (msg->previous_service_id != s->to &&
+          msg->previous_service_id != s->from) {
+        std::printf("Link with GID %lu has received a packet from a service "
+                    "different from its ends (%lu).",
+                    lp->gid, msg->previous_service_id);
+        abort();
+      }
     });
 
-    tw_event *const e = tw_event_new(send_to, g_tw_lookahead + departure_delay, lp);
+    tw_event *const e =
+        tw_event_new(send_to, g_tw_lookahead + departure_delay, lp);
     ispd_message *const m = static_cast<ispd_message *>(tw_event_data(e));
 
     m->type = message_type::ARRIVAL;
@@ -174,19 +180,22 @@ struct link {
     tw_event_send(e);
 
 #ifdef DEBUG_ON
-  const auto end = std::chrono::high_resolution_clock::now();
-  const auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
-  const auto timeTaken = static_cast<double>(duration.count());
+    const auto end = std::chrono::high_resolution_clock::now();
+    const auto duration =
+        std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+    const auto timeTaken = static_cast<double>(duration.count());
 
-  ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_LINK_FORWARD_TIME, timeTaken);
+    ispd::node_metrics::notifyMetric(
+        ispd::metrics::NodeMetricsFlag::NODE_LINK_FORWARD_TIME, timeTaken);
 #endif // DEBUG_ON
   }
 
   static void reverse(link_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
-    ispd_debug("[Reverse] Link %lu received a message at %lf of type (%d).", lp->gid, tw_now(lp), msg->type);
+    ispd_debug("[Reverse] Link %lu received a message at %lf of type (%d).",
+               lp->gid, tw_now(lp), msg->type);
 
 #ifdef DEBUG_ON
-  const auto start = std::chrono::high_resolution_clock::now();
+    const auto start = std::chrono::high_resolution_clock::now();
 #endif // DEBUG_ON
 
     /// Fetch the communication size and calculates the communication time.
@@ -195,8 +204,8 @@ struct link {
     const double next_available_time = msg->saved_link_next_available_time;
     const double waiting_delay = msg->saved_waiting_time;
 
-    /// Checks if the message is being sent from the master to the slave. Therefore,
-    /// the downward next available time should be reverse processed.
+    /// Checks if the message is being sent from the master to the slave.
+    /// Therefore, the downward next available time should be reverse processed.
     if (msg->downward_direction) {
       s->downward_next_available_time = next_available_time;
 
@@ -206,8 +215,8 @@ struct link {
       s->metrics.downward_comm_packets--;
       s->metrics.downward_waiting_time -= waiting_delay;
     }
-    /// Otherwise, if the message is being sent from the slae to the master. Therefore
-    /// the upward next available time should be reverse processed.
+    /// Otherwise, if the message is being sent from the slae to the master.
+    /// Therefore the upward next available time should be reverse processed.
     else {
       s->upward_next_available_time = next_available_time;
 
@@ -219,60 +228,69 @@ struct link {
     }
 
 #ifdef DEBUG_ON
-  const auto end = std::chrono::high_resolution_clock::now();
-  const auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
-  const auto timeTaken = static_cast<double>(duration.count());
+    const auto end = std::chrono::high_resolution_clock::now();
+    const auto duration =
+        std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+    const auto timeTaken = static_cast<double>(duration.count());
 
-  ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_LINK_REVERSE_TIME, timeTaken);
+    ispd::node_metrics::notifyMetric(
+        ispd::metrics::NodeMetricsFlag::NODE_LINK_REVERSE_TIME, timeTaken);
 #endif // DEBUG_ON
   }
 
   static void finish(link_state *s, tw_lp *lp) {
     const double lastActivityTime = std::max(s->downward_next_available_time,
-        s->upward_next_available_time);
-    const double linkTotalCommunicatedMBits = s->metrics.downward_comm_mbits +
-        s->metrics.upward_comm_mbits;
-    const double linkTotalCommunicationTime = s->metrics.downward_comm_time +
-        s->metrics.upward_comm_time;
-    const double linkTotalCommunicationWaitingTime = s->metrics.downward_waiting_time +
-        s->metrics.upward_waiting_time;
-    const double downwardIdleness = 1.0 - (s->metrics.downward_comm_time - s->metrics.downward_waiting_time) / s->metrics.downward_comm_time;
-    const double upwardIdleness = 1.0 - (s->metrics.upward_comm_time - s->metrics.upward_waiting_time) / s->metrics.upward_comm_time;
-
+                                             s->upward_next_available_time);
+    const double linkTotalCommunicatedMBits =
+        s->metrics.downward_comm_mbits + s->metrics.upward_comm_mbits;
+    const double linkTotalCommunicationTime =
+        s->metrics.downward_comm_time + s->metrics.upward_comm_time;
+    const double linkTotalCommunicationWaitingTime =
+        s->metrics.downward_waiting_time + s->metrics.upward_waiting_time;
+    const double downwardIdleness = 1.0 - (s->metrics.downward_comm_time -
+                                           s->metrics.downward_waiting_time) /
+                                              s->metrics.downward_comm_time;
+    const double upwardIdleness =
+        1.0 - (s->metrics.upward_comm_time - s->metrics.upward_waiting_time) /
+                  s->metrics.upward_comm_time;
 
     /// Report to the node`s metrics collector the last activity time
     /// of the machine in the simulation.
-    ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_SIMULATION_TIME, lastActivityTime);
-    ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_COMMUNICATED_MBITS, linkTotalCommunicatedMBits);
-    ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_COMMUNICATION_WAITING_TIME, linkTotalCommunicationWaitingTime);
-    ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_LINK_SERVICES);
-    ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_COMMUNICATION_TIME, linkTotalCommunicationTime);
+    ispd::node_metrics::notifyMetric(
+        ispd::metrics::NodeMetricsFlag::NODE_SIMULATION_TIME, lastActivityTime);
+    ispd::node_metrics::notifyMetric(
+        ispd::metrics::NodeMetricsFlag::NODE_TOTAL_COMMUNICATED_MBITS,
+        linkTotalCommunicatedMBits);
+    ispd::node_metrics::notifyMetric(
+        ispd::metrics::NodeMetricsFlag::NODE_TOTAL_COMMUNICATION_WAITING_TIME,
+        linkTotalCommunicationWaitingTime);
+    ispd::node_metrics::notifyMetric(
+        ispd::metrics::NodeMetricsFlag::NODE_TOTAL_LINK_SERVICES);
+    ispd::node_metrics::notifyMetric(
+        ispd::metrics::NodeMetricsFlag::NODE_TOTAL_COMMUNICATION_TIME,
+        linkTotalCommunicationTime);
 
-    std::printf(
-        "Link Queue Info & Metrics (%lu)\n"
-        " - Downward Communicated Mbits..: %lf Mbits (%lu).\n"
-        " - Downward Communicated Packets: %u packets (%lu).\n"
-        " - Downward Waiting Time........: %lf seconds (%lu).\n"
-        " - Downward Idleness............: %lf% (%lu).\n"
-        " - Downward Next Avail. Time....: %lf seconds (%lu).\n"
-        " - Upward Communicated Mbits....: %lf Mbits (%lu).\n"
-        " - Upward Communicated Packets..: %u packets (%lu).\n"
-        " - Upward Waiting Time..........: %lf seconds (%lu).\n"
-        " - Upward Idleness..............: %lf% (%lu).\n"
-        " - Upward Next Avail. Time......: %lf seconds (%lu).\n"
-        "\n",
-        lp->gid, 
-        s->metrics.downward_comm_mbits, lp->gid,
-        s->metrics.downward_comm_packets, lp->gid,
-        s->metrics.downward_waiting_time, lp->gid,
-        downwardIdleness * 100.0, lp->gid,
-        s->downward_next_available_time, lp->gid,
-        s->metrics.upward_comm_mbits, lp->gid,
-        s->metrics.upward_comm_packets, lp->gid,
-        s->metrics.upward_waiting_time, lp->gid,
-        upwardIdleness * 100.0, lp->gid,
-        s->upward_next_available_time, lp->gid
-    );
+    std::printf("Link Queue Info & Metrics (%lu)\n"
+                " - Downward Communicated Mbits..: %lf Mbits (%lu).\n"
+                " - Downward Communicated Packets: %u packets (%lu).\n"
+                " - Downward Waiting Time........: %lf seconds (%lu).\n"
+                " - Downward Idleness............: %lf% (%lu).\n"
+                " - Downward Next Avail. Time....: %lf seconds (%lu).\n"
+                " - Upward Communicated Mbits....: %lf Mbits (%lu).\n"
+                " - Upward Communicated Packets..: %u packets (%lu).\n"
+                " - Upward Waiting Time..........: %lf seconds (%lu).\n"
+                " - Upward Idleness..............: %lf% (%lu).\n"
+                " - Upward Next Avail. Time......: %lf seconds (%lu).\n"
+                "\n",
+                lp->gid, s->metrics.downward_comm_mbits, lp->gid,
+                s->metrics.downward_comm_packets, lp->gid,
+                s->metrics.downward_waiting_time, lp->gid,
+                downwardIdleness * 100.0, lp->gid,
+                s->downward_next_available_time, lp->gid,
+                s->metrics.upward_comm_mbits, lp->gid,
+                s->metrics.upward_comm_packets, lp->gid,
+                s->metrics.upward_waiting_time, lp->gid, upwardIdleness * 100.0,
+                lp->gid, s->upward_next_available_time, lp->gid);
   }
 };
 

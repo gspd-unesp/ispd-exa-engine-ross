@@ -5,7 +5,9 @@ namespace ispd::configuration {
 ///
 /// \brief Represents the configuration of a virtual machine in the simulation
 ///
-/// The VmConfiguration encapsulates various parameters related to the configuration of a virtual machine in the simulation environment and provides methods for obtaining information.
+/// The VmConfiguration encapsulates various parameters related to the
+/// configuration of a virtual machine in the simulation environment and
+/// provides methods for obtaining information.
 
 class VmConfiguration final {
 
@@ -20,7 +22,9 @@ private:
 public:
   /// \brief Constructor for VmConfiguration
   ///
-  /// Initializes a new instance of VmConfiguration class with the provided parameters. \param power \param load \param coreCount \param memory \param diskSpace
+  /// Initializes a new instance of VmConfiguration class with the provided
+  /// parameters. \param power \param load \param coreCount \param memory \param
+  /// diskSpace
 
   [[nodiscard]] constexpr explicit VmConfiguration(
       const double power, const double load, const unsigned coreCount,
@@ -30,7 +34,8 @@ public:
 
   /// \brief Calculates and returns the time to process given a processingSize
   ///
-  /// Calculates and returns the time required to process a given processing size.
+  /// Calculates and returns the time required to process a given processing
+  /// size.
   ///
   /// \param processingSize The size of the processing to be carried out.
   /// \return The time required to process the given size.
@@ -56,21 +61,14 @@ public:
     return m_CoreCount;
   }
 
-
   /// \brief Returns the amount of memory in this machine.
   /// return amount of memory in GB.
-  [[nodiscard]] inline double getMemory() const noexcept {
-    return m_Memory;
-  }
-
+  [[nodiscard]] inline double getMemory() const noexcept { return m_Memory; }
 
   /// \brief Returns the amount of disk space in this machine.
   /// return amount of disk space in GB.
-  [[nodiscard]] inline double getDiskSpace() const noexcept{
+  [[nodiscard]] inline double getDiskSpace() const noexcept {
     return m_DiskSpace;
   }
-
-
-
 };
-};
+}; // namespace ispd::configuration
