@@ -8,7 +8,10 @@
 #include <ispd/log/log.hpp>
 #include <ispd/model/user.hpp>
 #include <ispd/workload/workload.hpp>
+#include <ispd/cloud_workload/cloud_workload.hpp>
 #include <ispd/scheduler/scheduler.hpp>
+#include <ispd/cloud_scheduler/cloud_scheduler.hpp>
+#include <ispd/allocator/allocator.hpp>
 
 namespace ispd::model {
 
@@ -19,8 +22,10 @@ public:
   using user_map_type = std::unordered_map<User::uid_t, User>;
 
   void registerMachine(const tw_lpid gid, const double power, const double load,
-                       const unsigned coreCount, const double gpuPower,
-                       const unsigned gpuCoreCount,
+                       const unsigned coreCount, const double memory,
+                       const double disk, const double cpu_price,
+                       const double memory_price, const double disk_price,
+                       const double gpuPower, const unsigned gpuCoreCount,
                        const double interconnectionBandwidth,
                        const double wattageIdle, const double wattageMax);
 
@@ -34,6 +39,21 @@ public:
   void registerMaster(const tw_lpid gid, std::vector<tw_lpid> &&slaves,
                       ispd::scheduler::Scheduler *const scheduler,
                       ispd::workload::Workload *const workload);
+
+  void registerVM(const tw_lpid gid, const double power, const double load,
+                  const unsigned coreCount, const double memory,
+                  const double space);
+
+  void registerVMM(const tw_lpid gid, std::vector<tw_lpid> &&vms,
+                   std::vector<double> &&vms_mem,
+                   std::vector<double> &&vms_disk,
+                   std::vector<unsigned> &&vms_cores,
+                   std::vector<tw_lpid> &&machines,
+                   ispd::allocator::Allocator *const allocator,
+                   ispd::cloud_scheduler::CloudScheduler *const scheduler,
+                   ispd::workload::Workload *const workload,
+                   ispd::cloud_workload::CloudWorkload *const cloudWorkload,
+                   const unsigned total_vms);
 
   void registerUser(const std::string &name,
                     const double energyConsumptionLimit);
@@ -77,8 +97,10 @@ private:
 
 namespace ispd::this_model {
 void registerMachine(const tw_lpid gid, const double power, const double load,
-                     const unsigned coreCount, const double gpuPower,
-                     const unsigned gpuCoreCount,
+                     const unsigned coreCount, const double memory,
+                     const double disk, const double cpu_price,
+                     const double memory_price, const double disk_price,
+                     const double gpuPower, const unsigned gpuCoreCount,
                      const double interconnectionBandwidth,
                      const double wattageIdle, const double wattageMax);
 
@@ -92,6 +114,20 @@ void registerSwitch(const tw_lpid gid, const double bandwidth,
 void registerMaster(const tw_lpid gid, std::vector<tw_lpid> &&slaves,
                     ispd::scheduler::Scheduler *const scheduler,
                     ispd::workload::Workload *const workload);
+
+void registerVM(const tw_lpid gid, const double power, const double load,
+                const unsigned coreCount, const double memory,
+                const double space);
+
+void registerVMM(const tw_lpid gid, std::vector<tw_lpid> &&vms,
+                 std::vector<double> &&vms_mem, std::vector<double> &&vms_disk,
+                 std::vector<unsigned> &&vms_cores,
+                 std::vector<tw_lpid> &&machines,
+                 ispd::allocator::Allocator *const allocator,
+                 ispd::cloud_scheduler::CloudScheduler *const scheduler,
+                 ispd::workload::Workload *const workload,
+                 ispd::cloud_workload::CloudWorkload *const cloudWorkload,
+                 const unsigned total_vms);
 
 void registerUser(const std::string &name, const double energyConsumptionLimit);
 

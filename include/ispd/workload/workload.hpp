@@ -110,7 +110,7 @@ public:
   ///        sizes depending on the generation policy.
   ///
   /// This pure virtual function defines the interface for workload generation
-  /// in derived classes. Each derived workload class must implement this
+  /// in derived classes. Each derivezd workload class must implement this
   /// function to generate the workload's processing and communication sizes
   /// based on the specific generation policy. The actual logic for generating
   /// workload characteristics can vary between different workload types.

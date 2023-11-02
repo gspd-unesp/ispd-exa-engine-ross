@@ -59,7 +59,7 @@ auto RoutingTable::parseRouteLine(const std::string &routeLine,
   const std::size_t routeLineLength = routeLine.length();
   std::size_t whitespaceCount = 0;
   std::size_t pathLength = 0;
-  std::size_t pathIndex = 0;
+    std::size_t pathIndex = 0;
 
   // It counts the amount of whitespaces the route line contains.
   // With that information in hands, it is possible to conclude the

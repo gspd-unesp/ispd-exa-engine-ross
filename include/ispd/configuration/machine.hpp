@@ -16,6 +16,9 @@ private:
   double m_Load;         ///< Load factor of the machine (0.0 to 1.0).
   unsigned m_CoreCount;  ///< Number of cores in the machine.
 
+  double m_availableMemory;    ///< available memory (in GB)
+  double m_availableDiskSpace; ///< available disk space (in GB)
+
   double m_GpuPowerPerCore;
   unsigned m_GpuCoreCount;        ///< Number of GPU cores in the machine.
   double m_InterconnectBandwidth; ///< Total interconnection bandwidth (in
@@ -36,13 +39,17 @@ public:
   /// \param coreCount Number of cores in the machine.
   [[nodiscard]] constexpr explicit MachineConfiguration(
       const double power, const double load, const unsigned coreCount,
+      const double availableMemory, const double availableDiskSpace,
       const double gpuPower, const unsigned gpuCoreCount,
       const double interconnectionBandwidth, const double wattageIdle,
       const double wattageMax) noexcept
       : m_PowerPerCore(power / coreCount), m_Load(load), m_CoreCount(coreCount),
+        m_availableMemory(availableMemory),
+        m_availableDiskSpace(availableDiskSpace),
         m_InterconnectBandwidth(interconnectionBandwidth),
-        m_GpuPowerPerCore(gpuPower / gpuCoreCount), m_GpuCoreCount(gpuCoreCount),
-        m_WattageIdle(wattageIdle), m_WattageMax(wattageMax),
+        m_GpuPowerPerCore(gpuPower / gpuCoreCount),
+        m_GpuCoreCount(gpuCoreCount), m_WattageIdle(wattageIdle),
+        m_WattageMax(wattageMax),
         m_WattagePerCore((wattageMax - wattageIdle) / coreCount) {}
 
   /// \brief Calculates the time required to process a task.
@@ -101,7 +108,7 @@ public:
     return m_PowerPerCore;
   }
 
-  /// \brief Returns the load factor of the machine.
+  /// \brief Returns the load  factor of the machine.
   ///
   /// \return Load factor of the machine (0.0 to 1.0).
   [[nodiscard]] inline double getLoad() const noexcept { return m_Load; }
@@ -111,6 +118,42 @@ public:
   /// \return The core count of the machine.
   [[nodiscard]] inline unsigned getCoreCount() const noexcept {
     return m_CoreCount;
+  }
+
+  /// \brief Changes the amount of CPU cores available to use in this machine.
+  ///
+  /// The number of cores is changed when a new virtual machine is hosted in
+  /// this physical machine. \brief Returns the available memory in this
+  /// machine.
+  inline void setCoreCount(unsigned coreCount) { m_CoreCount = coreCount; }
+
+  /// \return The available memory of the machine
+  [[nodiscard]] inline double getAvailableMemory() const noexcept {
+    return m_availableMemory;
+  }
+
+  /// \brief Changes the available memory in this machine.
+  ///
+  /// The available memory  is changed when a new virtual machine is hosted in
+  /// this physical machine.
+
+  inline void setAvailableMemory(double availableMemory) {
+    m_availableMemory = availableMemory;
+  }
+
+  /// \brief Returns the available disk space in this machine.
+  ///
+  /// \return The available memory of the machine
+  [[nodiscard]] inline double getAvailableDiskSpace() const noexcept {
+    return m_availableDiskSpace;
+  }
+
+  /// \brief Changes the available disk space in this machine.
+  ///
+  /// The available disk space is changed when a new virtual machine is hosted
+  /// in this physical machine.
+  inline void setAvailableDiskSpace(double diskSpace) {
+    m_availableDiskSpace = diskSpace;
   }
 
   /// \brief Returns the total computational power supplied by the GPU (in
