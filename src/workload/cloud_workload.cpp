@@ -6,6 +6,7 @@ namespace ispd::cloud_workload {
 
 [[nodiscard]] CloudWorkload::CloudWorkload(
     const std::string &owner, const unsigned remainingApplications,
+    const unsigned taskPerApplication,
     std::unique_ptr<ispd::workload::InterarrivalDistribution>
         interarrivalDist) noexcept {
   const auto &registers_users = ispd::this_model::getUsers();
@@ -19,15 +20,18 @@ namespace ispd::cloud_workload {
 
   m_Owner = userIterator->second.getId();
   m_RemainingApplications = remainingApplications;
+  m_TasksPerApplication = taskPerApplication;
   m_InterarrivalDist = std::move(interarrivalDist);
 }
 
 [[nodiscard]] ConstantCloudWorkload::ConstantCloudWorkload(
     const std::string &user, const unsigned remainingApplications,
-    const double constantCommSize, const double constantProcSize,
+    const unsigned taskPerApplication, const double constantCommSize,
+    const double constantProcSize,
     std::unique_ptr<ispd::workload::InterarrivalDistribution>
         interarrivalDist) noexcept
-    : CloudWorkload(user, remainingApplications, std::move(interarrivalDist)),
+    : CloudWorkload(user, remainingApplications, taskPerApplication,
+                    std::move(interarrivalDist)),
       m_ConstantProcSize(constantProcSize),
       m_ConstantCommSize(constantCommSize) {
   if (constantProcSize <= 0.0)
@@ -46,12 +50,13 @@ namespace ispd::cloud_workload {
 
 ConstantCloudWorkload *
 constant(const std::string &owner, const unsigned remainingApplications,
-         const double constantCommSize, const double constantProcSize,
+         const unsigned taskPerApplication, const double constantCommSize,
+         const double constantProcSize,
          std::unique_ptr<ispd::workload::InterarrivalDistribution>
              interarrivalDist) {
-  return new ConstantCloudWorkload(owner, remainingApplications,
-                                   constantCommSize, constantProcSize,
-                                   std::move(interarrivalDist));
+  return new ConstantCloudWorkload(
+      owner, remainingApplications, taskPerApplication, constantCommSize,
+      constantProcSize, std::move(interarrivalDist));
 }
 
 }; // namespace ispd::cloud_workload

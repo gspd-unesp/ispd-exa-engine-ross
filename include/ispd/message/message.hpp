@@ -3,7 +3,7 @@
 
 #include <ispd/customer/task.hpp>
 #include <vector>
-#define TASK_FOR_APP 20 // this will be for a while.
+#define TASK_FOR_APP 20
 
 enum class message_type { GENERATE, ARRIVAL };
 

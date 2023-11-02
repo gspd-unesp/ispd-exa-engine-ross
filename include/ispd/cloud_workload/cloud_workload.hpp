@@ -44,6 +44,12 @@ protected:
   /// workload progress.
   unsigned m_RemainingApplications;
 
+  /// \brief The amount of tasks each application supports.
+  ///
+  /// The 'm_TasksPerApplication stores the amount of tasks that are
+  /// inside each application. It is immutable during the simulation.
+  unsigned m_TasksPerApplication;
+
   /// \brief Unique pointer to InterarrivalDistribution
   ///
   /// This member variable holds a `std::unique_ptr` to an
@@ -68,6 +74,7 @@ public:
   /// pointer to InteraarivalDistribution
   [[nodiscard]] explicit CloudWorkload(
       const std::string &owner, const unsigned remainingApplications,
+      const unsigned tasksPerApplication,
       std::unique_ptr<ispd::workload::InterarrivalDistribution>
           interarrivalDist) noexcept;
 
@@ -167,7 +174,8 @@ class ConstantCloudWorkload final : public CloudWorkload {
 public:
   [[nodiscard]] explicit ConstantCloudWorkload(
       const std::string &owner, const unsigned remainingApplications,
-      const double constantCommSize, const double constantProcSize,
+      const unsigned taskPerApplication, const double constantCommSize,
+      const double constantProcSize,
       std::unique_ptr<ispd::workload::InterarrivalDistribution>
           interarrivalDist) noexcept;
 
@@ -177,8 +185,8 @@ public:
     application->m_CommSize = 0;
     application->m_ProcSize = 0;
 
-    application->m_CommSize = m_ConstantProcSize * TASK_FOR_APP;
-    application->m_ProcSize += m_ConstantProcSize * TASK_FOR_APP;
+    application->m_CommSize = m_ConstantProcSize * m_TasksPerApplication;
+    application->m_ProcSize += m_ConstantProcSize * m_TasksPerApplication;
 
     CloudWorkload::m_RemainingApplications--;
   }
@@ -192,7 +200,8 @@ public:
 
 ConstantCloudWorkload *constant(
     const std::string &owner, const unsigned remainingApplications,
-    const double constantCommSize, const double constantProcSize,
+    const unsigned taskPerApplication, const double constantCommSize,
+    const double constantProcSize,
     std::unique_ptr<ispd::workload::InterarrivalDistribution> interarrivalDist);
 }; // namespace ispd::cloud_workload
 

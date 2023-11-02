@@ -121,7 +121,7 @@ int main(int argc, char **argv) {
           std::make_unique<ispd::workload::PoissonInterarrivalDistribution>(
               0.1)),
       ispd::cloud_workload::constant(
-          "User1", g_star_task_amount, 80, 1000,
+          "User1", g_star_task_amount, 10, 80, 1000,
           std::make_unique<ispd::workload::PoissonInterarrivalDistribution>(
               0.1)),
       g_star_vm_amount);
