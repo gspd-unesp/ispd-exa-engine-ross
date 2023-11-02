@@ -33,9 +33,8 @@ struct MachineMetrics final {
          ///< to other components within the simulation.
 
   /// \name Virtual Machine related metrics.
-  unsigned m_AllocatedVms =
-      0; ///< The total number of virtual machines allocated
-         ///< in this machine.
+  unsigned m_AllocatedVms = 0; ///< The total number of virtual machines
+                               ///< allocated in this machine.
 
   unsigned m_RejectedVms = 0; ///< The total number of virtual machines rejected
                               ///< in this machine

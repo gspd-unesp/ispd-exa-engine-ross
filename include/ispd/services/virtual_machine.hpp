@@ -148,7 +148,6 @@ struct virtual_machine {
     ispd::node_metrics::notifyMetric(
         ispd::metrics::NodeMetricsFlag::NODE_TOTAL_COMPLETED_APPLICATIONS,
         s->metrics.m_ProcApplications);
-    
 
     std::printf("Virtual machine metrics (%lu) \n"
                 " - Last Activity Time..: %lf seconds (%lu).\n"
@@ -158,9 +157,10 @@ struct virtual_machine {
                 " - Avg. Processing Time: %lf seconds (%lu).\n"
                 " - Idleness............: %lf%% (%lu).\n",
                 lp->gid, last_activity_time, lp->gid, s->metrics.m_ProcMFlops,
-                lp->gid, s->metrics.m_ProcApplications, lp->gid, s->metrics.m_ProcTime,
-                lp->gid, s->metrics.m_ProcTime / s->metrics.m_ProcApplications,
-                lp->gid, idleness * 100, lp->gid);
+                lp->gid, s->metrics.m_ProcApplications, lp->gid,
+                s->metrics.m_ProcTime, lp->gid,
+                s->metrics.m_ProcTime / s->metrics.m_ProcApplications, lp->gid,
+                idleness * 100, lp->gid);
   }
 };
 }; // namespace services

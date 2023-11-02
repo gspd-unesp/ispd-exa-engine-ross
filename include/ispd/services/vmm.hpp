@@ -120,10 +120,15 @@ struct VMM {
 
   static void finish(VMM_state *s, tw_lp *lp) {
 
-       ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_ALLOCATED_VMS,s->metrics.vms_alloc);
-     ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_REJECTED_VMS,
-     s->metrics.vms_rejected);
-     ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_COMPLETED_TASKS,s->metrics.applications_proc);
+    ispd::node_metrics::notifyMetric(
+        ispd::metrics::NodeMetricsFlag::NODE_TOTAL_ALLOCATED_VMS,
+        s->metrics.vms_alloc);
+    ispd::node_metrics::notifyMetric(
+        ispd::metrics::NodeMetricsFlag::NODE_TOTAL_REJECTED_VMS,
+        s->metrics.vms_rejected);
+    ispd::node_metrics::notifyMetric(
+        ispd::metrics::NodeMetricsFlag::NODE_TOTAL_COMPLETED_TASKS,
+        s->metrics.applications_proc);
     std::printf("Virtual Machine Monitor metrics (%lu)\n"
                 " - Total Vms allocated......: %u (%lu)\n"
                 " - Total Vms rejected.......: %u (%lu) \n"
