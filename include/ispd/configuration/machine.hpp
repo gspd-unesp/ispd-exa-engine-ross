@@ -123,10 +123,11 @@ public:
   /// \brief Changes the amount of CPU cores available to use in this machine.
   ///
   /// The number of cores is changed when a new virtual machine is hosted in
-  /// this physical machine. \brief Returns the available memory in this
-  /// machine.
+  /// this physical machine.
   inline void setCoreCount(unsigned coreCount) { m_CoreCount = coreCount; }
 
+  /// \brief Returns the available memory in this machine.
+  ///
   /// \return The available memory of the machine
   [[nodiscard]] inline double getAvailableMemory() const noexcept {
     return m_availableMemory;

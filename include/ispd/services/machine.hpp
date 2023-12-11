@@ -94,6 +94,7 @@ struct machine {
       /// If so, forwards send the task for the virtual machine.
       if (msg->vm_id > 0 && msg->is_vm == 0) {
         sent_to_vm(s, bf, msg, lp);
+        return;
       }
       /// Fetch the processing size and calculates the processing time.
       const double proc_size = msg->task.m_ProcSize;
