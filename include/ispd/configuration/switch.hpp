@@ -7,10 +7,10 @@ namespace ispd::configuration {
 /// \brief Represents the configuration of a communication switch in the
 /// simulation.
 ///
-/// The `SwitchConfiguration` structure encapsulates various parameters related to
-/// the configuration of a communication switch in the simulation environment. It
-/// provides methods to obtain information about the switch's bandwidth, latency,
-/// and load factor based on the specified parameters.
+/// The `SwitchConfiguration` structure encapsulates various parameters related
+/// to the configuration of a communication switch in the simulation
+/// environment. It provides methods to obtain information about the switch's
+/// bandwidth, latency, and load factor based on the specified parameters.
 class SwitchConfiguration final {
 private:
   double m_Bandwidth; ///< Total switch's bandwidth (in megabits per second).

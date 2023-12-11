@@ -145,7 +145,8 @@ namespace ispd::workload {
         "1]. (Specified communication stage selection probability: %lf).",
         probCommStage);
 
-  ispd_debug("[TwoStageUniform Workload] PI: [%lf, %lf, %lf, %lf], CI: [%lf, %lf, %lf, "
+  ispd_debug("[TwoStageUniform Workload] PI: [%lf, %lf, %lf, %lf], CI: [%lf, "
+             "%lf, %lf, "
              "%lf], RT: %u.",
              minProcSize, medProcSize, maxProcSize, probProcStage, minCommSize,
              medCommSize, maxCommSize, probCommStage, remainingTasks);

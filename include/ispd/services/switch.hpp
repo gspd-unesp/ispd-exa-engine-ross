@@ -51,7 +51,7 @@ struct Switch {
                lp->gid, tw_now(lp), msg->type, msg->route_offset);
 
 #ifdef DEBUG_ON
-  const auto start = std::chrono::high_resolution_clock::now();
+    const auto start = std::chrono::high_resolution_clock::now();
 #endif // DEBUG_ON
 
     /// Fetch the communication size and calculate the communication time.
@@ -70,8 +70,8 @@ struct Switch {
     const ispd::routing::Route *route =
         ispd::routing_table::getRoute(msg->task.m_Origin, msg->task.m_Dest);
 
-    tw_event *const e =
-        tw_event_new(route->get(msg->route_offset), g_tw_lookahead + commTime, lp);
+    tw_event *const e = tw_event_new(route->get(msg->route_offset),
+                                     g_tw_lookahead + commTime, lp);
     ispd_message *const m = static_cast<ispd_message *>(tw_event_data(e));
 
     m->type = message_type::ARRIVAL;
@@ -85,11 +85,13 @@ struct Switch {
     tw_event_send(e);
 
 #ifdef DEBUG_ON
-  const auto end = std::chrono::high_resolution_clock::now();
-  const auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
-  const auto timeTaken = static_cast<double>(duration.count());
+    const auto end = std::chrono::high_resolution_clock::now();
+    const auto duration =
+        std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+    const auto timeTaken = static_cast<double>(duration.count());
 
-  ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_SWITCH_FORWARD_TIME, timeTaken);
+    ispd::node_metrics::notifyMetric(
+        ispd::metrics::NodeMetricsFlag::NODE_SWITCH_FORWARD_TIME, timeTaken);
 #endif // DEBUG_ON
   }
 
@@ -98,7 +100,7 @@ struct Switch {
                lp->gid, tw_now(lp), msg->type);
 
 #ifdef DEBUG_ON
-  const auto start = std::chrono::high_resolution_clock::now();
+    const auto start = std::chrono::high_resolution_clock::now();
 #endif // DEBUG_ON
 
     const double commSize = msg->task.m_CommSize;
@@ -114,16 +116,19 @@ struct Switch {
     }
 
 #ifdef DEBUG_ON
-  const auto end = std::chrono::high_resolution_clock::now();
-  const auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
-  const auto timeTaken = static_cast<double>(duration.count());
+    const auto end = std::chrono::high_resolution_clock::now();
+    const auto duration =
+        std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+    const auto timeTaken = static_cast<double>(duration.count());
 
-  ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_SWITCH_REVERSE_TIME, timeTaken);
+    ispd::node_metrics::notifyMetric(
+        ispd::metrics::NodeMetricsFlag::NODE_SWITCH_REVERSE_TIME, timeTaken);
 #endif // DEBUG_ON
   }
 
   static void finish(SwitchState *s, tw_lp *lp) {
-    ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_MASTER_SERVICES);
+    ispd::node_metrics::notifyMetric(
+        ispd::metrics::NodeMetricsFlag::NODE_TOTAL_MASTER_SERVICES);
 
     std::printf("Switch Queue Info & Metrics (%lu)\n"
                 " - Downward Communicated Mbits..: %lf Mbits (%lu).\n"

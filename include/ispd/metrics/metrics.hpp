@@ -5,33 +5,40 @@
 #include <ispd/model/user.hpp>
 
 #ifdef DEBUG_ON
-  #include <cstdint>
-  #include <ispd/services/services.hpp>
+#include <cstdint>
+#include <ispd/services/services.hpp>
 #endif // DEBUG_ON
 
 namespace ispd::metrics {
 
 /// \brief Enumeration class representing various node-level metrics.
 ///
-/// This enumeration class defines a set of flags that correspond to different types of node-level metrics.
-/// These metrics provide insights into the performance and behavior of simulation components within a node.
-enum class NodeMetricsFlag { 
-  /// \brief The accumulation of all communicated megabits of all simulated links in this node.
+/// This enumeration class defines a set of flags that correspond to different
+/// types of node-level metrics. These metrics provide insights into the
+/// performance and behavior of simulation components within a node.
+enum class NodeMetricsFlag {
+  /// \brief The accumulation of all communicated megabits of all simulated
+  /// links in this node.
   NODE_TOTAL_COMMUNICATED_MBITS,
-  
-  /// \brief The accumulation of all processed megaflops of all simulated machines in this node.
+
+  /// \brief The accumulation of all processed megaflops of all simulated
+  /// machines in this node.
   NODE_TOTAL_PROCESSED_MFLOPS,
 
-  /// \brief The accumulation of all processing time of all simulated machines in this node.
+  /// \brief The accumulation of all processing time of all simulated machines
+  /// in this node.
   NODE_TOTAL_PROCESSING_TIME,
 
-  /// \brief The accumulation of all processing waiting time of all simulated machines in this node.
+  /// \brief The accumulation of all processing waiting time of all simulated
+  /// machines in this node.
   NODE_TOTAL_PROCESSING_WAITING_TIME,
 
-  /// \brief The accumulation of all communication time of all simulated links in this node.
+  /// \brief The accumulation of all communication time of all simulated links
+  /// in this node.
   NODE_TOTAL_COMMUNICATION_TIME,
 
-  /// \brief The accumulation of all communication waiting time of all simulated links in this node.
+  /// \brief The accumulation of all communication waiting time of all simulated
+  /// links in this node.
   NODE_TOTAL_COMMUNICATION_WAITING_TIME,
 
   /// \brief The count of how many masters have been simulated in this node.
@@ -46,221 +53,368 @@ enum class NodeMetricsFlag {
   /// \brief The count of how many switches have been simulated in this node.
   NODE_TOTAL_SWITCH_SERVICES,
 
-  /// \brief The count of how many completed tasks have been received by the masters simulated by this node.
+  /// \brief The count of how many completed tasks have been received by the
+  /// masters simulated by this node.
   NODE_TOTAL_COMPLETED_TASKS,
 
-  /// \brief The accumulation of the computational power of all machines simulated in this node.
+  /// \brief The count of how many applications were completed.
+  NODE_TOTAL_COMPLETED_APPLICATIONS,
+
+  /// \brief The count of how many applications did not complete.
+  NODE_TOTAL_REJECTED_APPLICATIONS,
+
+  /// \brief The accumulation of the computational power of all machines
+  /// simulated in this node.
   NODE_TOTAL_COMPUTATIONAL_POWER,
-  
-  /// \brief The accumulation of all the CPU cores count of all machines simulated in this node.
+
+  /// \brief The accumulation of all the CPU cores count of all machines
+  /// simulated in this node.
   NODE_TOTAL_CPU_CORES,
 
-  /// \brief The accumulation of all the GPU cores count of all machines simulated in this node.
+  /// \brief The accumulation of all the GPU cores count of all machines
+  /// simulated in this node.
   NODE_TOTAL_GPU_CORES,
-  
-  /// \brief The accumulation of the turnaround time of all completed tasks received by the masters simulated in this node.
+
+  /// \brief The accumulation of the turnaround time of all completed tasks
+  /// received by the masters simulated in this node.
   NODE_TOTAL_TURNAROUND_TIME,
 
-  /// \brief The accumulation of the total non idle energy consupmtion of all services simulated in this node.
+  /// \brief The accumulation of the total non idle energy consupmtion of all
+  /// services simulated in this node.
   NODE_TOTAL_NON_IDLE_ENERGY_CONSUMPTION,
 
-  /// \brief The accumulation of the total power consumption of all services in this node while being idle.
+  /// \brief The accumulation of the total power consumption of all services in
+  /// this node while being idle.
   NODE_TOTAL_POWER_IDLE,
+
+  /// \brief The totality of virtual machines allocated in the simulation.
+  NODE_TOTAL_ALLOCATED_VMS,
+
+  /// \brief The totality of virtual machines rejected in the simulation.
+  NODE_TOTAL_REJECTED_VMS,
+
+  NODE_TOTAL_CPU_COST,
+
+  NODE_TOTAL_MEMORY_COST,
+
+  NODE_TOTAL_DISK_SPACE_COST,
 
   /// \brief The simulation time in this node.
   NODE_SIMULATION_TIME,
 
 #ifdef DEBUG_ON
-  /// \brief The accumulation of the real time taken (ns) to process forwarding an event in a master.
+  /// \brief The accumulation of the real time taken (ns) to process forwarding
+  /// an event in a master.
   NODE_MASTER_FORWARD_TIME,
 
-  /// \brief The accumulation of the real time taken (ns) to reverse the process of an event in a master.
+  /// \brief The accumulation of the real time taken (ns) to reverse the process
+  /// of an event in a master.
   NODE_MASTER_REVERSE_TIME,
 
-  /// \brief The accumulation of the real time taken (ns) to process forwarding an event in a link.
+  /// \brief The accumulation of the real time taken (ns) to process forwarding
+  /// an event in a link.
   NODE_LINK_FORWARD_TIME,
 
-  /// \brief The accumulation of the real time taken (ns) to reverse the process of an event in a link.
+  /// \brief The accumulation of the real time taken (ns) to reverse the process
+  /// of an event in a link.
   NODE_LINK_REVERSE_TIME,
 
-  /// \brief The accumulation of the real time taken (ns) to process forwarding an event in a machine.
+  /// \brief The accumulation of the real time taken (ns) to process forwarding
+  /// an event in a machine.
   NODE_MACHINE_FORWARD_TIME,
-  
-  /// \brief The accumulation of the real time taken (ns) to reverse the process of an event in a machine.
+
+  /// \brief The accumulation of the real time taken (ns) to reverse the process
+  /// of an event in a machine.
   NODE_MACHINE_REVERSE_TIME,
 
-  /// \brief The accumulation of the real time taken (ns) to process forwarding an event in a switch.
+  /// \brief The accumulation of the real time taken (ns) to process forwarding
+  /// an event in a switch.
   NODE_SWITCH_FORWARD_TIME,
-  
-  /// \brief The accumulation of the real time taken (ns) to reverse the process of an event in a switch.
+
+  /// \brief The accumulation of the real time taken (ns) to reverse the process
+  /// of an event in a switch.
   NODE_SWITCH_REVERSE_TIME,
+
+  /// \brief The accumulation of the real time taken (ns) to process forwarding
+  /// an event in a virtual machine.
+  NODE_VM_FORWARD_TIME,
+
+  /// \brief The accumulation of the real time taken (ns) to reverse the process
+  /// of an event in a virtual machine
+  NODE_VM_REVERSE_TIME,
+
+  /// \brief The accumulation of the real time taken (ns) to process forwarding
+  /// an event in a virtual machine monitor.
+  NODE_VMM_FORWARD_TIME,
+
+  /// \brief The accumulation of the real time taken(ns) to reverse the process
+  /// of an event in a virtual machine monitor.
+  NODE_VMM_REVERSE_TIME
+
 #endif // DEBUG_ON
 };
 
-/// \brief Collects and reports various node-level metrics related to simulation components within a node.
+/// \brief Collects and reports various node-level metrics related to simulation
+/// components within a node.
 ///
-/// The NodeMetricsCollector class provides a mechanism for collecting and reporting a variety of node-level metrics
-/// related to different simulation components within a node. These metrics help track and analyze the performance,
-/// behavior, and resource utilization of the simulated system at a granular level.
+/// The NodeMetricsCollector class provides a mechanism for collecting and
+/// reporting a variety of node-level metrics related to different simulation
+/// components within a node. These metrics help track and analyze the
+/// performance, behavior, and resource utilization of the simulated system at a
+/// granular level.
 class NodeMetricsCollector {
 private:
-  unsigned m_NodeTotalMasterServices;           ///< Total count of master services simulated in this node.
-  unsigned m_NodeTotalLinkServices;             ///< Total count of link services simulated in this node.
-  unsigned m_NodeTotalMachineServices;          ///< Total count of machine services simulated in this node.
-  unsigned m_NodeTotalSwitchServices;           ///< Total count of switch services simulated in this node.
-  unsigned m_NodeTotalCompletedTasks;           ///< Total count of completed tasks simulated in this node.
+  unsigned m_NodeTotalMasterServices; ///< Total count of master services
+                                      ///< simulated in this node.
+  unsigned m_NodeTotalLinkServices; ///< Total count of link services simulated
+                                    ///< in this node.
+  unsigned m_NodeTotalMachineServices; ///< Total count of machine services
+                                       ///< simulated in this node.
+  unsigned m_NodeTotalSwitchServices;  ///< Total count of switch services
+                                       ///< simulated in this node.
+  unsigned m_NodeTotalCompletedTasks;  ///< Total count of completed tasks
+                                       ///< simulated in this node.
+  unsigned m_NodeTotalCompletedApplications; ///< Total count of completed
+                                             ///< applications simulated in this
+                                             ///< node.
+  unsigned
+      m_NodeTotalRejectedApplications; ///< Total count of rejected applications
+                                       ///< simulated in this node.
+  unsigned m_NodeTotalAllocatedVms;    ///< Total count of virtual machines
+                                       ///< simulated in this node.
+  unsigned m_NodeTotalRejectedVms; ///< Total count of rejected virtual machines
+                                   ///< simulated in this node.
 
-  double m_NodeTotalComputationalPower;         ///< Total computational power simulatted in this node.
-  unsigned m_NodeTotalCpuCores;                 ///< Total count of CPU cores simulated in this node.
-  unsigned m_NodeTotalGpuCores;                 ///< Total count of GPU cores simulated in this node.
+  double m_NodeTotalComputationalPower; ///< Total computational power
+                                        ///< simulatted in this node.
+  unsigned
+      m_NodeTotalCpuCores; ///< Total count of CPU cores simulated in this node.
+  unsigned
+      m_NodeTotalGpuCores; ///< Total count of GPU cores simulated in this node.
 
-  double m_NodeTotalCommunicatedMBits;          ///< Total communicated MBits simulated in this node.
-  double m_NodeTotalProcessedMFlops;            ///< Total processed MFLOPS simulated in this node.
-  double m_NodeTotalProcessingTime;             ///< Total processing time simulated in this node.
-  double m_NodeTotalProcessingWaitingTime;      ///< Total waiting time for processing simulated in this node.
-  double m_NodeTotalCommunicationTime;          ///< Total communication time simulated in this node.
-  double m_NodeTotalCommunicationWaitingTime;   ///< Total waiting time for communication simulated in this node.
-  double m_NodeTotalTurnaroundTime;             ///< Total turnaround time simulated in this node.
-  double m_NodeTotalNonIdleEnergyConsumption;   ///< Total non idle energy consumption (in Joules) in this node.
-  double m_NodeTotalPowerIdle;                  ///< Total idle power consumption from the services in this node.
-  double m_NodeSimulationTime;                  ///< The highest last activity time of a service center simulated in this node.
+  double m_NodeTotalCommunicatedMBits; ///< Total communicated MBits simulated
+                                       ///< in this node.
+  double m_NodeTotalProcessedMFlops;   ///< Total processed MFLOPS simulated in
+                                       ///< this node.
+  double m_NodeTotalProcessingTime; ///< Total processing time simulated in this
+                                    ///< node.
+  double
+      m_NodeTotalProcessingWaitingTime; ///< Total waiting time for processing
+                                        ///< simulated in this node.
+  double m_NodeTotalCommunicationTime;  ///< Total communication time simulated
+                                        ///< in this node.
+  double m_NodeTotalCommunicationWaitingTime; ///< Total waiting time for
+                                              ///< communication simulated in
+                                              ///< this node.
+  double m_NodeTotalTurnaroundTime; ///< Total turnaround time simulated in this
+                                    ///< node.
+  double m_NodeTotalNonIdleEnergyConsumption; ///< Total non idle energy
+                                              ///< consumption (in Joules) in
+                                              ///< this node.
+  double m_NodeTotalPowerIdle; ///< Total idle power consumption from the
+                               ///< services in this node.
+  double m_NodeSimulationTime; ///< The highest last activity time of a service
+                               ///< center simulated in this node.
 
+  double m_NodeTotalCpuCost;    ///< Total CPU cost in this node.
+  double m_NodeTotalMemoryCost; ///< Total memory cost in this node.
+  double m_NodeTotalDiskCost;   ///< Total disk space cost in this node.
 #ifdef DEBUG_ON
-  std::unordered_map<ispd::services::ServiceType, double> m_NodeTotalForwardTime;
-  std::unordered_map<ispd::services::ServiceType, uint64_t> m_NodeTotalForwardEventsCount;
-  std::unordered_map<ispd::services::ServiceType, double> m_NodeTotalReverseTime;
-  std::unordered_map<ispd::services::ServiceType, uint64_t> m_NodeTotalReverseEventsCount;
+  std::unordered_map<ispd::services::ServiceType, double>
+      m_NodeTotalForwardTime;
+  std::unordered_map<ispd::services::ServiceType, uint64_t>
+      m_NodeTotalForwardEventsCount;
+  std::unordered_map<ispd::services::ServiceType, double>
+      m_NodeTotalReverseTime;
+  std::unordered_map<ispd::services::ServiceType, uint64_t>
+      m_NodeTotalReverseEventsCount;
 #endif // DEBUG_ON
 
   void reportNodeUserMetrics();
+
 public:
-    /// \brief Notify the NodeMetricsCollector about a node-level metric with a flag.
-    ///
-    /// This method allows notifying the NodeMetricsCollector about a specific node-level metric using the provided flag.
-    /// The corresponding metric value will be updated based on the flag provided.
-    ///
-    /// \param flag The flag indicating the type of metric to be notified.
-    void notifyMetric(const NodeMetricsFlag flag);
+  /// \brief Notify the NodeMetricsCollector about a node-level metric with a
+  /// flag.
+  ///
+  /// This method allows notifying the NodeMetricsCollector about a specific
+  /// node-level metric using the provided flag. The corresponding metric value
+  /// will be updated based on the flag provided.
+  ///
+  /// \param flag The flag indicating the type of metric to be notified.
+  void notifyMetric(const NodeMetricsFlag flag);
 
-    /// \brief Notify the NodeMetricsCollector about a node-level metric with a flag and a value.
-    ///
-    /// This templated method allows notifying the NodeMetricsCollector about a specific node-level metric using the
-    /// provided flag and associated value. The corresponding metric value will be updated based on the flag and value
-    /// provided.
-    ///
-    /// \tparam T The type of the metric value.
-    /// \param flag The flag indicating the type of metric to be notified.
-    /// \param value The value of the metric to be updated.
-    template <typename T>
-    void notifyMetric(const NodeMetricsFlag flag, const T value);
+  /// \brief Notify the NodeMetricsCollector about a node-level metric with a
+  /// flag and a value.
+  ///
+  /// This templated method allows notifying the NodeMetricsCollector about a
+  /// specific node-level metric using the provided flag and associated value.
+  /// The corresponding metric value will be updated based on the flag and value
+  /// provided.
+  ///
+  /// \tparam T The type of the metric value.
+  /// \param flag The flag indicating the type of metric to be notified.
+  /// \param value The value of the metric to be updated.
+  template <typename T>
+  void notifyMetric(const NodeMetricsFlag flag, const T value);
 
-    /// \brief Report the collected node-level metrics to the master node.
-    ///
-    /// This method is responsible for reporting the collected node-level metrics to the master node.
-    /// It performs communication and aggregation of metrics as required by the simulation setup.
-    void reportNodeMetrics();
+  /// \brief Report the collected node-level metrics to the master node.
+  ///
+  /// This method is responsible for reporting the collected node-level metrics
+  /// to the master node. It performs communication and aggregation of metrics
+  /// as required by the simulation setup.
+  void reportNodeMetrics();
 };
 
-/// \brief Collects and reports global-level metrics aggregated from multiple nodes within the simulation.
+/// \brief Collects and reports global-level metrics aggregated from multiple
+/// nodes within the simulation.
 ///
-/// The GlobalMetricsCollector class is responsible for collecting and reporting global-level metrics that are aggregated
-/// from multiple nodes within the simulation. These metrics provide a high-level overview of the entire simulated system's
-/// performance, resource utilization, and behavior.
+/// The GlobalMetricsCollector class is responsible for collecting and reporting
+/// global-level metrics that are aggregated from multiple nodes within the
+/// simulation. These metrics provide a high-level overview of the entire
+/// simulated system's performance, resource utilization, and behavior.
 class GlobalMetricsCollector {
-    friend NodeMetricsCollector;  ///< Allows NodeMetricsCollector to access private members.
+  friend NodeMetricsCollector; ///< Allows NodeMetricsCollector to access
+                               ///< private members.
 
 private:
-    unsigned m_GlobalTotalMasterServices;           ///< Total count of master services across all nodes.
-    unsigned m_GlobalTotalLinkServices;             ///< Total count of link services across all nodes.
-    unsigned m_GlobalTotalMachineServices;          ///< Total count of machine services across all nodes.
-    unsigned m_GlobalTotalSwitchServices;           ///< Total count of switch services across all nodes.
-    unsigned m_GlobalTotalCompletedTasks;           ///< Total count of completed tasks across all nodes.
+  unsigned m_GlobalTotalMasterServices; ///< Total count of master services
+                                        ///< across all nodes.
+  unsigned m_GlobalTotalLinkServices;   ///< Total count of link services across
+                                        ///< all nodes.
+  unsigned m_GlobalTotalMachineServices; ///< Total count of machine services
+                                         ///< across all nodes.
+  unsigned m_GlobalTotalSwitchServices;  ///< Total count of switch services
+                                         ///< across all nodes.
+  unsigned m_GlobalTotalCompletedTasks;  ///< Total count of completed tasks
+                                         ///< across all nodes.
+  unsigned
+      m_GlobalTotalCompletedApplications; ///< Total count of completed
+                                          ///< applications across all nodes.
+  unsigned m_GlobalTotalAllocatedVms;     ///< Total count of virtual machines
+                                          ///< allocated across all nodes.
 
-    double m_GlobalTotalComputationalPower;         ///< Total computational power across all nodes.
-    unsigned m_GlobalTotalCpuCores;                 ///< Total count of CPU cores across all nodes.
-    unsigned m_GlobalTotalGpuCores;                 ///< Total count of GPU cores across all nodes.
+  double m_GlobalTotalComputationalPower; ///< Total computational power across
+                                          ///< all nodes.
+  unsigned
+      m_GlobalTotalCpuCores; ///< Total count of CPU cores across all nodes.
+  unsigned
+      m_GlobalTotalGpuCores; ///< Total count of GPU cores across all nodes.
 
-    double m_GlobalTotalCommunicatedMBits;          ///< Total communicated MBits across all nodes.
-    double m_GlobalTotalProcessedMFlops;            ///< Total processed MFLOPS across all nodes.
-    double m_GlobalTotalProcessingTime;             ///< Total processing time across all nodes.
-    double m_GlobalTotalProcessingWaitingTime;      ///< Total waiting time for processing across all nodes.
-    double m_GlobalTotalCommunicationTime;          ///< Total communication time across all nodes.
-    double m_GlobalTotalCommunicationWaitingTime;   ///< Total waiting time for communication across all nodes.
-    double m_GlobalTotalTurnaroundTime;             ///< Total turnaround time across all nodes.
-    double m_GlobalTotalNonIdleEnergyConsumption;   ///< Total non idle energy consumption across all nodes.
-    double m_GlobalTotalPowerIdle;                  ///< Total power idle across all nodes.
-    double m_GlobalSimulationTime;                  ///< Total simulation time.
+  double m_GlobalTotalCommunicatedMBits; ///< Total communicated MBits across
+                                         ///< all nodes.
+  double m_GlobalTotalProcessedMFlops;   ///< Total processed MFLOPS across all
+                                         ///< nodes.
+  double
+      m_GlobalTotalProcessingTime; ///< Total processing time across all nodes.
+  double m_GlobalTotalProcessingWaitingTime; ///< Total waiting time for
+                                             ///< processing across all nodes.
+  double m_GlobalTotalCommunicationTime; ///< Total communication time across
+                                         ///< all nodes.
+  double m_GlobalTotalCommunicationWaitingTime; ///< Total waiting time for
+                                                ///< communication across all
+                                                ///< nodes.
+  double
+      m_GlobalTotalTurnaroundTime; ///< Total turnaround time across all nodes.
+  double
+      m_GlobalTotalNonIdleEnergyConsumption; ///< Total non idle energy
+                                             ///< consumption across all nodes.
+  double m_GlobalTotalPowerIdle; ///< Total power idle across all nodes.
+  double m_GlobalSimulationTime; ///< Total simulation time.
 
-    std::unordered_map<ispd::model::User::uid_t, ispd::metrics::UserMetrics> m_GlobalUserMetrics; ///< Total user metrics.
+  double m_GlobalTotalCpuCost;       ///< Total cpu cost across all machines.
+  double m_GlobalTotalMemoryCost;    ///< Total memory cost across all machines.
+  double m_GlobalTotalDiskSpaceCost; ///< Total disk space cost across all
+                                     ///< machines.
+
+  std::unordered_map<ispd::model::User::uid_t, ispd::metrics::UserMetrics>
+      m_GlobalUserMetrics; ///< Total user metrics.
 #ifdef DEBUG_ON
-  std::unordered_map<ispd::services::ServiceType, double> m_GlobalTotalForwardTime;
-  std::unordered_map<ispd::services::ServiceType, uint64_t> m_GlobalTotalForwardEventsCount;
-  std::unordered_map<ispd::services::ServiceType, double> m_GlobalTotalReverseTime;
-  std::unordered_map<ispd::services::ServiceType, uint64_t> m_GlobalTotalReverseEventsCount;
+  std::unordered_map<ispd::services::ServiceType, double>
+      m_GlobalTotalForwardTime;
+  std::unordered_map<ispd::services::ServiceType, uint64_t>
+      m_GlobalTotalForwardEventsCount;
+  std::unordered_map<ispd::services::ServiceType, double>
+      m_GlobalTotalReverseTime;
+  std::unordered_map<ispd::services::ServiceType, uint64_t>
+      m_GlobalTotalReverseEventsCount;
 #endif // DEBUG_ON
 public:
-    /// \brief Report the aggregated global-level metrics to an external source.
-    ///
-    /// This method is responsible for reporting the aggregated global-level metrics and some other calculated
-    /// metrics to the standard output.
-    void reportGlobalMetrics();
+  /// \brief Report the aggregated global-level metrics to an external source.
+  ///
+  /// This method is responsible for reporting the aggregated global-level
+  /// metrics and some other calculated metrics to the standard output.
+  void reportGlobalMetrics();
 };
 
 }; // namespace ispd::metrics
 
-/// \brief Provides functionality to collect, notify, and report node-level metrics within the iSPD simulation framework.
+/// \brief Provides functionality to collect, notify, and report node-level
+/// metrics within the iSPD simulation framework.
 ///
-/// The ispd::node_metrics namespace encapsulates the functionality related to node-level metrics collection, notification,
-/// and reporting within the iSPD simulation framework. It defines functions and variables that allow the simulation components
-/// to track and analyze various metrics associated with individual nodes in the simulated system.
+/// The ispd::node_metrics namespace encapsulates the functionality related to
+/// node-level metrics collection, notification, and reporting within the iSPD
+/// simulation framework. It defines functions and variables that allow the
+/// simulation components to track and analyze various metrics associated with
+/// individual nodes in the simulated system.
 namespace ispd::node_metrics {
 
-    /// Pointer to the global instance of the NodeMetricsCollector responsible for tracking node-level metrics.
-    extern ispd::metrics::NodeMetricsCollector *g_NodeMetricsCollector;
+/// Pointer to the global instance of the NodeMetricsCollector responsible for
+/// tracking node-level metrics.
+extern ispd::metrics::NodeMetricsCollector *g_NodeMetricsCollector;
 
-    /// \brief Notify the metrics collector about a node-level metric without a value.
-    ///
-    /// This function is used to notify the metrics collector about a specific node-level metric that does not require
-    /// an associated value. The provided metric flag indicates the type of metric being reported.
-    ///
-    /// \param flag The flag representing the specific node-level metric to notify.
-    void notifyMetric(const ispd::metrics::NodeMetricsFlag flag);
+/// \brief Notify the metrics collector about a node-level metric without a
+/// value.
+///
+/// This function is used to notify the metrics collector about a specific
+/// node-level metric that does not require an associated value. The provided
+/// metric flag indicates the type of metric being reported.
+///
+/// \param flag The flag representing the specific node-level metric to notify.
+void notifyMetric(const ispd::metrics::NodeMetricsFlag flag);
 
-    /// \brief Notify the metrics collector about a node-level metric with a value.
-    ///
-    /// This function is used to notify the metrics collector about a specific node-level metric along with an associated value.
-    /// The provided metric flag indicates the type of metric being reported, and the value parameter holds the corresponding value.
-    ///
-    /// \tparam T The data type of the metric value.
-    /// \param flag The flag representing the specific node-level metric to notify.
-    /// \param value The value associated with the reported metric.
-    template <typename T>
-    void notifyMetric(const ispd::metrics::NodeMetricsFlag flag, const T value);
+/// \brief Notify the metrics collector about a node-level metric with a value.
+///
+/// This function is used to notify the metrics collector about a specific
+/// node-level metric along with an associated value. The provided metric flag
+/// indicates the type of metric being reported, and the value parameter holds
+/// the corresponding value.
+///
+/// \tparam T The data type of the metric value.
+/// \param flag The flag representing the specific node-level metric to notify.
+/// \param value The value associated with the reported metric.
+template <typename T>
+void notifyMetric(const ispd::metrics::NodeMetricsFlag flag, const T value);
 
-    /// \brief Report the aggregated node-level metrics to an external source.
-    ///
-    /// This function is responsible for reporting the aggregated node-level metrics to the node master.
-    /// It facilitates communication and aggregation of metrics for individual nodes across the simulation setup.
-    void reportNodeMetrics();
+/// \brief Report the aggregated node-level metrics to an external source.
+///
+/// This function is responsible for reporting the aggregated node-level metrics
+/// to the node master. It facilitates communication and aggregation of metrics
+/// for individual nodes across the simulation setup.
+void reportNodeMetrics();
 
 } // namespace ispd::node_metrics
 
-/// \brief Provides functionality to collect and report global-level metrics within the iSPD simulation framework.
+/// \brief Provides functionality to collect and report global-level metrics
+/// within the iSPD simulation framework.
 ///
-/// The ispd::global_metrics namespace encapsulates the functionality related to global-level metrics collection and reporting
-/// within the iSPD simulation framework. It defines functions and variables that allow the simulation components to track and
-/// analyze various metrics associated with the entire simulation setup, enabling aggregation and analysis of metrics at the
-/// global level.
+/// The ispd::global_metrics namespace encapsulates the functionality related to
+/// global-level metrics collection and reporting within the iSPD simulation
+/// framework. It defines functions and variables that allow the simulation
+/// components to track and analyze various metrics associated with the entire
+/// simulation setup, enabling aggregation and analysis of metrics at the global
+/// level.
 namespace ispd::global_metrics {
 
-    /// Pointer to the global instance of the GlobalMetricsCollector responsible for tracking global-level metrics.
-    extern ispd::metrics::GlobalMetricsCollector *g_GlobalMetricsCollector;
+/// Pointer to the global instance of the GlobalMetricsCollector responsible for
+/// tracking global-level metrics.
+extern ispd::metrics::GlobalMetricsCollector *g_GlobalMetricsCollector;
 
-    /// \brief Report the aggregated global-level metrics to an external source.
-    ///
-    /// This function is responsible for reporting the aggregated global-level metrics to the standard output.
-    /// It facilitates the communication and analysis of metrics collected from across the entire simulation setup.
-    void reportGlobalMetrics();
+/// \brief Report the aggregated global-level metrics to an external source.
+///
+/// This function is responsible for reporting the aggregated global-level
+/// metrics to the standard output. It facilitates the communication and
+/// analysis of metrics collected from across the entire simulation setup.
+void reportGlobalMetrics();
 
 } // namespace ispd::global_metrics
 

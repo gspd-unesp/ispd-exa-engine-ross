@@ -19,7 +19,7 @@ namespace services {
 struct master_metrics {
   /// \brief Amount of cmpleted tasks scheduled by the master.
   unsigned completed_tasks;
-  
+
   /// \brief Sum of all turnaround times of completed tasks.
   double total_turnaround_time;
 };
@@ -42,29 +42,34 @@ struct master {
 
   static void init(master_state *s, tw_lp *lp) {
     /// Fetch the service initializer from this logical process.
-    const auto &service_initializer = ispd::this_model::getServiceInitializer(lp->gid);
+    const auto &service_initializer =
+        ispd::this_model::getServiceInitializer(lp->gid);
 
     /// Call the service initializer for this logical process.
     service_initializer(s);
-   
+
     /// Initialize the scheduler.
     s->scheduler->initScheduler();
 
-    const uint32_t registered_routes_count = ispd::routing_table::countRoutes(lp->gid);
+    const uint32_t registered_routes_count =
+        ispd::routing_table::countRoutes(lp->gid);
 
     /// Early sanity check if the routes has been registered correctly. If not,
     /// the program is immediately aborted.
     if (registered_routes_count != s->slaves.size())
-      ispd_error("There are %u registered routes starting from master with GID %lu but there are %lu slaves.", registered_routes_count, lp->gid, s->slaves.size());
+      ispd_error("There are %u registered routes starting from master with GID "
+                 "%lu but there are %lu slaves.",
+                 registered_routes_count, lp->gid, s->slaves.size());
 
     /// Initialize the metrics.
     s->metrics.completed_tasks = 0;
     s->metrics.total_turnaround_time = 0;
 
-    /// Checks if the specified workload has remaining tasks. If so, a generate message
-    /// will be sent to the master itself to start generating the workload. Otherwise,
-    /// no workload is generate at all, since at initialization it has been identified
-    /// that the specified workload has no tasks.
+    /// Checks if the specified workload has remaining tasks. If so, a generate
+    /// message will be sent to the master itself to start generating the
+    /// workload. Otherwise, no workload is generate at all, since at
+    /// initialization it has been identified that the specified workload has no
+    /// tasks.
     if (s->workload->getRemainingTasks() > 0) {
       double offset;
 
@@ -83,44 +88,50 @@ struct master {
     ispd_debug("Master %lu has been initialized.", lp->gid);
   }
 
-  static void forward(master_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
-    ispd_debug("[Forward] Master %lu received a message at %lf of type (%d).", lp->gid, tw_now(lp), msg->type);
+  static void forward(master_state *s, tw_bf *bf, ispd_message *msg,
+                      tw_lp *lp) {
+    ispd_debug("[Forward] Master %lu received a message at %lf of type (%d).",
+               lp->gid, tw_now(lp), msg->type);
 
     switch (msg->type) {
-      case message_type::GENERATE:
-        generate(s, bf, msg, lp);
-        break;
-      case message_type::ARRIVAL:
-        arrival(s, bf, msg, lp);
-        break;
-      default:
-        std::cerr << "Unknown message type " << static_cast<int>(msg->type) << " at Master LP forward handler." << std::endl;
-        abort();
-        break;
+    case message_type::GENERATE:
+      generate(s, bf, msg, lp);
+      break;
+    case message_type::ARRIVAL:
+      arrival(s, bf, msg, lp);
+      break;
+    default:
+      std::cerr << "Unknown message type " << static_cast<int>(msg->type)
+                << " at Master LP forward handler." << std::endl;
+      abort();
+      break;
     }
-
   }
 
-  static void reverse(master_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
-    ispd_debug("[Reverse] Master %lu received a message at %lf of type (%d).", lp->gid, tw_now(lp), msg->type);
+  static void reverse(master_state *s, tw_bf *bf, ispd_message *msg,
+                      tw_lp *lp) {
+    ispd_debug("[Reverse] Master %lu received a message at %lf of type (%d).",
+               lp->gid, tw_now(lp), msg->type);
 
     switch (msg->type) {
-      case message_type::GENERATE:
-        generate_rc(s, bf, msg, lp);
-        break;
-      case message_type::ARRIVAL:
-        arrival_rc(s, bf, msg, lp);
-        break;
-      default:
-        std::cerr << "Unknown message type " << static_cast<int>(msg->type) << " at Master LP reverse handler." << std::endl;
-        abort();
-        break;
+    case message_type::GENERATE:
+      generate_rc(s, bf, msg, lp);
+      break;
+    case message_type::ARRIVAL:
+      arrival_rc(s, bf, msg, lp);
+      break;
+    default:
+      std::cerr << "Unknown message type " << static_cast<int>(msg->type)
+                << " at Master LP reverse handler." << std::endl;
+      abort();
+      break;
     }
   }
 
   static void commit(master_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
     if (msg->type == message_type::GENERATE) {
-      auto& userMetrics = ispd::this_model::getUserById(msg->task.m_Owner).getMetrics();
+      auto &userMetrics =
+          ispd::this_model::getUserById(msg->task.m_Owner).getMetrics();
 
       /// Update the user's metrics.
       userMetrics.m_IssuedTasks++;
@@ -128,38 +139,46 @@ struct master {
   }
 
   static void finish(master_state *s, tw_lp *lp) {
-    ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_COMPLETED_TASKS, s->metrics.completed_tasks);
-    ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_MASTER_SERVICES);
-    ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_TURNAROUND_TIME, s->metrics.total_turnaround_time);
+    ispd::node_metrics::notifyMetric(
+        ispd::metrics::NodeMetricsFlag::NODE_TOTAL_COMPLETED_TASKS,
+        s->metrics.completed_tasks);
+    ispd::node_metrics::notifyMetric(
+        ispd::metrics::NodeMetricsFlag::NODE_TOTAL_MASTER_SERVICES);
+    ispd::node_metrics::notifyMetric(
+        ispd::metrics::NodeMetricsFlag::NODE_TOTAL_TURNAROUND_TIME,
+        s->metrics.total_turnaround_time);
 
-    const double avgTurnaroundTime = s->metrics.total_turnaround_time / s->metrics.completed_tasks;
+    const double avgTurnaroundTime =
+        s->metrics.total_turnaround_time / s->metrics.completed_tasks;
 
-    std::printf(
-        "Master Metrics (%lu)\n"
-        " - Completed Tasks.....: %u tasks (%lu).\n"
-        " - Avg. Turnaround Time: %lf seconds (%lu).\n"
-        "\n",
-        lp->gid,
-        s->metrics.completed_tasks, lp->gid,
-        avgTurnaroundTime, lp->gid
-    );
+    std::printf("Master Metrics (%lu)\n"
+                " - Completed Tasks.....: %u tasks (%lu).\n"
+                " - Avg. Turnaround Time: %lf seconds (%lu).\n"
+                "\n",
+                lp->gid, s->metrics.completed_tasks, lp->gid, avgTurnaroundTime,
+                lp->gid);
   }
 
 private:
-  static void generate(master_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
-    ispd_debug("Master %lu will generate a task at %lf, remaining %u.", lp->gid, tw_now(lp), s->workload->getRemainingTasks());
+  static void generate(master_state *s, tw_bf *bf, ispd_message *msg,
+                       tw_lp *lp) {
+    ispd_debug("Master %lu will generate a task at %lf, remaining %u.", lp->gid,
+               tw_now(lp), s->workload->getRemainingTasks());
 
 #ifdef DEBUG_ON
-  const auto start = std::chrono::high_resolution_clock::now();
+    const auto start = std::chrono::high_resolution_clock::now();
 #endif // DEBUG_ON
 
     /// Use the master's scheduling policy to the schedule the next slave.
-    const tw_lpid scheduled_slave_id = s->scheduler->forwardSchedule(s->slaves, bf, msg, lp);
+    const tw_lpid scheduled_slave_id =
+        s->scheduler->forwardSchedule(s->slaves, bf, msg, lp);
 
     /// Fetch the route that connects this master with the scheduled slave.
-    const ispd::routing::Route *route = ispd::routing_table::getRoute(lp->gid, scheduled_slave_id);
+    const ispd::routing::Route *route =
+        ispd::routing_table::getRoute(lp->gid, scheduled_slave_id);
 
-    /// @Todo: This zero-delay timestamped message, could affect the conservative synchronization.
+    /// @Todo: This zero-delay timestamped message, could affect the
+    /// conservative synchronization.
     ///        This should be changed later.
     tw_event *const e = tw_event_new(route->get(0), g_tw_lookahead, lp);
     ispd_message *const m = static_cast<ispd_message *>(tw_event_data(e));
@@ -168,7 +187,8 @@ private:
 
     /// Use the master's workload generator for generate the task's
     /// processing and communication sizes.
-    s->workload->generateWorkload(lp->rng, m->task.m_ProcSize, m->task.m_CommSize);
+    s->workload->generateWorkload(lp->rng, m->task.m_ProcSize,
+                                  m->task.m_CommSize);
 
     m->task.m_Offload = s->workload->getComputingOffload();
 
@@ -185,8 +205,8 @@ private:
 
     tw_event_send(e);
 
-    /// Checks if the there are more remaining tasks to be generated. If so, a generate message
-    /// is sent to the master by itself to generate a new task.
+    /// Checks if the there are more remaining tasks to be generated. If so, a
+    /// generate message is sent to the master by itself to generate a new task.
     if (s->workload->getRemainingTasks() > 0) {
       double offset;
 
@@ -198,21 +218,24 @@ private:
 
       m->type = message_type::GENERATE;
 
-     tw_event_send(e);    
+      tw_event_send(e);
     }
 
 #ifdef DEBUG_ON
-  const auto end = std::chrono::high_resolution_clock::now();
-  const auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
-  const auto timeTaken = static_cast<double>(duration.count());
+    const auto end = std::chrono::high_resolution_clock::now();
+    const auto duration =
+        std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+    const auto timeTaken = static_cast<double>(duration.count());
 
-  ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_MASTER_FORWARD_TIME, timeTaken);
+    ispd::node_metrics::notifyMetric(
+        ispd::metrics::NodeMetricsFlag::NODE_MASTER_FORWARD_TIME, timeTaken);
 #endif // DEBUG_ON
   }
 
-  static void generate_rc(master_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
+  static void generate_rc(master_state *s, tw_bf *bf, ispd_message *msg,
+                          tw_lp *lp) {
 #ifdef DEBUG_ON
-  const auto start = std::chrono::high_resolution_clock::now();
+    const auto start = std::chrono::high_resolution_clock::now();
 #endif // DEBUG_ON
 
     /// Reverse the schedule.
@@ -221,22 +244,25 @@ private:
     /// Reverse the workload generator.
     s->workload->reverseGenerateWorkload(lp->rng);
 
-    /// Checks if after reversing the workload generator, there are remaining tasks to be generated.
-    /// If so, the random number generator is reversed since it is used to generate the interarrival
-    /// time of the tasks.
+    /// Checks if after reversing the workload generator, there are remaining
+    /// tasks to be generated. If so, the random number generator is reversed
+    /// since it is used to generate the interarrival time of the tasks.
     if (s->workload->getRemainingTasks() > 0)
       s->workload->reverseGenerateInterarrival(lp->rng);
 
 #ifdef DEBUG_ON
-  const auto end = std::chrono::high_resolution_clock::now();
-  const auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
-  const auto timeTaken = static_cast<double>(duration.count());
+    const auto end = std::chrono::high_resolution_clock::now();
+    const auto duration =
+        std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+    const auto timeTaken = static_cast<double>(duration.count());
 
-  ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_MASTER_REVERSE_TIME, timeTaken);
+    ispd::node_metrics::notifyMetric(
+        ispd::metrics::NodeMetricsFlag::NODE_MASTER_REVERSE_TIME, timeTaken);
 #endif // DEBUG_ON
   }
 
-  static void arrival(master_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
+  static void arrival(master_state *s, tw_bf *bf, ispd_message *msg,
+                      tw_lp *lp) {
     /// Calculate the end time of the task.
     msg->task.m_EndTime = tw_now(lp);
 
@@ -248,7 +274,8 @@ private:
     s->metrics.total_turnaround_time += turnaround_time;
   }
 
-  static void arrival_rc(master_state *s, tw_bf *bf, ispd_message *msg, tw_lp *lp) {
+  static void arrival_rc(master_state *s, tw_bf *bf, ispd_message *msg,
+                         tw_lp *lp) {
     /// Calculate the task`s turnaround time.
     const double turnaround_time = msg->task.m_EndTime - msg->task.m_SubmitTime;
 
@@ -256,9 +283,8 @@ private:
     s->metrics.completed_tasks--;
     s->metrics.total_turnaround_time -= turnaround_time;
   }
-
 };
 
-}; // namespace services
-}; // namespace ispd
+};     // namespace services
+};     // namespace ispd
 #endif // ISPD_SERVICE_MASTER_HPP
