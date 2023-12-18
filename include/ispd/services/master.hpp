@@ -49,7 +49,7 @@ struct master {
     service_initializer(s);
 
     /// Initialize the scheduler.
-    s->scheduler->initScheduler();
+    s->scheduler->initScheduler(s->slaves);
 
     const uint32_t registered_routes_count =
         ispd::routing_table::countRoutes(lp->gid);
@@ -65,12 +65,9 @@ struct master {
     s->metrics.completed_tasks = 0;
     s->metrics.total_turnaround_time = 0;
 
-    /// Checks if the specified workload has remaining tasks. If so, a generate
-    /// message will be sent to the master itself to start generating the
-    /// workload. Otherwise, no workload is generate at all, since at
-    /// initialization it has been identified that the specified workload has no
-    /// tasks.
-    if (s->workload->getRemainingTasks() > 0) {
+    /// Generates
+    for (int i = 0; i < s->slaves.size(); i++) {
+
       double offset;
 
       s->workload->generateInterarrival(lp->rng, offset);
@@ -169,55 +166,41 @@ private:
     const auto start = std::chrono::high_resolution_clock::now();
 #endif // DEBUG_ON
 
-    /// Use the master's scheduling policy to the schedule the next slave.
-    const tw_lpid scheduled_slave_id =
-        s->scheduler->forwardSchedule(s->slaves, bf, msg, lp);
-
-    /// Fetch the route that connects this master with the scheduled slave.
-    const ispd::routing::Route *route =
-        ispd::routing_table::getRoute(lp->gid, scheduled_slave_id);
-
-    /// @Todo: This zero-delay timestamped message, could affect the
-    /// conservative synchronization.
-    ///        This should be changed later.
-    tw_event *const e = tw_event_new(route->get(0), g_tw_lookahead, lp);
-    ispd_message *const m = static_cast<ispd_message *>(tw_event_data(e));
-
-    m->type = message_type::ARRIVAL;
-
-    /// Use the master's workload generator for generate the task's
-    /// processing and communication sizes.
-    s->workload->generateWorkload(lp->rng, m->task.m_ProcSize,
-                                  m->task.m_CommSize);
-
-    m->task.m_Offload = s->workload->getComputingOffload();
-
-    /// Task information specification.
-    m->task.m_Origin = lp->gid;
-    m->task.m_Dest = scheduled_slave_id;
-    m->task.m_SubmitTime = tw_now(lp);
-    m->task.m_Owner = s->workload->getOwner();
-
-    m->route_offset = 1;
-    m->previous_service_id = lp->gid;
-    m->downward_direction = 1;
-    m->task_processed = 0;
-
-    tw_event_send(e);
-
-    /// Checks if the there are more remaining tasks to be generated. If so, a
-    /// generate message is sent to the master by itself to generate a new task.
     if (s->workload->getRemainingTasks() > 0) {
-      double offset;
+      /// Use the master's scheduling policy to the schedule the next slave.
+      const tw_lpid scheduled_slave_id =
+          s->scheduler->forwardSchedule(s->slaves, bf, msg, lp);
+      ispd_debug("Machine chosen: %lu", scheduled_slave_id);
+      /// Fetch the route that connects this master with the scheduled slave.
+      const ispd::routing::Route *route =
+          ispd::routing_table::getRoute(lp->gid, scheduled_slave_id);
 
-      s->workload->generateInterarrival(lp->rng, offset);
-
-      /// Send a generate message to itself.
-      tw_event *const e = tw_event_new(lp->gid, g_tw_lookahead + offset, lp);
+      /// @Todo: This zero-delay timestamped message, could affect the
+      /// conservative synchronization.
+      ///        This should be changed later.
+      tw_event *const e = tw_event_new(route->get(0), g_tw_lookahead, lp);
       ispd_message *const m = static_cast<ispd_message *>(tw_event_data(e));
 
-      m->type = message_type::GENERATE;
+      m->type = message_type::ARRIVAL;
 
+      /// Use the master's workload generator for generate the task's
+      /// processing and communication sizes.
+      s->workload->generateWorkload(lp->rng, m->task.m_ProcSize,
+                                    m->task.m_CommSize);
+
+      m->task.m_Offload = s->workload->getComputingOffload();
+
+      /// Task information specification.
+      m->task.m_Origin = lp->gid;
+      m->task.m_Dest = scheduled_slave_id;
+      m->task.m_SubmitTime = tw_now(lp);
+      m->task.m_Owner = s->workload->getOwner();
+
+      m->route_offset = 1;
+      m->previous_service_id = lp->gid;
+      m->downward_direction = 1;
+      m->task_processed = 0;
+      m->vm_id = 0;
       tw_event_send(e);
     }
 
@@ -272,10 +255,29 @@ private:
     /// Update the master's metrics.
     s->metrics.completed_tasks++;
     s->metrics.total_turnaround_time += turnaround_time;
+
+    /// If there are still tasks to execute,
+    /// sends a generate message for creating another task for the currently
+    /// available processor
+    if (s->workload->getRemainingTasks() > 0) {
+      double offset;
+
+      s->workload->generateInterarrival(lp->rng, offset);
+
+      /// Send a generate message to itself.
+      tw_event *const e = tw_event_new(lp->gid, g_tw_lookahead + offset, lp);
+      ispd_message *const m = static_cast<ispd_message *>(tw_event_data(e));
+      m->vm_id = msg->vm_id;
+      m->type = message_type::GENERATE;
+      ispd_debug("Returned machine: %lu", msg->vm_id);
+
+      tw_event_send(e);
+    }
   }
 
   static void arrival_rc(master_state *s, tw_bf *bf, ispd_message *msg,
                          tw_lp *lp) {
+    ispd_debug("Arrival reverse");
     /// Calculate the task`s turnaround time.
     const double turnaround_time = msg->task.m_EndTime - msg->task.m_SubmitTime;
 

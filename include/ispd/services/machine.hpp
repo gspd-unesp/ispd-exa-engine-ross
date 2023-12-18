@@ -132,6 +132,7 @@ struct machine {
           0; /// The task's results will be sent back to the master.
       m->route_offset = msg->route_offset - 2;
       m->previous_service_id = lp->gid;
+      m->vm_id = lp->gid;
 
       /// Save information (for reverse computation).
       msg->saved_core_index = core_index;
@@ -164,6 +165,7 @@ struct machine {
       m->route_offset = msg->downward_direction ? (msg->route_offset + 1)
                                                 : (msg->route_offset - 1);
       m->previous_service_id = lp->gid;
+      m->vm_id = msg->vm_id;
 
       tw_event_send(e);
     }

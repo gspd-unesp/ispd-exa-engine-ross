@@ -673,7 +673,7 @@ char const *info_cray = "INFO"
   ('0' + ((n) >> 28 & 0xF)), ('0' + ((n) >> 24 & 0xF)),                        \
       ('0' + ((n) >> 20 & 0xF)), ('0' + ((n) >> 16 & 0xF)),                    \
       ('0' + ((n) >> 12 & 0xF)), ('0' + ((n) >> 8 & 0xF)),                     \
-      ('0' + ((n) >> 4 & 0xF)), ('0' + ((n)&0xF))
+      ('0' + ((n) >> 4 & 0xF)), ('0' + ((n) & 0xF))
 
 /* Construct a string literal encoding the version number. */
 #ifdef COMPILER_VERSION
@@ -819,7 +819,7 @@ const char *info_language_extensions_default = "INFO"
     !defined(__STRICT_ANSI__) && !defined(_MSC_VER)
                                                "ON"
 #else
-                                                "OFF"
+                                               "OFF"
 #endif
                                                "]";
 

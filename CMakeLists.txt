@@ -13,8 +13,8 @@ ENDIF(BGPM)
 
 SET(ispd_srcs
   # Main entry point.
-  #  ./src/main.cpp
-        ./src/cloud.cpp
+   ./src/main.cpp
+  #      ./src/cloud.cpp
   # Logging-related files.
   ./src/log/log.cpp
 

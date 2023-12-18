@@ -9,6 +9,7 @@
 #include <ispd/services/master.hpp>
 #include <ispd/services/switch.hpp>
 #include <ispd/services/machine.hpp>
+#include <ispd/scheduler/workqueue.hpp>
 #include <ispd/message/message.hpp>
 #include <ispd/routing/routing.hpp>
 #include <ispd/metrics/metrics.hpp>
@@ -64,7 +65,8 @@ int main(int argc, char **argv) {
   ispd::log::setOutputFile(nullptr);
 
   /// Read the routing table from a specified file.
-  ispd::routing_table::load("routes.route");
+  ispd::routing_table::load(
+      "/home/willao/Documentos/GitHub/ispd-exa-engine-ross/src/routes.route");
 
   tw_opt_add(opt);
   tw_init(&argc, &argv);
@@ -87,7 +89,7 @@ int main(int argc, char **argv) {
     slaves.emplace_back(machine_id);
 
   ispd::this_model::registerMaster(
-      0, std::move(slaves), new ispd::scheduler::RoundRobin,
+      0, std::move(slaves), new ispd::scheduler::Workqueue,
       ispd::workload::constant(
           "User1", g_star_task_amount, 1000.0, 80.0, 0.95,
           std::make_unique<ispd::workload::PoissonInterarrivalDistribution>(
@@ -100,8 +102,8 @@ int main(int argc, char **argv) {
   /// Registers serivce initializers for the machines.
   for (tw_lpid machine_id = 2; machine_id <= highest_machine_id;
        machine_id += 2)
-    ispd::this_model::registerMachine(machine_id, 20.0, 0.0, 8, 9800.0, 4096,
-                                      6.4, 0.0, 0.0);
+    ispd::this_model::registerMachine(machine_id, 20.0, 0.0, 8, 0, 0, 0, 0, 0,
+                                      9800.0, 4096, 6.4, 0.0, 0.0);
 
   /// Checks if no user has been registered. If so, the program is immediately
   /// aborted, since at least one user must be registered.
