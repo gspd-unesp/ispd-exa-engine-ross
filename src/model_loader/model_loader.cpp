@@ -65,6 +65,11 @@
 #define MODEL_SERVICE_LINK_LOAD_KEY ("load")
 #define MODEL_SERVICE_LINK_LATENCY_KEY ("latency")
 
+#define MODEL_SERVICE_SWITCH_ID_KEY ("id")
+#define MODEL_SERVICE_SWITCH_BANDWIDTH_KEY ("bandwidth")
+#define MODEL_SERVICE_SWITCH_LOAD_KEY ("load")
+#define MODEL_SERVICE_SWITCH_LATENCY_KEY ("latency")
+
 using json = nlohmann::json;
 
 namespace ispd::model_loader {
@@ -496,6 +501,53 @@ static auto loadLinks(const json &services) noexcept -> void {
              linkIndex);
 }
 
+static auto loadSwitch(const json &switch_, const size_t switchIndex) noexcept
+    -> void {
+  const auto &linkRequiredAttributes = {
+      MODEL_SERVICE_SWITCH_ID_KEY, MODEL_SERVICE_SWITCH_BANDWIDTH_KEY,
+      MODEL_SERVICE_SWITCH_LOAD_KEY, MODEL_SERVICE_SWITCH_LATENCY_KEY};
+
+  // Checks if the current switch specification has all the required
+  // attributes.
+  for (const auto &attribute : linkRequiredAttributes)
+    if (!switch_.contains(attribute))
+      ispd_error("Switch listed at index %lu in model "
+                 "specification does not "
+                 "have the `%s` attribute.",
+                 switchIndex, attribute);
+
+  const tw_lpid id = switch_[MODEL_SERVICE_SWITCH_ID_KEY];
+  const double bandwidth = switch_[MODEL_SERVICE_SWITCH_BANDWIDTH_KEY];
+  const double load = switch_[MODEL_SERVICE_SWITCH_LOAD_KEY];
+  const double latency = switch_[MODEL_SERVICE_SWITCH_LATENCY_KEY];
+
+  // Register the switch.
+  ispd::this_model::registerSwitch(id, bandwidth, load, latency);
+
+  ispd_debug("Switch listed at %lu with identifier %lu has been loaded from "
+             "the model specification.",
+             switchIndex, id);
+}
+
+static auto loadSwitches(const json &services) noexcept -> void {
+  // Checks if there is no switches subsection in the services section.
+  if (!services.contains(MODEL_SERVICES_SWITCHES_SUBSECTION))
+    ispd_error("Services section must have `%s` subsection.",
+               MODEL_SERVICES_SWITCHES_SUBSECTION);
+
+  const auto &switches = services[MODEL_SERVICES_SWITCHES_SUBSECTION];
+  size_t switchIndex = 0;
+
+  for (const auto &switch_ : switches) {
+    loadSwitch(switch_, switchIndex);
+    switchIndex++;
+  }
+
+  ispd_debug("An amount of %lu switches have been loaded from the model "
+             "specification.",
+             switchIndex);
+}
+
 static auto loadServices(const json &data) noexcept -> void {
   // Checks if there is no services section in the model to be loaded.
   if (!data.contains(MODEL_SERVICES_SECTION))
@@ -506,6 +558,7 @@ static auto loadServices(const json &data) noexcept -> void {
   loadMasters(services);
   loadMachines(services);
   loadLinks(services);
+  loadSwitches(services);
 }
 
 void loadModel(const std::filesystem::path modelPath) {
