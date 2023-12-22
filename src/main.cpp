@@ -14,6 +14,7 @@
 #include <ispd/metrics/metrics.hpp>
 #include <ispd/workload/workload.hpp>
 #include <ispd/workload/interarrival.hpp>
+#include <ispd/model_loader/model_loader.hpp>
 
 static unsigned g_star_machine_amount = 10;
 static unsigned g_star_task_amount = 100;
@@ -65,6 +66,9 @@ int main(int argc, char **argv) {
 
   /// Read the routing table from a specified file.
   ispd::routing_table::load("routes.route");
+  
+  /// @Temporary: Must be removed.
+  ispd::model_loader::loadModel("model.json");
 
   tw_opt_add(opt);
   tw_init(&argc, &argv);
