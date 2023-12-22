@@ -1,13 +1,14 @@
 #include <ross.h>
 #include <memory>
-#include <iostream>
+#include <vector>
 #include <fstream>
-#include <typeinfo>
 #include <unordered_map>
 #include <ispd/log/log.hpp>
 #include <lib/nlohmann/json.hpp>
 #include <ispd/model/builder.hpp>
 #include <ispd/workload/workload.hpp>
+#include <ispd/scheduler/scheduler.hpp>
+#include <ispd/scheduler/round_robin.hpp>
 #include <ispd/workload/interarrival.hpp>
 #include <ispd/model_loader/model_loader.hpp>
 
@@ -283,6 +284,24 @@ static auto loadWorkloads(const json &data) noexcept -> void {
              workloadIndex);
 }
 
+static auto loadMasterScheduler(const json &type) noexcept
+    -> ispd::scheduler::Scheduler * {
+  if (type == "RoundRobin") {
+    return new ispd::scheduler::RoundRobin;
+  } else {
+    ispd_error("Unexepected %s scheduler.", type.get<std::string>().c_str());
+  }
+  return nullptr;
+}
+
+static auto loadMasterSlaves(const json &slavesArray) noexcept
+    -> std::vector<tw_lpid> {
+  std::vector<tw_lpid> slaves;
+  for (const auto &slaveId : slavesArray)
+    slaves.emplace_back(slaveId.get<tw_lpid>());
+  return slaves;
+}
+
 static auto loadMaster(const json &master, const size_t masterIndex) -> void {
   const auto &masterRequiredAttributes = {MODEL_SERVICE_MASTER_ID_KEY,
                                           MODEL_SERVICE_MASTER_SCHEDULER_KEY,
@@ -295,6 +314,27 @@ static auto loadMaster(const json &master, const size_t masterIndex) -> void {
                  "specification does not "
                  "have the `%s` attribute.",
                  masterIndex, attribute);
+
+  const tw_lpid id = master[MODEL_SERVICE_MASTER_ID_KEY];
+
+  // Checks if there is no workloads registered to this master.
+  if (g_ModelLoader_Workloads.find(id) == g_ModelLoader_Workloads.cend())
+    ispd_error("No workloads have been loaded to master listed at %lu with "
+               "identifier %lu.",
+               masterIndex, id);
+
+  ispd::scheduler::Scheduler *scheduler =
+      loadMasterScheduler(master[MODEL_SERVICE_MASTER_SCHEDULER_KEY]);
+  std::vector<tw_lpid> slaves =
+      loadMasterSlaves(master[MODEL_SERVICE_MASTER_SLAVES_KEY]);
+  ispd::workload::Workload *workload = g_ModelLoader_Workloads.at(id);
+
+  // Register the master.
+  ispd::this_model::registerMaster(id, std::move(slaves), scheduler, workload);
+
+  ispd_debug("Master listed at %lu with identifier %lu has been loaded from "
+             "the model specification.",
+             masterIndex, id);
 }
 
 static auto loadMasters(const json &services) -> void {
@@ -310,6 +350,8 @@ static auto loadMasters(const json &services) -> void {
     loadMaster(master, masterIndex);
     masterIndex++;
   }
+
+  ispd_debug("An amount of %lu masters have been loaded from the model specification.", masterIndex);
 }
 
 static auto loadServices(const json &data) noexcept -> void {
