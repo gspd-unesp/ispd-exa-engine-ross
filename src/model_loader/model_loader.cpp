@@ -35,6 +35,17 @@
 
 #define MODEL_INTERARRIVAL_POISSON_LAMBDA_KEY ("lambda")
 
+/// \brief Services - Keys.
+#define MODEL_SERVICES_SECTION ("services")
+#define MODEL_SERVICES_MASTER_SUBSECTION ("masters")
+#define MODEL_SERVICES_MACHINES_SUBSECTION ("machines")
+#define MODEL_SERVICES_LINKS_SUBSECTION ("links")
+#define MODEL_SERVICES_SWITCHES_SUBSECTION ("switches")
+
+#define MODEL_SERVICE_MASTER_ID_KEY ("id")
+#define MODEL_SERVICE_MASTER_SCHEDULER_KEY ("scheduler")
+#define MODEL_SERVICE_MASTER_SLAVES_KEY ("slaves")
+
 using json = nlohmann::json;
 
 namespace ispd::model_loader {
@@ -154,6 +165,41 @@ static auto loadInterarrivalDist(const json &workload,
   }
 }
 
+/// \brief Loads Workloads from a JSON model specification.
+///
+/// This function is responsible for parsing and loading Workloads from a JSON
+/// model specification. Workloads are expected to be listed under the
+/// "workloads" section in the provided JSON data. The function iterates over
+/// each workload, checking for the presence of required attributes, and then
+/// creates corresponding Workload objects based on the specified type.
+///
+/// \param data The JSON data representing the model specification.
+///
+/// \note The function assumes that the model specification contains the
+///       "workloads" section, where each workload is specified as an object.
+///       If this section is missing, an error is logged using the ispd_error
+///       macro.
+///
+/// \note The function assumes that each workload specification includes
+///       attributes such as "type," "owner," "remainingTasks," and
+///       "masterId." It also extracts additional attributes based on the
+///       workload type.
+///
+/// \note Currently, the function supports the "uniform" workload type. For
+///       each uniform workload, it checks for additional attributes specific
+///       to the uniform workload type. If an unexpected type is encountered,
+///       an error is logged using the ispd_error macro.
+///
+/// \note The function uses the loadInterarrivalDist function to load the
+///       Interarrival Distribution for each workload.
+///
+/// \note The loaded Workloads are registered in a temporary storage
+///       (g_ModelLoader_Workloads) with master IDs as keys, as these will be
+///       fetched later to register them with the masters.
+///
+/// \note The function logs debug messages indicating the successful loading
+///       of each workload, including details such as the type, sizes, and
+///       owner.
 static auto loadWorkloads(const json &data) noexcept -> void {
   // Checks if there is no workloads section in the model to be loaded.
   if (!data.contains(MODEL_WORKLOADS_SECTION))
@@ -237,6 +283,45 @@ static auto loadWorkloads(const json &data) noexcept -> void {
              workloadIndex);
 }
 
+static auto loadMaster(const json &master, const size_t masterIndex) -> void {
+  const auto &masterRequiredAttributes = {MODEL_SERVICE_MASTER_ID_KEY,
+                                          MODEL_SERVICE_MASTER_SCHEDULER_KEY,
+                                          MODEL_SERVICE_MASTER_SLAVES_KEY};
+
+  // Checks if the current master specification has all the required attributes.
+  for (const auto &attribute : masterRequiredAttributes)
+    if (!master.contains(attribute))
+      ispd_error("Master listed at index %lu in model "
+                 "specification does not "
+                 "have the `%s` attribute.",
+                 masterIndex, attribute);
+}
+
+static auto loadMasters(const json &services) -> void {
+  // Checks if there is no masters subsection in the services section.
+  if (!services.contains(MODEL_SERVICES_MASTER_SUBSECTION))
+    ispd_error("Services section must have `%s` subsection.",
+               MODEL_SERVICES_MASTER_SUBSECTION);
+
+  const auto &masters = services[MODEL_SERVICES_MASTER_SUBSECTION];
+  size_t masterIndex = 0;
+
+  for (const auto &master : masters) {
+    loadMaster(master, masterIndex);
+    masterIndex++;
+  }
+}
+
+static auto loadServices(const json &data) noexcept -> void {
+  // Checks if there is no services section in the model to be loaded.
+  if (!data.contains(MODEL_SERVICES_SECTION))
+    ispd_error("Model must have `%s` section.", MODEL_SERVICES_SECTION);
+
+  const auto &services = data[MODEL_SERVICES_SECTION];
+
+  loadMasters(services);
+}
+
 void loadModel(const std::filesystem::path modelPath) {
   // Checks if the specified model file path does not exists.
   if (!std::filesystem::exists(modelPath))
@@ -247,5 +332,6 @@ void loadModel(const std::filesystem::path modelPath) {
 
   loadUsers(data);
   loadWorkloads(data);
+  loadServices(data);
 }
 } // namespace ispd::model_loader
