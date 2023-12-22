@@ -58,6 +58,13 @@
 #define MODEL_SERVICE_MACHINE_WATTAGEIDLE_KEY ("wattage_idle")
 #define MODEL_SERVICE_MACHINE_WATTAGEMAX_KEY ("wattage_max")
 
+#define MODEL_SERVICE_LINK_ID_KEY ("id")
+#define MODEL_SERVICE_LINK_FROM_KEY ("from")
+#define MODEL_SERVICE_LINK_TO_KEY ("to")
+#define MODEL_SERVICE_LINK_BANDWIDTH_KEY ("bandwidth")
+#define MODEL_SERVICE_LINK_LOAD_KEY ("load")
+#define MODEL_SERVICE_LINK_LATENCY_KEY ("latency")
+
 using json = nlohmann::json;
 
 namespace ispd::model_loader {
@@ -435,6 +442,60 @@ static auto loadMachines(const json &services) noexcept -> void {
              machineIndex);
 }
 
+static auto loadLink(const json &link, const size_t linkIndex) noexcept
+    -> void {
+   const auto &linkRequiredAttributes = {
+      MODEL_SERVICE_LINK_ID_KEY,
+      MODEL_SERVICE_LINK_FROM_KEY,
+      MODEL_SERVICE_LINK_TO_KEY,
+      MODEL_SERVICE_LINK_BANDWIDTH_KEY,
+      MODEL_SERVICE_LINK_LOAD_KEY,
+      MODEL_SERVICE_LINK_LATENCY_KEY
+  };
+
+  // Checks if the current link specification has all the required
+  // attributes.
+  for (const auto &attribute : linkRequiredAttributes)
+    if (!link.contains(attribute))
+      ispd_error("Link listed at index %lu in model "
+                 "specification does not "
+                 "have the `%s` attribute.",
+                 linkIndex, attribute);
+
+  const tw_lpid id = link[MODEL_SERVICE_LINK_ID_KEY].get<tw_lpid>();
+  const tw_lpid from = link[MODEL_SERVICE_LINK_FROM_KEY].get<tw_lpid>();
+  const tw_lpid to = link[MODEL_SERVICE_LINK_TO_KEY].get<tw_lpid>();
+  const double bandwidth = link[MODEL_SERVICE_LINK_BANDWIDTH_KEY].get<double>();
+  const double load = link[MODEL_SERVICE_LINK_LOAD_KEY].get<double>();
+  const double latency = link[MODEL_SERVICE_LINK_LATENCY_KEY].get<double>();
+
+  // Register the link.
+  ispd::this_model::registerLink(id, from, to, bandwidth, load, latency);
+
+  ispd_debug("Link listed at %lu with identifier %lu has been loaded from "
+             "the model specification.",
+             linkIndex, id);
+}
+
+static auto loadLinks(const json &services) noexcept -> void {
+  // Checks if there is no links subsection in the services section.
+  if (!services.contains(MODEL_SERVICES_LINKS_SUBSECTION))
+    ispd_error("Services section must have `%s` subsection.",
+               MODEL_SERVICES_LINKS_SUBSECTION);
+
+  const auto &links = services[MODEL_SERVICES_LINKS_SUBSECTION];
+  size_t linkIndex = 0;
+
+  for (const auto &link : links) {
+    loadLink(link, linkIndex);
+    linkIndex++;
+  }
+
+  ispd_debug("An amount of %lu links have been loaded from the model "
+             "specification.",
+             linkIndex);
+}
+
 static auto loadServices(const json &data) noexcept -> void {
   // Checks if there is no services section in the model to be loaded.
   if (!data.contains(MODEL_SERVICES_SECTION))
@@ -444,6 +505,7 @@ static auto loadServices(const json &data) noexcept -> void {
 
   loadMasters(services);
   loadMachines(services);
+  loadLinks(services);
 }
 
 void loadModel(const std::filesystem::path modelPath) {
