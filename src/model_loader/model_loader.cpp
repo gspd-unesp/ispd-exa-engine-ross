@@ -47,6 +47,17 @@
 #define MODEL_SERVICE_MASTER_SCHEDULER_KEY ("scheduler")
 #define MODEL_SERVICE_MASTER_SLAVES_KEY ("slaves")
 
+#define MODEL_SERVICE_MACHINE_ID_KEY ("id")
+#define MODEL_SERVICE_MACHINE_POWER_KEY ("power")
+#define MODEL_SERVICE_MACHINE_LOAD_KEY ("load")
+#define MODEL_SERVICE_MACHINE_CORECOUNT_KEY ("core_count")
+#define MODEL_SERVICE_MACHINE_GPUPOWER_KEY ("gpu_power")
+#define MODEL_SERVICE_MACHINE_GPUCORECOUNT_KEY ("gpu_core_count")
+#define MODEL_SERVICE_MACHINE_GPUINTERCONNECTIONBANDWIDTH_KEY                  \
+  ("gpu_interconnection_bandwidth")
+#define MODEL_SERVICE_MACHINE_WATTAGEIDLE_KEY ("wattage_idle")
+#define MODEL_SERVICE_MACHINE_WATTAGEMAX_KEY ("wattage_max")
+
 using json = nlohmann::json;
 
 namespace ispd::model_loader {
@@ -302,7 +313,8 @@ static auto loadMasterSlaves(const json &slavesArray) noexcept
   return slaves;
 }
 
-static auto loadMaster(const json &master, const size_t masterIndex) -> void {
+static auto loadMaster(const json &master, const size_t masterIndex) noexcept
+    -> void {
   const auto &masterRequiredAttributes = {MODEL_SERVICE_MASTER_ID_KEY,
                                           MODEL_SERVICE_MASTER_SCHEDULER_KEY,
                                           MODEL_SERVICE_MASTER_SLAVES_KEY};
@@ -337,7 +349,7 @@ static auto loadMaster(const json &master, const size_t masterIndex) -> void {
              masterIndex, id);
 }
 
-static auto loadMasters(const json &services) -> void {
+static auto loadMasters(const json &services) noexcept -> void {
   // Checks if there is no masters subsection in the services section.
   if (!services.contains(MODEL_SERVICES_MASTER_SUBSECTION))
     ispd_error("Services section must have `%s` subsection.",
@@ -354,6 +366,75 @@ static auto loadMasters(const json &services) -> void {
   ispd_debug("An amount of %lu masters have been loaded from the model specification.", masterIndex);
 }
 
+static auto loadMachine(const json &machine, const size_t machineIndex) noexcept
+    -> void {
+  const auto &machineRequiredAttributes = {
+      MODEL_SERVICE_MACHINE_ID_KEY,
+      MODEL_SERVICE_MACHINE_POWER_KEY,
+      MODEL_SERVICE_MACHINE_LOAD_KEY,
+      MODEL_SERVICE_MACHINE_CORECOUNT_KEY,
+      MODEL_SERVICE_MACHINE_GPUPOWER_KEY,
+      MODEL_SERVICE_MACHINE_GPUCORECOUNT_KEY,
+      MODEL_SERVICE_MACHINE_GPUINTERCONNECTIONBANDWIDTH_KEY,
+      MODEL_SERVICE_MACHINE_WATTAGEIDLE_KEY,
+      MODEL_SERVICE_MACHINE_WATTAGEMAX_KEY,
+  };
+
+  // Checks if the current machine specification has all the required
+  // attributes.
+  for (const auto &attribute : machineRequiredAttributes)
+    if (!machine.contains(attribute))
+      ispd_error("Machine listed at index %lu in model "
+                 "specification does not "
+                 "have the `%s` attribute.",
+                 machineIndex, attribute);
+
+  const tw_lpid id = machine[MODEL_SERVICE_MACHINE_ID_KEY].get<tw_lpid>();
+  const double power = machine[MODEL_SERVICE_MACHINE_POWER_KEY].get<double>();
+  const double load = machine[MODEL_SERVICE_MACHINE_LOAD_KEY].get<double>();
+  const unsigned coreCount =
+      machine[MODEL_SERVICE_MACHINE_CORECOUNT_KEY].get<unsigned>();
+  const double gpuPower =
+      machine[MODEL_SERVICE_MACHINE_GPUPOWER_KEY].get<double>();
+  const unsigned gpuCoreCount =
+      machine[MODEL_SERVICE_MACHINE_GPUCORECOUNT_KEY].get<unsigned>();
+  const double interconnectionBandwidth =
+      machine[MODEL_SERVICE_MACHINE_GPUINTERCONNECTIONBANDWIDTH_KEY]
+          .get<double>();
+  const double wattageIdle =
+      machine[MODEL_SERVICE_MACHINE_WATTAGEIDLE_KEY].get<double>();
+  const double wattageMax =
+      machine[MODEL_SERVICE_MACHINE_WATTAGEMAX_KEY].get<double>();
+
+  // Registter the machine.
+  ispd::this_model::registerMachine(id, power, load, coreCount, gpuPower,
+                                    gpuCoreCount, interconnectionBandwidth,
+                                    wattageIdle, wattageMax);
+
+  ispd_debug("Machine listed at %lu with identifier %lu has been loaded from "
+             "the model specification.",
+             machineIndex, id);
+}
+
+static auto loadMachines(const json &services) noexcept -> void {
+  // Checks if there is no machines subsection in the services section.
+  if (!services.contains(MODEL_SERVICES_MACHINES_SUBSECTION))
+    ispd_error("Services section must have `%s` subsection.",
+               MODEL_SERVICES_MACHINES_SUBSECTION);
+
+  const auto &machines = services[MODEL_SERVICES_MACHINES_SUBSECTION];
+  size_t machineIndex = 0;
+
+  for (const auto &machine : machines) {
+    loadMachine(machine, machineIndex);
+    machineIndex++;
+  }
+
+  ispd_debug("An amount of %lu machines have been loaded from the model "
+             "specification.",
+             machineIndex);
+}
+
 static auto loadServices(const json &data) noexcept -> void {
   // Checks if there is no services section in the model to be loaded.
   if (!data.contains(MODEL_SERVICES_SECTION))
@@ -362,6 +443,7 @@ static auto loadServices(const json &data) noexcept -> void {
   const auto &services = data[MODEL_SERVICES_SECTION];
 
   loadMasters(services);
+  loadMachines(services);
 }
 
 void loadModel(const std::filesystem::path modelPath) {
