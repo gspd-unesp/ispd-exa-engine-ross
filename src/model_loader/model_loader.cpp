@@ -74,7 +74,68 @@ using json = nlohmann::json;
 
 namespace ispd::model_loader {
 
+/// \brief Logical Process Types.
+///
+/// This enumeration lists the available logical process types used in a
+/// discrete-event simulation. Each logical process type corresponds to a
+/// specific role within the simulation model. The numbers assigned to each
+/// logical process type must match the values used in `lps_type` when
+/// configuring logical processes with `tw_lp_settype`.
+///
+/// \note Logical processes represent entities in the simulation model, and each
+///       type serves a unique purpose.
+///
+/// \details The available logical process types are:
+///   - MASTER: Represents the master service center.
+///   - LINK: Represents a communication link.
+///   - MACHINE: Represents a computational node or machine that performs tasks.
+///   - SWITCH: Represents a network switch for communication in a distributed
+///   system.
+///   - DUMMY: Represents a dummy logical process with no specific role.
+///
+/// \note The numbering of the logical process types (0 for MASTER, 1 for LINK,
+///       and so on) is crucial for compatibility with the configuration of
+///       logical process types using `tw_lp_settype`.
+///
+/// \see tw_lp_settype
+enum LogicalProcessType {
+  MASTER = 0,
+  LINK = 1,
+  MACHINE = 2,
+  SWITCH = 3,
+  DUMMY = 4
+};
+
 std::unordered_map<tw_lpid, ispd::workload::Workload *> g_ModelLoader_Workloads;
+
+/// \brief Global Identifier to Logical Process Type Mapping.
+///
+/// This unordered map is designed to store the mapping between global logical
+/// process identifiers and their corresponding logical process types. In a
+/// discrete-event simulation, each logical process has a unique global
+/// identifier (tw_lpid), and associating it with a logical process type
+/// provides information about its role or purpose within the simulation.
+///
+/// \see tw_lpid
+/// \see LogicalProcessType
+///
+/// \note The usage of an unordered map allows for efficient retrieval of
+///       logical process types based on their global identifiers.
+///
+/// \note This global map is typically utilized during the simulation setup
+///       phase to establish the characteristics of each logical process.
+std::unordered_map<tw_lpid, LogicalProcessType> g_GidToType;
+
+static auto registerGidToType(const tw_lpid gid,
+                              const LogicalProcessType type) noexcept -> void {
+  // Checks if a mapping has already been registered for the specified global
+  // identifier.
+  if (g_GidToType.find(gid) != g_GidToType.cend()) [[unlikely]]
+    ispd_error("A logical process type mapping for the global logical process "
+               "identifier %lu has already been made.",
+               gid);
+  g_GidToType.emplace(gid, type);
+}
 
 /// \brief Loads user information from a JSON data structure and registers
 ///        users in the simulation model.
@@ -355,6 +416,7 @@ static auto loadMaster(const json &master, const size_t masterIndex) noexcept
 
   // Register the master.
   ispd::this_model::registerMaster(id, std::move(slaves), scheduler, workload);
+  registerGidToType(id, LogicalProcessType::MASTER);
 
   ispd_debug("Master listed at %lu with identifier %lu has been loaded from "
              "the model specification.",
@@ -422,6 +484,7 @@ static auto loadMachine(const json &machine, const size_t machineIndex) noexcept
   ispd::this_model::registerMachine(id, power, load, coreCount, gpuPower,
                                     gpuCoreCount, interconnectionBandwidth,
                                     wattageIdle, wattageMax);
+  registerGidToType(id, LogicalProcessType::MACHINE);
 
   ispd_debug("Machine listed at %lu with identifier %lu has been loaded from "
              "the model specification.",
@@ -476,6 +539,7 @@ static auto loadLink(const json &link, const size_t linkIndex) noexcept
 
   // Register the link.
   ispd::this_model::registerLink(id, from, to, bandwidth, load, latency);
+  registerGidToType(id, LogicalProcessType::LINK);
 
   ispd_debug("Link listed at %lu with identifier %lu has been loaded from "
              "the model specification.",
@@ -523,6 +587,7 @@ static auto loadSwitch(const json &switch_, const size_t switchIndex) noexcept
 
   // Register the switch.
   ispd::this_model::registerSwitch(id, bandwidth, load, latency);
+  registerGidToType(id, LogicalProcessType::SWITCH);
 
   ispd_debug("Switch listed at %lu with identifier %lu has been loaded from "
              "the model specification.",
