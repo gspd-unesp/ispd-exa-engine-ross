@@ -74,38 +74,6 @@ using json = nlohmann::json;
 
 namespace ispd::model_loader {
 
-/// \brief Logical Process Types.
-///
-/// This enumeration lists the available logical process types used in a
-/// discrete-event simulation. Each logical process type corresponds to a
-/// specific role within the simulation model. The numbers assigned to each
-/// logical process type must match the values used in `lps_type` when
-/// configuring logical processes with `tw_lp_settype`.
-///
-/// \note Logical processes represent entities in the simulation model, and each
-///       type serves a unique purpose.
-///
-/// \details The available logical process types are:
-///   - MASTER: Represents the master service center.
-///   - LINK: Represents a communication link.
-///   - MACHINE: Represents a computational node or machine that performs tasks.
-///   - SWITCH: Represents a network switch for communication in a distributed
-///   system.
-///   - DUMMY: Represents a dummy logical process with no specific role.
-///
-/// \note The numbering of the logical process types (0 for MASTER, 1 for LINK,
-///       and so on) is crucial for compatibility with the configuration of
-///       logical process types using `tw_lp_settype`.
-///
-/// \see tw_lp_settype
-enum LogicalProcessType {
-  MASTER = 0,
-  LINK = 1,
-  MACHINE = 2,
-  SWITCH = 3,
-  DUMMY = 4
-};
-
 std::unordered_map<tw_lpid, ispd::workload::Workload *> g_ModelLoader_Workloads;
 
 /// \brief Global Identifier to Logical Process Type Mapping.
@@ -626,7 +594,7 @@ static auto loadServices(const json &data) noexcept -> void {
   loadSwitches(services);
 }
 
-void loadModel(const std::filesystem::path modelPath) {
+auto loadModel(const std::filesystem::path modelPath) noexcept -> void {
   // Checks if the specified model file path does not exists.
   if (!std::filesystem::exists(modelPath))
     ispd_error("Model path %s does not exists.", modelPath.c_str());
@@ -638,4 +606,20 @@ void loadModel(const std::filesystem::path modelPath) {
   loadWorkloads(data);
   loadServices(data);
 }
+
+[[nodiscard]] auto getLogicalProcessType(const tw_lpid gid) noexcept
+    -> LogicalProcessType {
+  /// Checks if no logical process type has been registered for the
+  /// specified logical process global identifier.
+  if (g_GidToType.find(gid) == g_GidToType.cend())
+    ispd_error("getLogicalProcessType: Trying to fetch the logical process "
+               "type to an unregistered identifier.");
+  return g_GidToType.at(gid);
+}
+
+[[nodiscard]] auto getServicesSize() noexcept
+    -> std::unordered_map<tw_lpid, LogicalProcessType>::size_type {
+  return g_GidToType.size();
+}
+
 } // namespace ispd::model_loader

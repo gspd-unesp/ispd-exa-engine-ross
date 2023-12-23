@@ -184,12 +184,12 @@ void SimulationModel::registerMaster(
 
   /// Register the service initializer for a master with the specified
   /// logical process global identifier.
-  registerServiceInitializer(gid, [workload, scheduler, &slaves](void *state) {
+  registerServiceInitializer(gid, [workload, scheduler, slaves](void *state) {
     ispd::services::master_state *s =
         static_cast<ispd::services::master_state *>(state);
 
     /// Specify the master's slaves.
-    s->slaves = std::move(slaves);
+    s->slaves = slaves;
 
     /// Specify the master's schedule and workload.
     s->scheduler = scheduler;

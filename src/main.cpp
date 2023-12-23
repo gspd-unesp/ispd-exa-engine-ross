@@ -78,40 +78,12 @@ int main(int argc, char **argv) {
   if (g_tw_synchronization_protocol != CONSERVATIVE)
     g_tw_lookahead = 0;
 
-  const tw_lpid highest_machine_id = g_star_machine_amount * 2;
-  const tw_lpid highest_link_id = highest_machine_id - 1;
-
-  /// Register the user.
-  ispd::this_model::registerUser("User1", 100.0);
-
-  /// Register a master.
-  std::vector<tw_lpid> slaves;
-  for (tw_lpid machine_id = 2; machine_id <= highest_machine_id;
-       machine_id += 2)
-    slaves.emplace_back(machine_id);
-
-  ispd::this_model::registerMaster(
-      0, std::move(slaves), new ispd::scheduler::RoundRobin,
-      ispd::workload::constant(
-          "User1", g_star_task_amount, 1000.0, 80.0, 0.95,
-          std::make_unique<ispd::workload::PoissonInterarrivalDistribution>(
-              0.1)));
-
-  /// Registers service initializers for the links.
-  for (tw_lpid link_id = 1; link_id <= highest_link_id; link_id += 2)
-    ispd::this_model::registerLink(link_id, 0, link_id + 1, 50.0, 0.0, 1.0);
-
-  /// Registers serivce initializers for the machines.
-  for (tw_lpid machine_id = 2; machine_id <= highest_machine_id;
-       machine_id += 2)
-    ispd::this_model::registerMachine(machine_id, 20.0, 0.0, 8, 9800.0, 4096,
-                                      6.4, 0.0, 0.0);
-
   /// Checks if no user has been registered. If so, the program is immediately
   /// aborted, since at least one user must be registered.
   if (ispd::this_model::getUsers().size() == 0)
     ispd_error("At least one user must be registered.");
 
+  const unsigned highest_machine_id = 0;
   /// The total number of logical processes.
   const unsigned nlp = g_star_machine_amount * 2 + 1;
 
@@ -184,20 +156,14 @@ int main(int argc, char **argv) {
   }
   /// Sequential.
   else {
+    /// The amount of services to have its logical process type to be set.
+    const auto servicesSize = ispd::model_loader::getServicesSize();
+
     /// Set the total number of logical processes that should be created.
-    tw_define_lps(nlp, sizeof(ispd_message));
+    tw_define_lps(servicesSize, sizeof(ispd_message));
 
-    /// The master type is set at the logical process with GID 0.
-    tw_lp_settype(0, &lps_type[0]);
-
-    /// Set the logical processes types.
-    for (unsigned i = 1; i < nlp; i += 2) {
-      /// Register at odd logical process identifier the link.
-      tw_lp_settype(i, &lps_type[1]);
-
-      // Register at even logical process identifier the machine.
-      tw_lp_settype(i + 1, &lps_type[2]);
-    }
+    for (size_t i = 0; i < servicesSize; i++)
+      tw_lp_settype(i, &lps_type[ispd::model_loader::getLogicalProcessType(i)]);
   }
 
   tw_run();
