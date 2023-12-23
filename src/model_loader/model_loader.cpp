@@ -613,7 +613,7 @@ auto loadModel(const std::filesystem::path modelPath) noexcept -> void {
   /// specified logical process global identifier.
   if (g_GidToType.find(gid) == g_GidToType.cend())
     ispd_error("getLogicalProcessType: Trying to fetch the logical process "
-               "type to an unregistered identifier.");
+               "type to an unregistered identifier (%lu) at node (%lu).", gid, g_tw_mynode);
   return g_GidToType.at(gid);
 }
 

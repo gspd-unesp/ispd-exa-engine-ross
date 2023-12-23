@@ -83,9 +83,8 @@ int main(int argc, char **argv) {
   if (ispd::this_model::getUsers().size() == 0)
     ispd_error("At least one user must be registered.");
 
-  const unsigned highest_machine_id = 0;
-  /// The total number of logical processes.
-  const unsigned nlp = g_star_machine_amount * 2 + 1;
+  /// The amount of services to have its logical process type to be set.
+  const auto servicesSize = ispd::model_loader::getServicesSize();
 
   /// Distributed.
   if (tw_nnodes() > 1) {
@@ -99,7 +98,8 @@ int main(int argc, char **argv) {
     /// lps (nlp). In this case, in the last node, after all the required
     /// logical processes be created, the remaining logical processes are going
     /// to be set as dummies.
-    const unsigned nlp_per_pe = (unsigned)ceil((double)nlp / tw_nnodes());
+    const unsigned nlp_per_pe =
+        (unsigned)ceil((double)servicesSize / tw_nnodes());
 
     /// Set the number of logical processes (LP) per processing element (PE).
     tw_define_lps(nlp_per_pe, sizeof(ispd_message));
@@ -112,43 +112,26 @@ int main(int argc, char **argv) {
     /// Count the amount of dummies that should be set to this node.
     unsigned dummy_count = 0;
 
-    if (g_tw_mynode == 0) {
-      /// Set the master logical process.
-      tw_lp_settype(0, &lps_type[0]);
+    /// Set the links and machines.
+    for (unsigned i = 0; i < nlp_per_pe; i++) {
+      if (current_gid >= servicesSize) {
+        tw_lp_settype(i,
+                      &lps_type[ispd::model_loader::LogicalProcessType::DUMMY]);
 
-      /// Set the links and machines.
-      for (unsigned i = 1; i < nlp_per_pe; i++) {
-        if (current_gid > highest_machine_id) {
-          tw_lp_settype(i, &lps_type[4]);
-
-          dummy_count++;
-          current_gid++;
-          continue;
-        }
-
-        if (i & 1)
-          tw_lp_settype(i, &lps_type[1]);
-        else
-          tw_lp_settype(i, &lps_type[2]);
+        dummy_count++;
         current_gid++;
+        continue;
       }
-    } else {
-      /// Set the links and machines.
-      for (unsigned i = 0; i < nlp_per_pe; i++) {
-        if (current_gid > highest_machine_id) {
-          tw_lp_settype(i, &lps_type[4]);
 
-          dummy_count++;
-          current_gid++;
-          continue;
-        }
+      /// The correspondent logical process type for the given logical process
+      /// global identifier.
+      const ispd::model_loader::LogicalProcessType type =
+          ispd::model_loader::getLogicalProcessType(current_gid);
 
-        if (current_gid & 1)
-          tw_lp_settype(i, &lps_type[1]);
-        else
-          tw_lp_settype(i, &lps_type[2]);
-        current_gid++;
-      }
+      /// Set the logical process type.
+      tw_lp_settype(i, &lps_type[type]);
+
+      current_gid++;
     }
 
     ispd_info("A total of %u dummies have been created at node %d.",
@@ -156,14 +139,21 @@ int main(int argc, char **argv) {
   }
   /// Sequential.
   else {
-    /// The amount of services to have its logical process type to be set.
-    const auto servicesSize = ispd::model_loader::getServicesSize();
-
     /// Set the total number of logical processes that should be created.
     tw_define_lps(servicesSize, sizeof(ispd_message));
 
-    for (size_t i = 0; i < servicesSize; i++)
-      tw_lp_settype(i, &lps_type[ispd::model_loader::getLogicalProcessType(i)]);
+    for (size_t i = 0; i < servicesSize; i++) {
+      /// The logical process global identifier to be registered.
+      const tw_lpid gid = static_cast<tw_lpid>(i);
+
+      /// The correspondent logical process type for the given logical process
+      /// global identifier.
+      const ispd::model_loader::LogicalProcessType type =
+          ispd::model_loader::getLogicalProcessType(gid);
+
+      /// Set the logical process type.
+      tw_lp_settype(gid, &lps_type[type]);
+    }
   }
 
   tw_run();
