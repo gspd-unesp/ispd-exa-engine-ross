@@ -1,6 +1,7 @@
 #ifndef ISPD_METRICS_HPP
 #define ISPD_METRICS_HPP
 
+#include <filesystem>
 #include <unordered_map>
 #include <ispd/model/user.hpp>
 
@@ -204,6 +205,16 @@ public:
     /// This method is responsible for reporting the aggregated global-level metrics and some other calculated
     /// metrics to the standard output.
     void reportGlobalMetrics();
+
+    /// \brief Write aggregated global-level metrics to a file in JSON format.
+    ///
+    /// This function plays a crucial role in the reporting mechanism of the simulation engine. Its primary
+    /// responsibility is to write the aggregated global-level metrics, obtained during the simulation, to a
+    /// specified file in the JSON format. The generated report serves as an essential input for the
+    /// `ispd-exa-gui` application, enhancing the visualization and analysis of simulation results.
+    ///
+    /// \param reportFilePath The file path where the aggregated metrics report will be written in JSON format.
+    void reportGlobalMetricsToFile(const std::filesystem::path reportFilePath);
 };
 
 }; // namespace ispd::metrics
@@ -261,6 +272,16 @@ namespace ispd::global_metrics {
     /// This function is responsible for reporting the aggregated global-level metrics to the standard output.
     /// It facilitates the communication and analysis of metrics collected from across the entire simulation setup.
     void reportGlobalMetrics();
+
+    /// \brief Write aggregated global-level metrics to a file in JSON format.
+    ///
+    /// This function plays a crucial role in the reporting mechanism of the simulation engine. Its primary
+    /// responsibility is to write the aggregated global-level metrics, obtained during the simulation, to a
+    /// specified file in the JSON format. The generated report serves as an essential input for the
+    /// `ispd-exa-gui` application, enhancing the visualization and analysis of simulation results.
+    ///
+    /// \param reportFilePath The file path where the aggregated metrics report will be written in JSON format.
+    void reportGlobalMetricsToFile(const std::filesystem::path reportFilePath);
 
 } // namespace ispd::global_metrics
 

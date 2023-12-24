@@ -161,6 +161,7 @@ int main(int argc, char **argv) {
   tw_end();
 
   ispd::global_metrics::reportGlobalMetrics();
+  ispd::global_metrics::reportGlobalMetricsToFile("results.json");
 
   return 0;
 }

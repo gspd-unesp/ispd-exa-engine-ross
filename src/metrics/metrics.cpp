@@ -1,9 +1,11 @@
 #include <mpi.h>
 #include <ross.h>
+#include <fstream>
 #include <algorithm>
 #include <ispd/log/log.hpp>
-#include <ispd/metrics/metrics.hpp>
+#include <lib/nlohmann/json.hpp>
 #include <ispd/model/builder.hpp>
+#include <ispd/metrics/metrics.hpp>
 
 namespace ispd::metrics {
 
@@ -405,6 +407,107 @@ void GlobalMetricsCollector::reportGlobalMetrics() {
 #endif // DEBUG_ON
 }
 
+void GlobalMetricsCollector::reportGlobalMetricsToFile(
+    const std::filesystem::path reportFilePath) {
+  using json = nlohmann::json;
+
+  json data;
+  std::ofstream out(reportFilePath);
+
+  /// Writing the general-related metrics.
+  data["simulation_time"] = m_GlobalSimulationTime;
+
+  /// Writing the total-related metrics.
+  json total;
+
+  total["processed_mflops"] = m_GlobalTotalProcessedMFlops;
+  total["communicated_mbits"] = m_GlobalTotalCommunicatedMBits;
+  total["processing_waiting_time"] = m_GlobalTotalProcessingWaitingTime;
+  total["master_services"] = m_GlobalTotalMasterServices;
+  total["link_serivces"] = m_GlobalTotalLinkServices;
+  total["machine_services"] = m_GlobalTotalMachineServices;
+  total["switch_services"] = m_GlobalTotalSwitchServices;
+  data["total"] = total;
+
+  /// Writing the average-related metrics.
+  json average;
+
+  const double avgProcessingTime =
+      m_GlobalTotalProcessingTime / m_GlobalTotalCompletedTasks;
+  const double avgProcessingWaitingTime =
+      m_GlobalTotalProcessingWaitingTime / m_GlobalTotalCompletedTasks;
+  const double avgCommunicationTime =
+      m_GlobalTotalCommunicationTime / m_GlobalTotalCompletedTasks;
+  const double avgCommunicationWaitingTime =
+      m_GlobalTotalCommunicationWaitingTime / m_GlobalTotalCompletedTasks;
+  const double avgTotalTurnaroundTime =
+      m_GlobalTotalTurnaroundTime / m_GlobalTotalCompletedTasks;
+
+  average["processing_time"] = avgProcessingTime;
+  average["processing_waiting_time"] = avgProcessingWaitingTime;
+  average["communication_time"] = avgCommunicationTime;
+  average["communication_waiting_time"] = avgCommunicationWaitingTime;
+  average["turnaround_time"] = avgTotalTurnaroundTime;
+  data["average"] = average;
+
+  /// Writing the system-related metrics.
+  json system;
+
+  /// Maximum computational power obtained in the simulation.
+  const double maxComputationalPower =
+      m_GlobalTotalProcessedMFlops / m_GlobalSimulationTime;
+
+  {
+    /// The efficiency is calculated as: Rmax / Rpeak
+    const double efficiency =
+        maxComputationalPower / m_GlobalTotalComputationalPower;
+
+    /// Writing the system processing-related metrics.
+    json processing;
+    processing["peak_computational_power"] = m_GlobalTotalComputationalPower;
+    processing["max_computational_power"] = maxComputationalPower;
+    processing["efficiency"] = efficiency;
+    system["processing"] = processing;
+  }
+
+  {
+    /// The total energy consumption is divided into two main components:
+    /// dynamic (D) and static (S) energy consumption. The dynamic energy
+    /// consumption refers to the energy consumed while the component is
+    /// actively processing tasks or performing operations. In contrast, the
+    /// static energy consumption corresponds to the energy consumed when the
+    /// component is in an idle or low-power state.
+    ///
+    /// \note The dynamic energy consumption is typically influenced by factors
+    /// such as processing load, activity patterns, and utilization. The static
+    /// energy consumption often includes power used by components in standby,
+    /// sleep, or other low-power modes.
+    const double totalEnergyConsumption =
+        m_GlobalTotalNonIdleEnergyConsumption +
+        m_GlobalTotalPowerIdle * m_GlobalSimulationTime;
+
+    /// Calculates the system average power and the system's energy efficiency.
+    const double avgPower = totalEnergyConsumption / m_GlobalSimulationTime;
+    const double energyEfficiency = maxComputationalPower / avgPower;
+
+    /// Writing the system energy-related metrics.
+    json energy;
+
+    energy["energy_consumption"] = totalEnergyConsumption;
+    energy["energy_efficiency"] = energyEfficiency;
+    energy["average_power"] = avgPower;
+    energy["idle_power"] = m_GlobalTotalPowerIdle;
+    system["energy"] = energy;
+  }
+
+  system["total_cpu_cores"] = m_GlobalTotalCpuCores;
+  system["total_gpu_cores"] = m_GlobalTotalGpuCores;
+  data["system"] = system;
+
+  /// Write the JSON content into the file using the prettified format.
+  out << std::setw(2) << data << std::endl;
+}
+
 }; // namespace ispd::metrics
 
 namespace ispd::node_metrics {
@@ -443,6 +546,8 @@ namespace ispd::global_metrics {
     /// Forward the report to the global metrics collector.
     g_GlobalMetricsCollector->reportGlobalMetrics();
   }
-  
-}; // namespace ispd::global_metrics
 
+  void reportGlobalMetricsToFile(const std::filesystem::path reportFilePath) {
+    g_GlobalMetricsCollector->reportGlobalMetricsToFile(reportFilePath);
+  }
+}; // namespace ispd::global_metrics
