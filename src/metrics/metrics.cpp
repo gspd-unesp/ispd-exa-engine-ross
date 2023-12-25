@@ -504,6 +504,30 @@ void GlobalMetricsCollector::reportGlobalMetricsToFile(
   system["total_gpu_cores"] = m_GlobalTotalGpuCores;
   data["system"] = system;
 
+  /// Writing the user-related metrics.
+  json users;
+
+  for (const auto& [id, userMetrics] : m_GlobalUserMetrics) {
+    const double userAvgProcTime = userMetrics.m_ProcTime / userMetrics.m_IssuedTasks;
+    const double userAvgProcWaitingTime = userMetrics.m_ProcWaitingTime / userMetrics.m_IssuedTasks;
+    const double userAvgCommTime = userMetrics.m_CommTime / userMetrics.m_IssuedTasks;
+    const double userAvgCommWaitingTime = userMetrics.m_CommWaitingTime / userMetrics.m_IssuedTasks;
+
+    json user;
+
+    user["average_processing_time"] = userAvgProcTime;
+    user["average_processing_waiting_time"] = userAvgProcWaitingTime;
+    user["average_communication_time"] = userAvgCommTime;
+    user["average_communication_waiting_time"] = userAvgCommWaitingTime;
+    user["issued_tasks"] = userMetrics.m_IssuedTasks;
+    user["completed_tasks"] = userMetrics.m_CompletedTasks;
+    user["energy_consumption"] = userMetrics.m_EnergyConsumption;
+    
+    users[ispd::this_model::getUserById(id).getName()] = user;
+  }
+
+  data["users"] = users;
+
   /// Write the JSON content into the file using the prettified format.
   out << std::setw(2) << data << std::endl;
 }
