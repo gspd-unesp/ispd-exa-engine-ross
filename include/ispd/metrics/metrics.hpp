@@ -261,17 +261,48 @@ namespace ispd::node_metrics {
     template <typename T>
     void notifyMetric(const ispd::metrics::NodeMetricsFlag flag, const T value);
 
+    /// \brief Notify aggregated node-level report metrics with machine metrics.
+    ///
+    /// This function serves the purpose of updating the aggregated node-level report metrics with the metrics
+    /// obtained from a specific machine.
+    ///
+    /// \param metrics The machine metrics to be incorporated into the aggregated report.
+    /// \param configuration The machine configuration used for calculating additional metrics.
+    /// \param gid The global identifier of the machine for uniquely identifying and associating metrics.
     void notifyReport(const ispd::metrics::MachineMetrics &metrics, 
                       const ispd::configuration::MachineConfiguration &configuration,
                       const tw_lpid gid);
 
+    /// \brief Notify aggregated node-level report metrics with link metrics.
+    ///
+    /// This function serves the purpose of updating the aggregated node-level report metrics with the metrics
+    /// obtained from a specific link.
+    ///
+    /// \param metrics The link metrics to be incorporated into the aggregated report.
+    /// \param configuration The link configuration used for calculating additional metrics.
+    /// \param gid The global identifier of the link for uniquely identifying and associating metrics.
     void notifyReport(const ispd::metrics::LinkMetrics &metrics,
                       const ispd::configuration::LinkConfiguration &configuration,
                       const tw_lpid gid);
 
+    /// \brief Notify aggregated node-level report metrics with master metrics.
+    ///
+    /// This function serves the purpose of updating the aggregated node-level report metrics with the metrics
+    /// obtained from a specific master.
+    ///
+    /// \param metrics The master metrics to be incorporated into the aggregated report.
+    /// \param gid The global identifier of the master for uniquely identifying and associating metrics.
     void notifyReport(const ispd::metrics::MasterMetrics &metrics,
                       const tw_lpid gid);
 
+    /// \brief Notify aggregated node-level report metrics with switch metrics.
+    ///
+    /// This function serves the purpose of updating the aggregated node-level report metrics with the metrics
+    /// obtained from a specific switch.
+    ///
+    /// \param metrics The switch metrics to be incorporated into the aggregated report.
+    /// \param configuration The switch configuration used for calculating additional metrics.
+    /// \param gid The global identifier of the switch for uniquely identifying and associating metrics.
     void notifyReport(const ispd::metrics::SwitchMetrics &metrics,
                       const ispd::configuration::SwitchConfiguration &configuration,
                       const tw_lpid gid);
