@@ -9,20 +9,13 @@
 #include <ispd/routing/routing.hpp>
 #include <ispd/metrics/metrics.hpp>
 #include <ispd/configuration/switch.hpp>
+#include <ispd/metrics/switch_metrics.hpp>
 
 namespace ispd::services {
 
-struct SwitchMetrics {
-  double m_UpwardCommMbits;
-  double m_DownwardCommMbits;
-
-  unsigned m_UpwardCommPackets;
-  unsigned m_DownwardCommPackets;
-};
-
 struct SwitchState {
   ispd::configuration::SwitchConfiguration m_Conf;
-  SwitchMetrics m_Metrics;
+  ispd::metrics::SwitchMetrics m_Metrics;
 };
 
 struct Switch {
