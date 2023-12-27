@@ -668,7 +668,28 @@ namespace ispd::global_metrics {
     g_GlobalMetricsCollector->reportGlobalMetrics();
   }
 
+  auto purgeOldNodeReportFiles() noexcept -> void {
+    /// Only the master node will purge the old report files.
+    if (g_tw_mynode)
+      return;
+
+    /// Count how many nodes that are acting in the simulation.
+    const size_t nodeCount = tw_nnodes();
+
+    for (size_t i = 0; i < nodeCount; i++) {
+      const std::string nodeFilePath = "node_" + std::to_string(i) + ".json";
+
+      /// Checks if the file with the specified path does exists. If so, the
+      /// file will be removed.
+      if (std::filesystem::exists(nodeFilePath))
+        std::filesystem::remove(nodeFilePath);
+    }
+  }
+
   void reportGlobalMetricsToFile(const std::filesystem::path reportFilePath) {
+    /// Purge the old node report files.
+    purgeOldNodeReportFiles();
+
     g_GlobalMetricsCollector->reportGlobalMetricsToFile(reportFilePath);
   }
 }; // namespace ispd::global_metrics

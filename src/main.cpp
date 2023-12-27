@@ -70,6 +70,9 @@ int main(int argc, char **argv) {
   /// @Temporary: Must be removed.
   ispd::model_loader::loadModel("model.json");
 
+  /// Remove the previously generated node-level aggreated report files.
+  ispd::global_metrics::purgeOldNodeReportFiles();
+
   tw_opt_add(opt);
   tw_init(&argc, &argv);
 
