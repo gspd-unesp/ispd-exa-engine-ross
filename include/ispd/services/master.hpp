@@ -12,17 +12,10 @@
 #include <ispd/workload/workload.hpp>
 #include <ispd/scheduler/scheduler.hpp>
 #include <ispd/scheduler/round_robin.hpp>
+#include <ispd/metrics/master_metrics.hpp>
 
 namespace ispd {
 namespace services {
-
-struct master_metrics {
-  /// \brief Amount of cmpleted tasks scheduled by the master.
-  unsigned completed_tasks;
-  
-  /// \brief Sum of all turnaround times of completed tasks.
-  double total_turnaround_time;
-};
 
 struct master_state {
   /// \brief Master's slaves.
@@ -35,7 +28,7 @@ struct master_state {
   ispd::workload::Workload *workload;
 
   /// \brief Master's metrics.
-  master_metrics metrics;
+  ispd::metrics::MasterMetrics metrics;
 };
 
 struct master {
