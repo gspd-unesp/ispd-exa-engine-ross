@@ -8,37 +8,12 @@
 #include <ispd/message/message.hpp>
 #include <ispd/metrics/metrics.hpp>
 #include <ispd/configuration/link.hpp>
+#include <ispd/metrics/link_metrics.hpp>
 
 extern double g_NodeSimulationTime;
 
 namespace ispd {
 namespace services {
-
-struct link_metrics {
-  /// \brief The amount of communication time performed by the upward link.
-  double upward_comm_time;
-
-  /// \brief The amount of communication time performed by the downward link.
-  double downward_comm_time;
-
-  /// \brief The amount of communicated Mbits by the upward link.
-  double upward_comm_mbits;
-
-  /// \brief The amount of communicated Mbits by the downward link.
-  double downward_comm_mbits;
-
-  /// \brief The amount of communicated packets by the upward link.
-  unsigned upward_comm_packets;
-
-  /// \brief The amount of communicated packets by the downward link.
-  unsigned downward_comm_packets;
-
-  /// \brief The amount of upward waiting time occurred in this link.
-  double upward_waiting_time;
-
-  /// \brief The amount of downward waiting time occurred in this link.
-  double downward_waiting_time;
-};
 
 struct link_state {
   /// \brief Link's ends.
@@ -49,7 +24,7 @@ struct link_state {
   ispd::configuration::LinkConfiguration conf;
 
   /// \brief Link's Metrics.
-  link_metrics metrics;
+  ispd::metrics::LinkMetrics metrics;
 
   /// \brief Link's Queueing Model Information.
   double upward_next_available_time;
