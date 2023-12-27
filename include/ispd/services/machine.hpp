@@ -202,7 +202,7 @@ struct machine {
     const double totalCpuTime = std::accumulate(s->cores_free_time.cbegin(), s->cores_free_time.cend(), 0.0);
     const double idleness = (totalCpuTime - s->m_Metrics.m_ProcTime) / totalCpuTime;
 
-    /// Finish the machine metrics.
+    /// Finish the machine's metrics.
     s->m_Metrics.m_Idleness = idleness;
 
     /// Report to the node`s metrics collector this machine`s metrics.

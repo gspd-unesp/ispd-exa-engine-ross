@@ -207,6 +207,9 @@ struct link {
     const double downwardIdleness = 1.0 - (s->metrics.downward_comm_time - s->metrics.downward_waiting_time) / s->metrics.downward_comm_time;
     const double upwardIdleness = 1.0 - (s->metrics.upward_comm_time - s->metrics.upward_waiting_time) / s->metrics.upward_comm_time;
 
+    /// Finish the link's metrics.
+    s->metrics.m_UpwardIdleness = upwardIdleness;
+    s->metrics.m_DownwardIdleness = downwardIdleness;
 
     /// Report to the node`s metrics collector the last activity time
     /// of the machine in the simulation.
@@ -215,6 +218,9 @@ struct link {
     ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_COMMUNICATION_WAITING_TIME, linkTotalCommunicationWaitingTime);
     ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_LINK_SERVICES);
     ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_COMMUNICATION_TIME, linkTotalCommunicationTime);
+
+    /// Report to the node's metrics reports file this links's metrics.
+    ispd::node_metrics::notifyReport(s->metrics, s->conf, lp->gid);
 
     std::printf(
         "Link Queue Info & Metrics (%lu)\n"

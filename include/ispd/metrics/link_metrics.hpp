@@ -34,6 +34,15 @@ struct LinkMetrics final {
 
   /// \brief The amount of downward waiting time occurred in this link.
   double downward_waiting_time;
+
+  /// \name Finish-related Metrics.
+  /// 
+  /// Note: These metrics are only calculated at the `finish` event handler.
+  ///       Therefore, it is not guaranteed to have the right value
+  ///       while the simulation is being executed.
+
+  double m_UpwardIdleness; ///< The percentage of upward link idleness.
+  double m_DownwardIdleness; ///< The percentage of downward link idleness.
 };
 
 }

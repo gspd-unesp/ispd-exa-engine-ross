@@ -7,6 +7,8 @@
 #include <ispd/model/user.hpp>
 #include <lib/nlohmann/json.hpp>
 #include <ispd/services/services.hpp>
+#include <ispd/configuration/link.hpp>
+#include <ispd/metrics/link_metrics.hpp>
 #include <ispd/configuration/machine.hpp>
 #include <ispd/metrics/machine_metrics.hpp>
 
@@ -258,6 +260,10 @@ namespace ispd::node_metrics {
 
     void notifyReport(const ispd::metrics::MachineMetrics &metrics, 
                       const ispd::configuration::MachineConfiguration &configuration,
+                      const tw_lpid gid);
+
+    void notifyReport(const ispd::metrics::LinkMetrics &metrics,
+                      const ispd::configuration::LinkConfiguration &configuration,
                       const tw_lpid gid);
 
     /// \brief Report the aggregated node-level metrics to an external source.

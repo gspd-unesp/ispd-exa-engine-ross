@@ -591,6 +591,28 @@ namespace ispd::node_metrics {
     g_NodeMetricsReport->emplace(std::to_string(gid), report);
   }
 
+  void notifyReport(const ispd::metrics::LinkMetrics &metrics,
+                    const ispd::configuration::LinkConfiguration &configuration,
+                    const tw_lpid gid) {
+    nlohmann::json report;
+
+    report["upward_communication_time"] = metrics.upward_comm_time;
+    report["downward_communication_time"] = metrics.downward_comm_time;
+    report["upward_communication_bits"] = metrics.upward_comm_mbits;
+    report["downward_communication_bits"] = metrics.downward_comm_mbits;
+    report["upward_comm_packets"] = metrics.upward_comm_packets;
+    report["downward_comm_packets"] = metrics.downward_comm_packets;
+    report["upward_waiting_time"] = metrics.upward_waiting_time;
+    report["downward_waiting_time"] = metrics.downward_waiting_time;
+    report["upward_idleness"] = metrics.m_UpwardIdleness;
+    report["downward_idleness"] = metrics.m_DownwardIdleness;
+    report["type"] = ispd::services::getServiceTypeName(ispd::services::ServiceType::LINK);
+    report["simulated_on"] = "node_" + std::to_string(g_tw_mynode);
+
+    /// Write the report of the current link to the node metrics report.
+    g_NodeMetricsReport->emplace(std::to_string(gid), report);
+  }
+
   void reportNodeMetrics() {
     /// Forward the report to the node metrics collector.
     g_NodeMetricsCollector->reportNodeMetrics();
