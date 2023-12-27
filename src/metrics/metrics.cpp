@@ -687,9 +687,6 @@ namespace ispd::global_metrics {
   }
 
   void reportGlobalMetricsToFile(const std::filesystem::path reportFilePath) {
-    /// Purge the old node report files.
-    purgeOldNodeReportFiles();
-
     g_GlobalMetricsCollector->reportGlobalMetricsToFile(reportFilePath);
   }
 }; // namespace ispd::global_metrics
