@@ -1,13 +1,17 @@
 #ifndef ISPD_METRICS_HPP
 #define ISPD_METRICS_HPP
 
+#include <ross.h>
 #include <filesystem>
 #include <unordered_map>
 #include <ispd/model/user.hpp>
+#include <lib/nlohmann/json.hpp>
+#include <ispd/services/services.hpp>
+#include <ispd/configuration/machine.hpp>
+#include <ispd/metrics/machine_metrics.hpp>
 
 #ifdef DEBUG_ON
   #include <cstdint>
-  #include <ispd/services/services.hpp>
 #endif // DEBUG_ON
 
 namespace ispd::metrics {
@@ -228,6 +232,10 @@ namespace ispd::node_metrics {
 
     /// Pointer to the global instance of the NodeMetricsCollector responsible for tracking node-level metrics.
     extern ispd::metrics::NodeMetricsCollector *g_NodeMetricsCollector;
+    
+    /// Pointer to the global instance of the JSON object responsible for tracking node-level metrics that will
+    /// be written into the node-level metrics report file.
+    extern nlohmann::json *g_NodeMetricsReport;
 
     /// \brief Notify the metrics collector about a node-level metric without a value.
     ///
@@ -248,11 +256,22 @@ namespace ispd::node_metrics {
     template <typename T>
     void notifyMetric(const ispd::metrics::NodeMetricsFlag flag, const T value);
 
+    void notifyReport(const ispd::metrics::MachineMetrics &metrics, 
+                      const ispd::configuration::MachineConfiguration &configuration,
+                      const tw_lpid gid);
+
     /// \brief Report the aggregated node-level metrics to an external source.
     ///
     /// This function is responsible for reporting the aggregated node-level metrics to the node master.
     /// It facilitates communication and aggregation of metrics for individual nodes across the simulation setup.
     void reportNodeMetrics();
+
+    /// \brief Write aggregated node-level metrics to a file in JSON format.
+    ///
+    /// This function plays a crucial role in the reporting mechanism of the simulation engine. Its primary
+    /// responsibility is to write the aggregated node-level metrics, obtained during the simulation, to a
+    /// specified file in the JSON format.
+    void reportNodeMetricsToFile();
 
 } // namespace ispd::node_metrics
 

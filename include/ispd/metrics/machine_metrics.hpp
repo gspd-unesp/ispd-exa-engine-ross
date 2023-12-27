@@ -34,6 +34,14 @@ struct MachineMetrics final {
 
   /// \name Energy-related Metrics
   double m_EnergyConsumption; ///< Total energy consumpttion (in Joules).
+
+  /// \name Finish-related Metrics.
+  ///  
+  /// Note: These metrics is only calculated at the `finish` event handler.
+  ///       Therefore, it is not guaranteed to have the right value
+  ///       while the simulation is being executed.
+
+  double m_Idleness; ///< The percentage of machine idleness.
 };
 
 } // namespace ispd::metrics

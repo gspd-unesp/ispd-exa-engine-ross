@@ -202,6 +202,9 @@ struct machine {
     const double totalCpuTime = std::accumulate(s->cores_free_time.cbegin(), s->cores_free_time.cend(), 0.0);
     const double idleness = (totalCpuTime - s->m_Metrics.m_ProcTime) / totalCpuTime;
 
+    /// Finish the machine metrics.
+    s->m_Metrics.m_Idleness = idleness;
+
     /// Report to the node`s metrics collector this machine`s metrics.
     ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_SIMULATION_TIME, lastActivityTime);
     ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_PROCESSED_MFLOPS, s->m_Metrics.m_ProcMflops);
@@ -213,6 +216,9 @@ struct machine {
     ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_PROCESSING_TIME, s->m_Metrics.m_ProcTime);
     ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_NON_IDLE_ENERGY_CONSUMPTION, s->m_Metrics.m_EnergyConsumption);
     ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_POWER_IDLE, s->conf.getWattageIdle());
+
+    /// Report to the node's metrics reports file this machine's metrics.
+    ispd::node_metrics::notifyReport(s->m_Metrics, s->conf, lp->gid);
 
     std::printf(
         "Machine Metrics (%lu)\n"
@@ -232,7 +238,7 @@ struct machine {
         s->m_Metrics.m_ForwardedTasks, lp->gid,
         s->m_Metrics.m_ProcWaitingTime, lp->gid,
         s->m_Metrics.m_ProcTime / s->m_Metrics.m_ProcTasks, lp->gid,
-        idleness * 100.0, lp->gid,
+        s->m_Metrics.m_Idleness * 100.0, lp->gid,
         s->m_Metrics.m_EnergyConsumption, lp->gid
     );
   }

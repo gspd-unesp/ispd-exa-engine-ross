@@ -1,11 +1,13 @@
 #include <mpi.h>
 #include <ross.h>
+#include <string>
 #include <fstream>
 #include <algorithm>
 #include <ispd/log/log.hpp>
 #include <lib/nlohmann/json.hpp>
 #include <ispd/model/builder.hpp>
 #include <ispd/metrics/metrics.hpp>
+#include <ispd/metrics/machine_metrics.hpp>
 
 namespace ispd::metrics {
 
@@ -538,6 +540,8 @@ namespace ispd::node_metrics {
 
   ispd::metrics::NodeMetricsCollector *g_NodeMetricsCollector = new ispd::metrics::NodeMetricsCollector();
 
+  nlohmann::json *g_NodeMetricsReport = new nlohmann::json();
+
   template <>
   void notifyMetric(const enum ispd::metrics::NodeMetricsFlag flag, const double value) {
     /// Forward the notification to the node metrics collector.
@@ -555,11 +559,50 @@ namespace ispd::node_metrics {
     g_NodeMetricsCollector->notifyMetric(flag);
   }
 
+  void notifyReport(const ispd::metrics::MachineMetrics &metrics,
+                    const ispd::configuration::MachineConfiguration &configuration,
+                    const tw_lpid gid) {
+    nlohmann::json report;
+
+    /// Calculates the machine's average processing time, i.e., the average time
+    /// spent to process one task.
+    const double avgProcTime = metrics.m_ProcTime / metrics.m_ProcTasks;
+
+    /// Calculates the machine's average power consumption.
+    const double avgPowerConsumption = metrics.m_EnergyConsumption / metrics.m_ProcTime;
+#define MFLOPS_TO_GFLOPS (1e-3)
+    /// Calculates the machine's energy efficiency (GFLOPs/watts)
+    const double energyEfficiency = (metrics.m_ProcMflops * MFLOPS_TO_GFLOPS) / avgPowerConsumption;
+#undef MFLOPS_TO_GFLOPS
+
+    report["processed_mflops"] = metrics.m_ProcMflops;
+    report["processed_time"] = metrics.m_ProcTime;
+    report["processed_tasks"] = metrics.m_ProcTasks;
+    report["forwarded_tasks"] = metrics.m_ForwardedTasks;
+    report["energy_consumption"] = metrics.m_EnergyConsumption;
+    report["average_processing_time"] = avgProcTime;
+    report["idleness"] = metrics.m_Idleness;
+    report["average_power_consumption"] = avgPowerConsumption;
+    report["energy_efficiency"] = energyEfficiency;
+    report["type"] = ispd::services::getServiceTypeName(ispd::services::ServiceType::MACHINE);
+    report["simulated_on"] = "node_" + std::to_string(g_tw_mynode);
+
+    /// Write the report of the current machine to the node metrics report.
+    g_NodeMetricsReport->emplace(std::to_string(gid), report);
+  }
+
   void reportNodeMetrics() {
     /// Forward the report to the node metrics collector.
     g_NodeMetricsCollector->reportNodeMetrics();
   }
 
+  void reportNodeMetricsToFile() {
+    /// The output stream in which the node-level metrics will be written to.
+    std::ofstream out("node_" + std::to_string(g_tw_mynode) + ".json");
+
+    /// Write the JSON content into the file using the prettified format.
+    out << std::setw(2) << *g_NodeMetricsReport << std::endl;
+  }
 }; // namespace ispd::node_metrics
 
 namespace ispd::global_metrics {

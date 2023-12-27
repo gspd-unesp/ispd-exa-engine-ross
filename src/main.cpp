@@ -158,6 +158,7 @@ int main(int argc, char **argv) {
 
   tw_run();
   ispd::node_metrics::reportNodeMetrics();
+  ispd::node_metrics::reportNodeMetricsToFile();
   tw_end();
 
   ispd::global_metrics::reportGlobalMetrics();
