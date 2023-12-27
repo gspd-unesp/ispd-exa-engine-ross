@@ -596,12 +596,12 @@ namespace ispd::node_metrics {
                     const tw_lpid gid) {
     nlohmann::json report;
 
-    report["upward_communication_time"] = metrics.upward_comm_time;
-    report["downward_communication_time"] = metrics.downward_comm_time;
-    report["upward_communication_bits"] = metrics.upward_comm_mbits;
-    report["downward_communication_bits"] = metrics.downward_comm_mbits;
-    report["upward_comm_packets"] = metrics.upward_comm_packets;
-    report["downward_comm_packets"] = metrics.downward_comm_packets;
+    report["upward_communicated_time"] = metrics.upward_comm_time;
+    report["downward_communicated_time"] = metrics.downward_comm_time;
+    report["upward_communicated_mbits"] = metrics.upward_comm_mbits;
+    report["downward_communicated_mbits"] = metrics.downward_comm_mbits;
+    report["upward_communicated_packets"] = metrics.upward_comm_packets;
+    report["downward_communicated_packets"] = metrics.downward_comm_packets;
     report["upward_waiting_time"] = metrics.upward_waiting_time;
     report["downward_waiting_time"] = metrics.downward_waiting_time;
     report["upward_idleness"] = metrics.m_UpwardIdleness;
@@ -627,6 +627,21 @@ namespace ispd::node_metrics {
     report["simulated_on"] = "node_" + std::to_string(g_tw_mynode);
 
     /// Write the report of the current master to the node metrics report.
+    g_NodeMetricsReport->emplace(std::to_string(gid), report);
+  }
+
+  void
+  notifyReport(const ispd::metrics::SwitchMetrics &metrics,
+               const ispd::configuration::SwitchConfiguration &configuration,
+               const tw_lpid gid) {
+    nlohmann::json report;
+
+    report["upward_communicated_mbits"] = metrics.m_UpwardCommMbits;
+    report["downward_communicated_mbits"] = metrics.m_DownwardCommMbits;
+    report["upward_communicated_packets"] = metrics.m_UpwardCommPackets;
+    report["downward_communicated_packets"] = metrics.m_DownwardCommPackets;
+
+    /// Write the report of the current switch to the node metrics report.
     g_NodeMetricsReport->emplace(std::to_string(gid), report);
   }
 

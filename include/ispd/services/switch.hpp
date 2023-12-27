@@ -117,6 +117,7 @@ struct Switch {
 
   static void finish(SwitchState *s, tw_lp *lp) {
     ispd::node_metrics::notifyMetric(ispd::metrics::NodeMetricsFlag::NODE_TOTAL_MASTER_SERVICES);
+    ispd::node_metrics::notifyReport(s->m_Metrics, s->m_Conf, lp->gid);
 
     std::printf("Switch Queue Info & Metrics (%lu)\n"
                 " - Downward Communicated Mbits..: %lf Mbits (%lu).\n"
