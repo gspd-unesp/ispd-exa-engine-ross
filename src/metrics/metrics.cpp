@@ -9,7 +9,22 @@
 #include <ispd/metrics/metrics.hpp>
 #include <ispd/metrics/machine_metrics.hpp>
 
+/// \brief Generates the file path for the report of a specific node.
+///
+/// This function constructs and returns the file path for the report of a node
+/// identified by the given node ID. The file path is generated based on the
+/// convention "node_<nodeId>.json".
+///
+/// \param nodeId The unique identifier of the node for which the report path is generated.
+///
+/// \return A std::filesystem::path representing the file path for the node report.
+[[nodiscard]] static auto getNodeFileReportPath(const size_t nodeId) noexcept 
+  -> std::filesystem::path {
+  return std::filesystem::path("node_" + std::to_string(nodeId) + ".json");
+}
+
 namespace ispd::metrics {
+
 
 void NodeMetricsCollector::reportNodeUserMetrics() {
   /// An alias for the global metrics collector.
@@ -415,17 +430,32 @@ static auto waitAllNodeFileReport() noexcept -> void {
 countAgain:
   size_t count = 0;
 
-  for (size_t i = 0; i < nodeCount; i++) {
-    const std::string nodeFilePath = "node_" + std::to_string(i) + ".json";
-
-    if (std::filesystem::exists(nodeFilePath))
+  for (size_t i = 0; i < nodeCount; i++)
+    if (std::filesystem::exists(getNodeFileReportPath(i)))
       count++;
-  }
 
   if (count != nodeCount) {
     ispd_debug("Waiting all node file reports...");
     goto countAgain;
   }
+}
+
+[[nodiscard]] static auto aggregateNodeFileReport() noexcept -> nlohmann::json {
+  /// Count how many nodes that are acting in the simulation.
+  const size_t nodeCount = tw_nnodes();
+  nlohmann::json services;
+
+  for (size_t i = 0; i < nodeCount; i++) {
+    std::ifstream in(getNodeFileReportPath(i));
+    nlohmann::json nodeReport = nlohmann::json::parse(in);
+
+    /// Writing all content from a specific node report into the
+    /// global-level aggregated metrics.
+    for (const auto& [key, value] : nodeReport.items())
+      services.emplace(key, value);
+  }
+
+  return services;
 }
 
 
@@ -553,6 +583,10 @@ void GlobalMetricsCollector::reportGlobalMetricsToFile(
   }
 
   data["users"] = users;
+
+  /// Writing the service-related aggregated metrics.
+  json services = aggregateNodeFileReport();
+  data["services"] = services;
 
   /// Write the JSON content into the file using the prettified format.
   out << std::setw(2) << data << std::endl;
