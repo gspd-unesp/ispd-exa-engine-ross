@@ -127,6 +127,9 @@ struct master {
 
     const double avgTurnaroundTime = s->metrics.total_turnaround_time / s->metrics.completed_tasks;
 
+    /// Report to the node's metrics reports file this master's metrics.
+    ispd::node_metrics::notifyReport(s->metrics, lp->gid);
+
     std::printf(
         "Master Metrics (%lu)\n"
         " - Completed Tasks.....: %u tasks (%lu).\n"

@@ -613,6 +613,23 @@ namespace ispd::node_metrics {
     g_NodeMetricsReport->emplace(std::to_string(gid), report);
   }
 
+  void notifyReport(const ispd::metrics::MasterMetrics &metrics,
+                    const tw_lpid gid) {
+    nlohmann::json report;
+
+    /// Calculates the master's average turnaround time.
+    const double avgTurnaroundTime = metrics.total_turnaround_time / metrics.completed_tasks;
+
+    report["completed_tasks"] = metrics.completed_tasks;
+    report["total_turnaround_time"] = metrics.total_turnaround_time;
+    report["average_turnaround_time"] = avgTurnaroundTime;
+    report["type"] = ispd::services::getServiceTypeName(ispd::services::ServiceType::MASTER);
+    report["simulated_on"] = "node_" + std::to_string(g_tw_mynode);
+
+    /// Write the report of the current master to the node metrics report.
+    g_NodeMetricsReport->emplace(std::to_string(gid), report);
+  }
+
   void reportNodeMetrics() {
     /// Forward the report to the node metrics collector.
     g_NodeMetricsCollector->reportNodeMetrics();
