@@ -66,7 +66,7 @@ int main(int argc, char **argv) {
 
   /// Read the routing table from a specified file.
   ispd::routing_table::load("routes.route");
-  
+
   /// @Temporary: Must be removed.
   ispd::model_loader::loadModel("model.json");
 

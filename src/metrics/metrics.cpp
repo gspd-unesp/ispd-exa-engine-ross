@@ -409,8 +409,32 @@ void GlobalMetricsCollector::reportGlobalMetrics() {
 #endif // DEBUG_ON
 }
 
+static auto waitAllNodeFileReport() noexcept -> void {
+  /// Count how many nodes that are acting in the simulation.
+  const size_t nodeCount = tw_nnodes();
+countAgain:
+  size_t count = 0;
+
+  for (size_t i = 0; i < nodeCount; i++) {
+    const std::string nodeFilePath = "node_" + std::to_string(i) + ".json";
+
+    if (std::filesystem::exists(nodeFilePath))
+      count++;
+  }
+
+  if (count != nodeCount) {
+    ispd_debug("Waiting all node file reports...");
+    goto countAgain;
+  }
+}
+
+
 void GlobalMetricsCollector::reportGlobalMetricsToFile(
     const std::filesystem::path reportFilePath) {
+  /// Checks if all file reports have been generated, such that we can
+  /// continue the generation of the global-level file report.
+  waitAllNodeFileReport();
+
   using json = nlohmann::json;
 
   json data;
