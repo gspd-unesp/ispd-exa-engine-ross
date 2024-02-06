@@ -209,9 +209,18 @@ static auto loadInterarrivalDist(const json &workload,
 
   if (type == "poisson") {
     const auto &lambda = interarrival[MODEL_INTERARRIVAL_POISSON_LAMBDA_KEY];
+    ispd_debug("poisson interarrival distribution");
     return std::make_unique<ispd::workload::PoissonInterarrivalDistribution>(
         lambda);
-  } else {
+  }
+  else if (type == "fixed")
+  {
+    const auto &lambda = interarrival[MODEL_INTERARRIVAL_POISSON_LAMBDA_KEY];
+    ispd_debug("fixed interarrival distribution");
+
+    return std::make_unique<ispd::workload::FixedInterarrivalDistribution>(lambda);
+  }
+  else {
     ispd_error("Unexpected `%s` interarrival distribution type.",
                type.get<std::string>().c_str());
     throw std::runtime_error("Unreachable!"); // Make the compiler happy!
