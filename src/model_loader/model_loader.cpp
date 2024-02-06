@@ -35,7 +35,7 @@
 #define MODEL_INTERARRIVAL_TYPE_KEY ("type")
 
 #define MODEL_INTERARRIVAL_POISSON_LAMBDA_KEY ("lambda")
-
+#define MODEL_INTERARRIVAL_WEIBULL_SHAPE_KEY ("shape")
 /// \brief Services - Keys.
 #define MODEL_SERVICES_SECTION ("services")
 #define MODEL_SERVICES_MASTER_SUBSECTION ("masters")
@@ -225,6 +225,13 @@ static auto loadInterarrivalDist(const json &workload,
     ispd_debug("exponential interarrival distribution");
 
     return std::make_unique<ispd::workload::ExponentialInterarrivalDistribution>(lambda);
+  }
+  else if (type == "weibull")
+  {
+      const auto &mean = interarrival[MODEL_INTERARRIVAL_POISSON_LAMBDA_KEY];
+      const auto &shape = interarrival[MODEL_INTERARRIVAL_WEIBULL_SHAPE_KEY];
+      ispd_debug("weibull interarrival distribution");
+      return std::make_unique<ispd::workload::WeibullInterarrivalDistribution>(mean,shape);
   }
   else {
     ispd_error("Unexpected `%s` interarrival distribution type.",
