@@ -220,6 +220,12 @@ static auto loadInterarrivalDist(const json &workload,
 
     return std::make_unique<ispd::workload::FixedInterarrivalDistribution>(lambda);
   }
+  else if (type == "exponential"){
+    const auto &lambda = interarrival[MODEL_INTERARRIVAL_POISSON_LAMBDA_KEY];
+    ispd_debug("exponential interarrival distribution");
+
+    return std::make_unique<ispd::workload::ExponentialInterarrivalDistribution>(lambda);
+  }
   else {
     ispd_error("Unexpected `%s` interarrival distribution type.",
                type.get<std::string>().c_str());
