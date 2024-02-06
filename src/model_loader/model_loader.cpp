@@ -35,7 +35,7 @@
 #define MODEL_INTERARRIVAL_TYPE_KEY ("type")
 
 #define MODEL_INTERARRIVAL_POISSON_LAMBDA_KEY ("lambda")
-
+#define MODEL_INTERARRIVAL_WEIBULL_SHAPE_KEY ("shape")
 /// \brief Services - Keys.
 #define MODEL_SERVICES_SECTION ("services")
 #define MODEL_SERVICES_MASTER_SUBSECTION ("masters")
@@ -209,9 +209,31 @@ static auto loadInterarrivalDist(const json &workload,
 
   if (type == "poisson") {
     const auto &lambda = interarrival[MODEL_INTERARRIVAL_POISSON_LAMBDA_KEY];
+    ispd_debug("poisson interarrival distribution");
     return std::make_unique<ispd::workload::PoissonInterarrivalDistribution>(
         lambda);
-  } else {
+  }
+  else if (type == "fixed")
+  {
+    const auto &lambda = interarrival[MODEL_INTERARRIVAL_POISSON_LAMBDA_KEY];
+    ispd_debug("fixed interarrival distribution");
+
+    return std::make_unique<ispd::workload::FixedInterarrivalDistribution>(lambda);
+  }
+  else if (type == "exponential"){
+    const auto &lambda = interarrival[MODEL_INTERARRIVAL_POISSON_LAMBDA_KEY];
+    ispd_debug("exponential interarrival distribution");
+
+    return std::make_unique<ispd::workload::ExponentialInterarrivalDistribution>(lambda);
+  }
+  else if (type == "weibull")
+  {
+      const auto &mean = interarrival[MODEL_INTERARRIVAL_POISSON_LAMBDA_KEY];
+      const auto &shape = interarrival[MODEL_INTERARRIVAL_WEIBULL_SHAPE_KEY];
+      ispd_debug("weibull interarrival distribution");
+      return std::make_unique<ispd::workload::WeibullInterarrivalDistribution>(mean,shape);
+  }
+  else {
     ispd_error("Unexpected `%s` interarrival distribution type.",
                type.get<std::string>().c_str());
     throw std::runtime_error("Unreachable!"); // Make the compiler happy!
