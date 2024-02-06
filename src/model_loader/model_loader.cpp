@@ -170,7 +170,8 @@ static auto loadUsers(const json &data) noexcept -> void {
       userIndex);
 }
 
-/// \brief Loads an Interarrival Distribution from a JSON workload specification.
+/// \brief Loads an Interarrival Distribution from a JSON workload
+/// specification.
 ///
 /// This function parses and loads an Interarrival Distribution from a JSON
 /// workload specification. The Interarrival Distribution type is specified
@@ -178,8 +179,9 @@ static auto loadUsers(const json &data) noexcept -> void {
 /// specified type, the function creates an instance of the corresponding
 /// InterarrivalDistribution subclass and returns it as a unique pointer.
 ///
-/// \param workload The JSON workload specification containing interarrival type.
-/// \param workloadIndex The index of the workload in the model specification.
+/// \param workload The JSON workload specification containing interarrival
+/// type. \param workloadIndex The index of the workload in the model
+/// specification.
 ///
 /// \note The function assumes that the workload JSON contains the
 ///       "interarrival_type" attribute, specifying the type of interarrival
@@ -212,28 +214,25 @@ static auto loadInterarrivalDist(const json &workload,
     ispd_debug("poisson interarrival distribution");
     return std::make_unique<ispd::workload::PoissonInterarrivalDistribution>(
         lambda);
-  }
-  else if (type == "fixed")
-  {
+  } else if (type == "fixed") {
     const auto &lambda = interarrival[MODEL_INTERARRIVAL_POISSON_LAMBDA_KEY];
     ispd_debug("fixed interarrival distribution");
 
-    return std::make_unique<ispd::workload::FixedInterarrivalDistribution>(lambda);
-  }
-  else if (type == "exponential"){
+    return std::make_unique<ispd::workload::FixedInterarrivalDistribution>(
+        lambda);
+  } else if (type == "exponential") {
     const auto &lambda = interarrival[MODEL_INTERARRIVAL_POISSON_LAMBDA_KEY];
     ispd_debug("exponential interarrival distribution");
 
-    return std::make_unique<ispd::workload::ExponentialInterarrivalDistribution>(lambda);
-  }
-  else if (type == "weibull")
-  {
-      const auto &mean = interarrival[MODEL_INTERARRIVAL_POISSON_LAMBDA_KEY];
-      const auto &shape = interarrival[MODEL_INTERARRIVAL_WEIBULL_SHAPE_KEY];
-      ispd_debug("weibull interarrival distribution");
-      return std::make_unique<ispd::workload::WeibullInterarrivalDistribution>(mean,shape);
-  }
-  else {
+    return std::make_unique<
+        ispd::workload::ExponentialInterarrivalDistribution>(lambda);
+  } else if (type == "weibull") {
+    const auto &mean = interarrival[MODEL_INTERARRIVAL_POISSON_LAMBDA_KEY];
+    const auto &shape = interarrival[MODEL_INTERARRIVAL_WEIBULL_SHAPE_KEY];
+    ispd_debug("weibull interarrival distribution");
+    return std::make_unique<ispd::workload::WeibullInterarrivalDistribution>(
+        mean, shape);
+  } else {
     ispd_error("Unexpected `%s` interarrival distribution type.",
                type.get<std::string>().c_str());
     throw std::runtime_error("Unreachable!"); // Make the compiler happy!
@@ -308,7 +307,8 @@ static auto loadWorkloads(const json &data) noexcept -> void {
     std::unique_ptr<ispd::workload::InterarrivalDistribution> interarrivalDist =
         loadInterarrivalDist(workload, workloadIndex);
 
-    if (type == "uniform") {
+    if (type == "uniform" || type == "two stage uniform" ||
+        type == "constant") {
       const auto &uniformWorkloadRequiredAttributes = {
           MODEL_WORKLOAD_UNIFORM_MINPROCSIZE_KEY,
           MODEL_WORKLOAD_UNIFORM_MAXPROCSIZE_KEY,
@@ -319,7 +319,7 @@ static auto loadWorkloads(const json &data) noexcept -> void {
       // required attributes.
       for (const auto &attribute : uniformWorkloadRequiredAttributes)
         if (!workload.contains(attribute))
-          ispd_error("Uniform Workload listed at index %lu in model "
+          ispd_error(" Workload listed at index %lu in model "
                      "specification does not "
                      "have the `%s` attribute.",
                      workloadIndex, attribute);
@@ -333,14 +333,25 @@ static auto loadWorkloads(const json &data) noexcept -> void {
       const auto maxCommSize =
           workload[MODEL_WORKLOAD_UNIFORM_MAXCOMMSIZE_KEY].get<double>();
 
-      w = new ispd::workload::UniformWorkload(
-          owner, remainingTasks, minProcSize, maxProcSize, minCommSize,
-          maxCommSize, computingOffload, std::move(interarrivalDist));
+      if (type == "uniform") {
+        w = new ispd::workload::UniformWorkload(
+            owner, remainingTasks, minProcSize, maxProcSize, minCommSize,
+            maxCommSize, computingOffload, std::move(interarrivalDist));
 
-      ispd_debug("Uniform Workload (%.2lf, %.2lf, %.2lf, %.2lf) for master "
-                 "with id %lu has been loaded from the model specification.",
-                 minProcSize, maxProcSize, minCommSize, maxCommSize,
-                 masterId.get<tw_lpid>());
+        ispd_debug("Uniform Workload (%.2lf, %.2lf, %.2lf, %.2lf) for master "
+                   "with id %lu has been loaded from the model specification.",
+                   minProcSize, maxProcSize, minCommSize, maxCommSize,
+                   masterId.get<tw_lpid>());
+
+      } else if (type == "constant") {
+        w = new ispd::workload::ConstantWorkload(
+            owner, remainingTasks, maxProcSize, maxCommSize, computingOffload,
+            std::move(interarrivalDist));
+        ispd_debug("Constant Workload (%.2lf, %.2lf) for master "
+                   "with id %lu has been loaded from the model specification.",
+                   minProcSize, maxProcSize,
+                   masterId.get<tw_lpid>());
+      }
     } else {
       ispd_error("Unexpected workload type %s.",
                  type.get<std::string>().c_str());
@@ -348,7 +359,8 @@ static auto loadWorkloads(const json &data) noexcept -> void {
 
     // Register the workload in a temporary storage, because this will be
     // fetched after to register them with the masters.
-    g_ModelLoader_Workloads.insert(std::make_pair<>(masterId.get<tw_lpid>(), w));
+    g_ModelLoader_Workloads.insert(
+        std::make_pair<>(masterId.get<tw_lpid>(), w));
 
     workloadIndex++;
   }
@@ -427,7 +439,9 @@ static auto loadMasters(const json &services) noexcept -> void {
     masterIndex++;
   }
 
-  ispd_debug("An amount of %lu masters have been loaded from the model specification.", masterIndex);
+  ispd_debug(
+      "An amount of %lu masters have been loaded from the model specification.",
+      masterIndex);
 }
 
 static auto loadMachine(const json &machine, const size_t machineIndex) noexcept
@@ -502,14 +516,10 @@ static auto loadMachines(const json &services) noexcept -> void {
 
 static auto loadLink(const json &link, const size_t linkIndex) noexcept
     -> void {
-   const auto &linkRequiredAttributes = {
-      MODEL_SERVICE_LINK_ID_KEY,
-      MODEL_SERVICE_LINK_FROM_KEY,
-      MODEL_SERVICE_LINK_TO_KEY,
-      MODEL_SERVICE_LINK_BANDWIDTH_KEY,
-      MODEL_SERVICE_LINK_LOAD_KEY,
-      MODEL_SERVICE_LINK_LATENCY_KEY
-  };
+  const auto &linkRequiredAttributes = {
+      MODEL_SERVICE_LINK_ID_KEY,   MODEL_SERVICE_LINK_FROM_KEY,
+      MODEL_SERVICE_LINK_TO_KEY,   MODEL_SERVICE_LINK_BANDWIDTH_KEY,
+      MODEL_SERVICE_LINK_LOAD_KEY, MODEL_SERVICE_LINK_LATENCY_KEY};
 
   // Checks if the current link specification has all the required
   // attributes.
@@ -635,7 +645,8 @@ auto loadModel(const std::filesystem::path modelPath) noexcept -> void {
   /// specified logical process global identifier.
   if (g_GidToType.find(gid) == g_GidToType.cend())
     ispd_error("getLogicalProcessType: Trying to fetch the logical process "
-               "type to an unregistered identifier (%lu) at node (%lu).", gid, g_tw_mynode);
+               "type to an unregistered identifier (%lu) at node (%lu).",
+               gid, g_tw_mynode);
   return g_GidToType.at(gid);
 }
 
