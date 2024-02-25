@@ -1,6 +1,3 @@
-//
-// Created by willao on 24/02/24.
-//
 
 #ifndef ISPD_EXA_ENGINE_ROSS_DYNAMIC_MASTER_HPP
 #define ISPD_EXA_ENGINE_ROSS_DYNAMIC_MASTER_HPP
