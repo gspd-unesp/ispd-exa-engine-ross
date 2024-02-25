@@ -134,6 +134,7 @@ struct link {
     m->downward_direction = msg->downward_direction;
     m->route_offset = msg->route_offset;
     m->previous_service_id = lp->gid;
+    m->service_id = msg->service_id;
 
     /// Save information (for reverse computation).
     msg->saved_link_next_available_time = saved_next_available_time;

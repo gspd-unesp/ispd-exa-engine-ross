@@ -98,6 +98,7 @@ struct machine {
       m->downward_direction = 0;       /// The task's results will be sent back to the master.
       m->route_offset = msg->route_offset - 2;
       m->previous_service_id = lp->gid;
+      m->service_id = lp->gid;
       
       /// Save information (for reverse computation).
       msg->saved_core_index = core_index;

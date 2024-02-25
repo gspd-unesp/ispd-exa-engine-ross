@@ -30,7 +30,7 @@ private:
   std::vector<tw_lpid>::size_type m_NextSlaveIndex;
 
 public:
-  void initScheduler() override {
+  void initScheduler(std::vector<tw_lpid> &slaves) override {
     m_NextSlaveIndex = std::vector<tw_lpid>::size_type{0};
   }
 
