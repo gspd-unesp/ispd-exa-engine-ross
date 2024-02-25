@@ -10,6 +10,9 @@
 #include <ispd/scheduler/scheduler.hpp>
 #include <ispd/scheduler/round_robin.hpp>
 #include <ispd/workload/interarrival.hpp>
+#include <ispd/scheduler/workqueue.hpp>
+#include <ispd/services/static_master.hpp>
+#include <ispd/services/dynamic_master.hpp>
 #include <ispd/model_loader/model_loader.hpp>
 
 /// \brief User - Keys.
@@ -374,7 +377,9 @@ static auto loadMasterScheduler(const json &type) noexcept
     -> ispd::scheduler::Scheduler * {
   if (type == "RoundRobin") {
     return new ispd::scheduler::RoundRobin;
-  } else {
+  } else if (type == "Workqueue"){
+    return new ispd::scheduler::Workqueue;
+  }else {
     ispd_error("Unexepected %s scheduler.", type.get<std::string>().c_str());
   }
   return nullptr;

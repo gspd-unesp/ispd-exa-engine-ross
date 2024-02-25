@@ -10,6 +10,8 @@
 #include <ispd/services/switch.hpp>
 #include <ispd/services/machine.hpp>
 #include <ispd/message/message.hpp>
+#include <ispd/services/static_master.hpp>
+#include <ispd/services/dynamic_master.hpp>
 #include <ispd/routing/routing.hpp>
 #include <ispd/metrics/metrics.hpp>
 #include <ispd/workload/workload.hpp>
@@ -22,11 +24,11 @@ static unsigned g_star_task_amount = 100;
 tw_peid mapping(tw_lpid gid) { return (tw_peid)gid / g_tw_nlp; }
 
 tw_lptype lps_type[] = {
-    {(init_f)ispd::services::master::init, (pre_run_f)NULL,
-     (event_f)ispd::services::master::forward,
-     (revent_f)ispd::services::master::reverse,
-     (commit_f)ispd::services::master::commit,
-     (final_f)ispd::services::master::finish, (map_f)mapping,
+    {(init_f)ispd::services:: StaticMaster::init, (pre_run_f)NULL,
+     (event_f)ispd::services::StaticMaster::forward,
+     (revent_f)ispd::services::StaticMaster::reverse,
+     (commit_f)ispd::services::StaticMaster::commit,
+     (final_f)ispd::services::StaticMaster::finish, (map_f)mapping,
      sizeof(ispd::services::master_state)},
     {(init_f)ispd::services::link::init, (pre_run_f)NULL,
      (event_f)ispd::services::link::forward,
@@ -65,10 +67,10 @@ int main(int argc, char **argv) {
   ispd::log::setOutputFile(nullptr);
 
   /// Read the routing table from a specified file.
-  ispd::routing_table::load("routes.route");
+  ispd::routing_table::load("/home/willao/Área de trabalho/ispd-models/8-machines/routes.route");
 
   /// @Temporary: Must be removed.
-  ispd::model_loader::loadModel("model.json");
+  ispd::model_loader::loadModel("/home/willao/Área de trabalho/ispd-models/8-machines/output.json");
 
   /// Remove the previously generated node-level aggreated report files.
   ispd::global_metrics::purgeOldNodeReportFiles();
