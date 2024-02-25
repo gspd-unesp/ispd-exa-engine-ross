@@ -3,10 +3,7 @@
 
 #include <ispd/customer/task.hpp>
 
-enum class message_type {
-  GENERATE,
-  ARRIVAL
-};
+enum class message_type { GENERATE, ARRIVAL };
 
 struct ispd_message {
   /// \brief The message type.
@@ -25,16 +22,14 @@ struct ispd_message {
   int route_offset;
   tw_lpid previous_service_id;
 
-
   /// \brief Sender information
   tw_lpid service_id;
 
   /// \brief Message flags.
-  unsigned int downward_direction: 1;
-  unsigned int task_processed: 1;
+  unsigned int downward_direction : 1;
+  unsigned int task_processed : 1;
   tw_lpid machine_id;
-  unsigned int: 5; /// Reversed flags.
+  unsigned int : 5; /// Reversed flags.
 };
 
 #endif // ISPD_MESSAGE_H
-

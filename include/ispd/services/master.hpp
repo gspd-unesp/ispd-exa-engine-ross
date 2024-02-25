@@ -14,11 +14,8 @@
 #include <ispd/scheduler/round_robin.hpp>
 #include <ispd/metrics/master_metrics.hpp>
 
-
-
 namespace ispd {
 namespace services {
-
 
 struct master_state {
   /// \brief Master's slaves.
@@ -34,8 +31,6 @@ struct master_state {
   ispd::metrics::MasterMetrics metrics;
 };
 
-
-}; // namespace services
-}; // namespace ispd
+};     // namespace services
+};     // namespace ispd
 #endif // ISPD_SERVICE_MASTER_HPP
-

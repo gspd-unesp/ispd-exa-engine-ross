@@ -43,7 +43,6 @@ public:
     if (msg->service_id) {
       /// adds the new free machine in the queue
       freeMachines.push_back(msg->service_id);
-
     }
     tw_lpid machine = freeMachines.front();
     lastAvailableMachine.push(machine);
@@ -62,4 +61,3 @@ public:
   }
 };
 } // namespace ispd::scheduler
-

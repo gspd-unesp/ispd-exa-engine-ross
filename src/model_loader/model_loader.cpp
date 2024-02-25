@@ -352,8 +352,7 @@ static auto loadWorkloads(const json &data) noexcept -> void {
             std::move(interarrivalDist));
         ispd_debug("Constant Workload (%.2lf, %.2lf) for master "
                    "with id %lu has been loaded from the model specification.",
-                   minProcSize, maxProcSize,
-                   masterId.get<tw_lpid>());
+                   minProcSize, maxProcSize, masterId.get<tw_lpid>());
       }
     } else {
       ispd_error("Unexpected workload type %s.",
@@ -377,9 +376,9 @@ static auto loadMasterScheduler(const json &type) noexcept
     -> ispd::scheduler::Scheduler * {
   if (type == "RoundRobin") {
     return new ispd::scheduler::RoundRobin;
-  } else if (type == "Workqueue"){
+  } else if (type == "Workqueue") {
     return new ispd::scheduler::Workqueue;
-  }else {
+  } else {
     ispd_error("Unexepected %s scheduler.", type.get<std::string>().c_str());
   }
   return nullptr;
