@@ -341,7 +341,41 @@ static auto loadWorkloads(const json &data) noexcept -> void {
                  "with id %lu has been loaded from the model specification.",
                  minProcSize, maxProcSize, minCommSize, maxCommSize,
                  masterId.get<tw_lpid>());
-    } else {
+    }
+    else if (type == "constant")
+    {
+      const auto &uniformWorkloadRequiredAttributes = {
+          MODEL_WORKLOAD_UNIFORM_MINPROCSIZE_KEY,
+          MODEL_WORKLOAD_UNIFORM_MAXPROCSIZE_KEY,
+          MODEL_WORKLOAD_UNIFORM_MINCOMMSIZE_KEY,
+          MODEL_WORKLOAD_UNIFORM_MAXCOMMSIZE_KEY};
+
+      // Checks if the current uniform workload specifications has all the
+      // required attributes.
+      for (const auto &attribute : uniformWorkloadRequiredAttributes)
+        if (!workload.contains(attribute))
+          ispd_error("Constant Workload listed at index %lu in model "
+                     "specification does not "
+                     "have the `%s` attribute.",
+                     workloadIndex, attribute);
+
+      const auto maxProcSize =
+          workload[MODEL_WORKLOAD_UNIFORM_MAXPROCSIZE_KEY].get<double>();
+
+      const auto maxCommSize =
+          workload[MODEL_WORKLOAD_UNIFORM_MAXCOMMSIZE_KEY].get<double>();
+
+
+
+      w = new ispd::workload::ConstantWorkload(owner, remainingTasks, maxProcSize,
+                                               maxCommSize, computingOffload, std::move(interarrivalDist));
+
+      ispd_debug("Constant Workload (%.2lf, %.2lf) for master "
+                 "with id %lu has been loaded from the model specification.",
+                 maxProcSize, maxCommSize,
+                 masterId.get<tw_lpid>());
+    }
+    else {
       ispd_error("Unexpected workload type %s.",
                  type.get<std::string>().c_str());
     }
