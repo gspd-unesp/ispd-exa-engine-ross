@@ -121,7 +121,7 @@ struct link {
         /// If so, the program is immediately aborted.
         if (msg->previous_service_id != s->to &&
             msg->previous_service_id != s->from) {
-            std::printf("Link with GID %lu has received a packet from a service different from its ends (%lu).", lp->gid, msg->previous_service_id);
+            ispd_debug("Link with GID %lu has received a packet from a service different from its ends (%lu).", lp->gid, msg->previous_service_id);
             abort();
         }
     });

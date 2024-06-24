@@ -33,6 +33,10 @@ SET(ispd_srcs
   ./src/workload/interarrival.cpp
 )
 
+# Add the -g flag to the CMAKE_CXX_FLAGS variable
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
+
+
 ADD_EXECUTABLE(ispd ${ispd_srcs})
 ADD_EXECUTABLE(ispd_test ${ispd_srcs})
 
